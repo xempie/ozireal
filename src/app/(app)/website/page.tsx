@@ -52,7 +52,7 @@ export default function WebsitePage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Migration readiness
@@ -78,7 +78,7 @@ export default function WebsitePage() {
             {redirects.length - mapped} still undecided
           </div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Traffic on the live site</CardTitle>
           <MultiLine
             data={listingTrafficTrend}

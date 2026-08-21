@@ -78,7 +78,7 @@ export default async function ContactDetail({
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           {c.intent && (
             <Card className="border-[#4a3aa7]/25 bg-[#4a3aa7]/[0.04]">
               <div className="flex items-center gap-2 mb-2">

@@ -57,7 +57,7 @@ export default function ProposalsPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Proposals sent
@@ -73,7 +73,7 @@ export default function ProposalsPage() {
             {Math.round((won / sent) * 100)}% of those sent
           </div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <Callout tone="queue" title="A proposal is outbound">
             It carries the agency's name and a price estimate to a prospective vendor, so
             it goes through the approval queue like any other message. Nothing generates
@@ -83,7 +83,7 @@ export default function ProposalsPage() {
       </div>
 
       <Section title="All proposals">
-        <Table>
+        <Table minWidth={880}>
           <THead>
             <TR>
               <TH>Property</TH>
@@ -101,7 +101,7 @@ export default function ProposalsPage() {
               const prop = propertyById(p.propertyId);
               return (
                 <TR key={p.id}>
-                  <TD>
+                  <TD nowrap>
                     {prop && (
                       <Link
                         href={`/properties/${prop.id}`}
@@ -112,7 +112,7 @@ export default function ProposalsPage() {
                     )}
                     <div className="text-3 text-[12px]">{prop?.suburb}</div>
                   </TD>
-                  <TD>
+                  <TD nowrap>
                     <Link
                       href={`/contacts/${p.contactId}`}
                       className="text-2 hover:underline underline-offset-2"
@@ -177,7 +177,7 @@ export default function ProposalsPage() {
               ))}
             </div>
 
-            <div className="flex gap-2 mt-4">
+            <div className="flex flex-wrap gap-2 mt-4">
               <Button variant="primary" size="sm">
                 <ShieldCheck size={12} />
                 Approve and send

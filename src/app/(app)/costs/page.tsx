@@ -44,7 +44,7 @@ export default function CostsPage() {
         subtitle="Every generation is logged with its model, tokens, cost and the record that caused it. Per-tenant cost visibility is a launch requirement, not a later addition."
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <Stat label="Today" value={moneyPrecise(todayCost)} tone="ai" />
         <Stat
           label="Month to date"

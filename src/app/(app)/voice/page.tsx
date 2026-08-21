@@ -37,7 +37,7 @@ export default function VoicePage() {
         }
       />
 
-      <div className="grid lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Recorded this week
@@ -152,7 +152,7 @@ export default function VoicePage() {
                         ))}
                       </ul>
                       {v.status === "transcribed" && (
-                        <div className="flex gap-2 mt-2.5">
+                        <div className="flex flex-wrap gap-2 mt-2.5">
                           <Button variant="primary" size="sm">
                             Commit both
                           </Button>

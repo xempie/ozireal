@@ -56,7 +56,7 @@ export default function ContentPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Published articles
@@ -72,7 +72,7 @@ export default function ContentPage() {
             {views.toLocaleString()}
           </div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Publishing and readership</CardTitle>
           <MultiLine
             data={contentTrend}
@@ -92,7 +92,7 @@ export default function ContentPage() {
       </div>
 
       <Section title="Articles">
-        <Table>
+        <Table minWidth={900}>
           <THead>
             <TR>
               <TH>Title</TH>
@@ -107,7 +107,7 @@ export default function ContentPage() {
           <tbody>
             {blogPosts.map((p) => (
               <TR key={p.id}>
-                <TD className="font-medium max-w-[300px]">
+                <TD className="font-medium min-w-[240px]">
                   {p.title}
                   {p.legacy && (
                     <Badge tone="neutral" className="ml-2">
@@ -174,7 +174,7 @@ export default function ContentPage() {
                     {listingAddress(l)}
                   </Link>
                 )}
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
                   <span className="text-3 text-[11.5px]">
                     {s.status === "published"
                       ? `${s.engagement} interactions`

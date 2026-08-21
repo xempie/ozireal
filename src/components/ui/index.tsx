@@ -14,12 +14,16 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between gap-6 border-b pb-4 mb-6">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6 border-b pb-4 mb-5 sm:mb-6">
       <div className="min-w-0">
-        <h1 className="text-[19px] font-semibold tracking-[-0.01em]">{title}</h1>
+        <h1 className="text-[17px] sm:text-[19px] font-semibold tracking-[-0.01em]">
+          {title}
+        </h1>
         {subtitle && <p className="text-2 mt-1 text-[13px] max-w-2xl">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+      {actions && (
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">{actions}</div>
+      )}
     </div>
   );
 }
@@ -38,16 +42,16 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section className={cn("mb-7", className)}>
+    <section className={cn("mb-7 min-w-0", className)}>
       {(title || actions) && (
-        <div className="flex items-baseline justify-between gap-4 mb-2.5">
-          <div className="flex items-baseline gap-2.5 min-w-0">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-2.5">
+          <div className="flex flex-wrap items-baseline gap-x-2.5 min-w-0">
             {title && (
               <h2 className="text-[13px] font-semibold uppercase tracking-[0.06em] text-2">
                 {title}
               </h2>
             )}
-            {hint && <span className="text-3 text-[12px] truncate">{hint}</span>}
+            {hint && <span className="text-3 text-[12px]">{hint}</span>}
           </div>
           {actions}
         </div>
@@ -199,8 +203,10 @@ export function Button({
       type="button"
       title={title ?? "Inert in the prototype — no backend is wired up"}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-md font-medium transition-colors cursor-default",
-        size === "sm" ? "text-[12px] px-2 py-1" : "text-[13px] px-2.5 py-1.5",
+        "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors cursor-default",
+        size === "sm"
+          ? "text-[12px] px-2.5 min-h-8"
+          : "text-[13px] px-3 min-h-9",
         variants[variant],
         className,
       )}
@@ -212,11 +218,23 @@ export function Button({
 
 /* ----------------------------------------------------------------- table */
 
-export function Table({ children }: { children: React.ReactNode }) {
+export function Table({
+  children,
+  minWidth = 640,
+}: {
+  children: React.ReactNode;
+  /** Floor in px before the card scrolls. Raise it for wide tables. */
+  minWidth?: number;
+}) {
   return (
-    <div className="surface-2 border rounded-lg overflow-hidden">
+    <div className="surface-2 border rounded-lg overflow-hidden min-w-0">
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px] border-collapse">{children}</table>
+        <table
+          className="w-full text-[13px] border-collapse"
+          style={{ minWidth }}
+        >
+          {children}
+        </table>
       </div>
     </div>
   );
@@ -252,12 +270,23 @@ export function TH({
 export function TD({
   children,
   className,
+  nowrap,
 }: {
   children?: React.ReactNode;
   className?: string;
+  /** For identity columns - an address must not break as "11 Berry / Fry / Avenue". */
+  nowrap?: boolean;
 }) {
   return (
-    <td className={cn("px-3 py-2 border-b align-top", className)}>{children}</td>
+    <td
+      className={cn(
+        "px-3 py-2 border-b align-top",
+        nowrap && "whitespace-nowrap",
+        className,
+      )}
+    >
+      {children}
+    </td>
   );
 }
 
@@ -285,10 +314,10 @@ export function KeyValue({
   return (
     <dl
       className={cn(
-        "grid gap-x-6 gap-y-2.5",
-        cols === 1 && "grid-cols-1",
-        cols === 2 && "grid-cols-1 sm:grid-cols-2",
-        cols === 3 && "grid-cols-1 sm:grid-cols-3",
+        "@container grid gap-x-6 gap-y-2.5",
+        cols === 1 && "grid-cols-1 @md:grid-cols-2 @2xl:grid-cols-3",
+        cols === 2 && "grid-cols-1 @sm:grid-cols-2",
+        cols === 3 && "grid-cols-2 @sm:grid-cols-3",
       )}
     >
       {items.map(([k, v]) => (

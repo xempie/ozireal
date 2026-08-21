@@ -108,7 +108,7 @@ export default function ConfirmPage() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
                     <Button variant="primary" size="sm">
                       <Check size={12} />
                       Commit
@@ -186,7 +186,7 @@ export default function ConfirmPage() {
 
                   <p className="text-2 text-[12.5px] mt-3">{m.matchedOn}</p>
 
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
                     <Button variant="primary" size="sm">
                       Merge into the older record
                     </Button>

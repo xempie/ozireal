@@ -36,17 +36,17 @@ export default function CompliancePage() {
           <span className="text-[13px] flex-1">{complianceExample.question}</span>
           <Send size={14} className="text-3 shrink-0" />
         </div>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
           <span className="text-3 text-[11.5px]">Jurisdiction</span>
           <Badge tone="brand">South Australia</Badge>
-          <span className="text-3 text-[11.5px]">
+          <span className="text-3 text-[11.5px] basis-full sm:basis-auto">
             filtered before retrieval, so another state&apos;s rules cannot surface
           </span>
         </div>
       </Card>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <Card>
             <CardTitle>Answer</CardTitle>
             <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap">

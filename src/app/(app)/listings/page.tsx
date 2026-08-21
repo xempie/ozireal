@@ -39,7 +39,7 @@ export default function ListingsPage() {
         }
       />
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4">
+      <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
         {columns.map((col) => {
           const items = listings.filter((l) => l.status === col.status);
           return (

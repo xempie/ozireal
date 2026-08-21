@@ -109,7 +109,7 @@ export default function ContactsPage() {
         </Card>
       </div>
 
-      <Table>
+      <Table minWidth={900}>
         <THead>
           <TR>
             <TH>Name</TH>
@@ -127,7 +127,7 @@ export default function ContactsPage() {
             const smsConsent = c.consents.find((x) => x.channel === "sms");
             return (
               <TR key={c.id}>
-                <TD>
+                <TD nowrap>
                   <Link
                     href={`/contacts/${c.id}`}
                     className="font-medium hover:underline underline-offset-2"

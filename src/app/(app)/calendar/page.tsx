@@ -57,7 +57,7 @@ export default function CalendarPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         {(["google", "outlook"] as const).map((p) => {
           const s = syncState[p];
           return (
@@ -80,7 +80,7 @@ export default function CalendarPage() {
             </Card>
           );
         })}
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2">
           <Callout tone="brand" title="What the platform will not touch">
             We never edit or delete an event we did not create. Our own events carry an
             identifier so we recognise them and do not echo our writes back in as new
@@ -90,7 +90,7 @@ export default function CalendarPage() {
       </div>
 
       <Section title="Next seven days">
-        <div className="grid grid-cols-1 md:grid-cols-4 xl:grid-cols-7 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-2.5 sm:gap-3 items-start">
           {days.map((day, idx) => {
             const evs = eventsFor(day);
             const isToday = idx === 0;

@@ -107,7 +107,16 @@
   border-color: var(--line);
 }
 
-html,
+/* The root element MUST stay at the browser default. Setting font-size here
+   rescales every rem-based Tailwind utility - a 14px root silently turned
+   min-h-8 (2rem) into 28px instead of 32, and shrank every padding and gap to
+   87.5% of its intended value. Body-level sizing gets the dense look without
+   touching the spacing scale. */
+html {
+  background: var(--surface);
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background: var(--surface);
   color: var(--text);

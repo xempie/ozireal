@@ -136,7 +136,7 @@ export default function DashboardPage() {
       />
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
         <Kpi
           label="Enquiries this week"
           value={enquiriesThisWeek}
@@ -193,8 +193,8 @@ export default function DashboardPage() {
       )}
 
       {/* Charts row 1 */}
-      <div className="grid lg:grid-cols-3 gap-4 mb-6">
-        <Card className="lg:col-span-2">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:md:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Enquiries by channel</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
             Weekly, every adapter. The website is the growth channel.
@@ -222,7 +222,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts row 2 */}
-      <div className="grid lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:md:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         <Card>
           <CardTitle>Pipeline</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-3">Last 90 days.</p>
@@ -281,7 +281,7 @@ export default function DashboardPage() {
 
       {/* Tables */}
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <Section title="Follow-ups due" hint="sorted by how overdue">
             <Table>
               <THead>

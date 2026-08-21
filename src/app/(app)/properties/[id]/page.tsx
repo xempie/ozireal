@@ -47,7 +47,7 @@ export default async function PropertyDetail({
       />
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 min-w-0">
           <Card>
             <CardTitle>Attributes</CardTitle>
             <KeyValue
@@ -77,7 +77,7 @@ export default async function PropertyDetail({
           </Card>
 
           <Section title="Listing history" hint="the whole life of the property">
-            <Table>
+            <Table minWidth={780}>
               <THead>
                 <TR>
                   <TH>Campaign</TH>

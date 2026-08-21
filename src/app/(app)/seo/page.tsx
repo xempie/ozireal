@@ -55,7 +55,7 @@ export default function SeoPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Open findings
@@ -71,7 +71,7 @@ export default function SeoPage() {
           </div>
           <div className="text-[26px] font-semibold tabular mt-1">{affected}</div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Search impressions and clicks</CardTitle>
           <MultiLine
             data={seoTrend}
@@ -130,7 +130,7 @@ export default function SeoPage() {
                       <p className="text-[12.5px] leading-relaxed">{issue.proposal}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 mt-3">
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
                       <Button size="sm">
                         <Check size={12} />
                         Accept into change set
@@ -139,7 +139,7 @@ export default function SeoPage() {
                         <X size={12} />
                         Dismiss
                       </Button>
-                      <span className="text-3 text-[11.5px] ml-auto inline-flex items-center gap-1">
+                      <span className="text-3 text-[11.5px] sm:ml-auto inline-flex items-center gap-1">
                         <Ban size={11} />
                         cannot be applied automatically
                       </span>

@@ -48,7 +48,7 @@ function DraftCard({ item }: { item: ApprovalItem }) {
           : undefined
       }
     >
-      <div className="flex items-start justify-between gap-4 mb-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-2.5">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge tone={item.kind === "sms" ? "channel" : "brand"}>
@@ -86,10 +86,10 @@ function DraftCard({ item }: { item: ApprovalItem }) {
               </span>,
             ]
               .filter(Boolean)
-              .map((node, i) => (
-                <span key={i} className="inline-flex items-center gap-2">
-                  {i > 0 && <span aria-hidden>·</span>}
+              .map((node, i, arr) => (
+                <span key={i} className="inline-flex items-center gap-2 whitespace-nowrap">
                   {node}
+                  {i < arr.length - 1 && <span aria-hidden>·</span>}
                 </span>
               ))}
           </div>
@@ -120,7 +120,7 @@ function DraftCard({ item }: { item: ApprovalItem }) {
       )}
 
       {item.status === "pending" && (
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex flex-wrap items-center gap-2 mt-3">
           <Button variant="primary" size="sm">
             <Check size={12} />
             Approve and send

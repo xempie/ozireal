@@ -51,6 +51,8 @@ const axisProps = {
   tick: { fill: TEXT, fontSize: 11 },
   tickLine: false,
   axisLine: { stroke: AXIS },
+  // Drop ticks rather than let dates collide into an unreadable string.
+  minTickGap: 24,
 } as const;
 
 /**
@@ -164,7 +166,7 @@ export function StackedArea({
 }) {
   return (
     <ChartFrame height={height}>
-      <AreaChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: -18 }}>
+      <AreaChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
         <defs>
           {keys.map((k, i) => (
             <linearGradient key={k} id={`grad-${k}`} x1="0" y1="0" x2="0" y2="1">
@@ -214,7 +216,7 @@ export function MultiLine({
 }) {
   return (
     <ChartFrame height={height}>
-      <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
+      <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
         <CartesianGrid stroke={GRID} strokeWidth={0.8} vertical={false} />
         <XAxis dataKey={xKey} {...axisProps} />
         <YAxis {...yAxisProps} />
@@ -260,7 +262,7 @@ export function Bars({
 }) {
   return (
     <ChartFrame height={height}>
-      <BarChart data={data} margin={{ top: 6, right: 6, bottom: 0, left: -18 }}>
+      <BarChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
         <CartesianGrid stroke={GRID} strokeWidth={0.8} vertical={false} />
         <XAxis dataKey={xKey} {...axisProps} />
         <YAxis {...yAxisProps} />

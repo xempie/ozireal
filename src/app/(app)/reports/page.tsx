@@ -84,7 +84,7 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 mb-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 [&>*:last-child:nth-child(odd)]:md:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         <Card>
           <CardTitle>Pipeline conversion</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-3">Last 90 days.</p>
@@ -111,7 +111,7 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:md:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         <Card>
           <CardTitle>Enquiries by suburb</CardTitle>
           <HBars
@@ -148,7 +148,7 @@ export default function ReportsPage() {
       </div>
 
       <Section title="Listing performance">
-        <Table>
+        <Table minWidth={820}>
           <THead>
             <TR>
               <TH>Listing</TH>
@@ -166,9 +166,9 @@ export default function ReportsPage() {
               .sort((a, b) => b.views7d - a.views7d)
               .map((l) => (
                 <TR key={l.id}>
-                  <TD className="font-medium">{listingAddress(l)}</TD>
+                  <TD nowrap className="font-medium">{listingAddress(l)}</TD>
                   <TD className="text-2">{statusLabel[l.status]}</TD>
-                  <TD className="text-2">{l.priceDisplay || "—"}</TD>
+                  <TD nowrap className="text-2">{l.priceDisplay || "—"}</TD>
                   <TD className="text-right tabular text-2">
                     {l.views7d.toLocaleString()}
                   </TD>

@@ -32,7 +32,7 @@ export default function PropertiesPage() {
         }
       />
 
-      <Table>
+      <Table minWidth={860}>
         <THead>
           <TR>
             <TH>Address</TH>
@@ -50,7 +50,7 @@ export default function PropertiesPage() {
             const owner = contactById(p.ownerContactId);
             return (
               <TR key={p.id}>
-                <TD>
+                <TD nowrap>
                   <Link
                     href={`/properties/${p.id}`}
                     className="font-medium hover:underline underline-offset-2"
@@ -65,7 +65,7 @@ export default function PropertiesPage() {
                 <TD className="tabular whitespace-nowrap text-2">
                   {p.beds} bed · {p.baths} bath · {p.parking} car
                 </TD>
-                <TD className="tabular text-2">
+                <TD nowrap className="tabular text-2">
                   {p.landSqm > 0 ? `${p.landSqm} m²` : "—"}
                 </TD>
                 <TD>

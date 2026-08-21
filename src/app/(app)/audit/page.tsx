@@ -54,7 +54,7 @@ export default function AuditPage() {
         }
       />
 
-      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Entries
@@ -77,7 +77,7 @@ export default function AuditPage() {
               .join(" · ")}
           </div>
         </Card>
-        <Card className="lg:col-span-2">
+        <Card className="sm:col-span-2 lg:col-span-2">
           <Callout tone="brand" title="Why this exists separately">
             The interaction log records what happened with a contact. This records what a
             person did to the system — the two answer different questions when something
@@ -87,7 +87,7 @@ export default function AuditPage() {
       </div>
 
       <Section title="Activity">
-        <Table>
+        <Table minWidth={760}>
           <THead>
             <TR>
               <TH>When</TH>

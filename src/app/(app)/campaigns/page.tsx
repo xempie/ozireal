@@ -60,7 +60,7 @@ export default function CampaignsPage() {
       </div>
 
       <Section title="Campaigns">
-        <Table>
+        <Table minWidth={940}>
           <THead>
             <TR>
               <TH>Campaign</TH>
@@ -79,8 +79,8 @@ export default function CampaignsPage() {
               const l = listingById(c.listingId);
               return (
                 <TR key={c.id}>
-                  <TD className="font-medium max-w-[240px]">{c.name}</TD>
-                  <TD>
+                  <TD nowrap className="font-medium">{c.name}</TD>
+                  <TD nowrap>
                     {l && (
                       <Link
                         href={`/listings/${l.id}`}
@@ -192,7 +192,7 @@ export default function CampaignsPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 mt-3 pt-3 border-t">
+            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
               <Button variant="primary" size="sm">
                 <Users size={12} />
                 Generate {builderMatches.length} drafts
