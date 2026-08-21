@@ -1,0 +1,161 @@
+import {
+  AlertOctagon,
+  AlertTriangle,
+  Info,
+  Play,
+  Ban,
+  Check,
+  X,
+} from "lucide-react";
+import {
+  PageHeader,
+  Section,
+  Card,
+  CardTitle,
+  Badge,
+  Button,
+  Callout,
+  ProtoNote,
+} from "@/components/ui";
+import { MultiLine } from "@/components/charts";
+import { seoIssues, seoTrend } from "@/lib/sample-data-2";
+
+const sev = {
+  critical: {
+    tone: "blocked" as const,
+    icon: AlertOctagon,
+    label: "Critical",
+  },
+  warning: {
+    tone: "queue" as const,
+    icon: AlertTriangle,
+    label: "Warning",
+  },
+  info: {
+    tone: "neutral" as const,
+    icon: Info,
+    label: "Info",
+  },
+};
+
+export default function SeoPage() {
+  const critical = seoIssues.filter((i) => i.severity === "critical").length;
+  const affected = seoIssues.reduce((s, i) => s + i.affected, 0);
+
+  return (
+    <>
+      <PageHeader
+        title="SEO agent"
+        subtitle="Crawls the site fortnightly and produces a change set you can read. It has no ability to publish — not even a disabled one."
+        actions={
+          <Button variant="primary">
+            <Play size={13} />
+            Run a crawl
+          </Button>
+        }
+      />
+
+      <div className="grid lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
+            Open findings
+          </div>
+          <div className="text-[26px] font-semibold tabular mt-1">
+            {seoIssues.length}
+          </div>
+          <div className="text-3 text-[11.5px]">{critical} critical</div>
+        </Card>
+        <Card>
+          <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
+            URLs affected
+          </div>
+          <div className="text-[26px] font-semibold tabular mt-1">{affected}</div>
+        </Card>
+        <Card className="lg:col-span-2">
+          <CardTitle>Search impressions and clicks</CardTitle>
+          <MultiLine
+            data={seoTrend}
+            keys={["Impressions", "Clicks"]}
+            xKey="month"
+            height={96}
+          />
+        </Card>
+      </div>
+
+      <div className="mb-6">
+        <Callout tone="blocked" title="This agent proposes, it never deploys">
+          Every finding below produces a reviewable change. A human applies it. There is
+          no publish button on this screen and no setting that adds one — the same rule
+          that governs outbound messages governs anything that touches a live site.
+        </Callout>
+      </div>
+
+      <Section title="Change set" hint="from the crawl on 18 August">
+        <div className="space-y-3">
+          {seoIssues.map((issue) => {
+            const s = sev[issue.severity];
+            const Icon = s.icon;
+            return (
+              <Card
+                key={issue.id}
+                className={
+                  issue.severity === "critical"
+                    ? "border-[#d03b3b]/35 bg-[#d03b3b]/[0.03]"
+                    : undefined
+                }
+              >
+                <div className="flex items-start gap-3">
+                  <Icon
+                    size={16}
+                    className={
+                      issue.severity === "critical"
+                        ? "text-[#b02f2f] dark:text-[#f08a8a] mt-0.5 shrink-0"
+                        : "text-3 mt-0.5 shrink-0"
+                    }
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-[13px] font-semibold">{issue.title}</span>
+                      <Badge tone={s.tone}>{s.label}</Badge>
+                      <Badge tone="neutral">{issue.affected} URLs</Badge>
+                    </div>
+                    <p className="text-2 text-[12.5px] mt-1.5 leading-relaxed">
+                      {issue.detail}
+                    </p>
+
+                    <div className="mt-2.5 surface-3 border rounded-md p-2.5">
+                      <div className="text-3 text-[10.5px] uppercase tracking-[0.05em] font-medium mb-1">
+                        Proposed change
+                      </div>
+                      <p className="text-[12.5px] leading-relaxed">{issue.proposal}</p>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-3">
+                      <Button size="sm">
+                        <Check size={12} />
+                        Accept into change set
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <X size={12} />
+                        Dismiss
+                      </Button>
+                      <span className="text-3 text-[11.5px] ml-auto inline-flex items-center gap-1">
+                        <Ban size={11} />
+                        cannot be applied automatically
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+        <ProtoNote>
+          The two critical findings are both migration risks rather than ordinary SEO
+          hygiene — they exist because the Wix cutover has not happened yet. They stop
+          being findings the moment the redirect map is finished.
+        </ProtoNote>
+      </Section>
+    </>
+  );
+}
