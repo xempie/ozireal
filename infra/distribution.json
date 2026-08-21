@@ -1,0 +1,45 @@
+{
+  "CallerReference": "ozirealty-console-2026-08-21",
+  "Comment": "Ozi Realty console prototype - sample data, basic auth",
+  "Enabled": true,
+  "DefaultRootObject": "index.html",
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "s3-console",
+        "DomainName": "ozirealty-console-310792823958.s3.ap-southeast-2.amazonaws.com",
+        "OriginAccessControlId": "E182T4AZOWPCP2",
+        "S3OriginConfig": { "OriginAccessIdentity": "" }
+      }
+    ]
+  },
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "s3-console",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "Compress": true,
+    "AllowedMethods": {
+      "Quantity": 2,
+      "Items": ["GET", "HEAD"],
+      "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] }
+    },
+    "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+    "FunctionAssociations": {
+      "Quantity": 1,
+      "Items": [{ "EventType": "viewer-request", "FunctionARN": "arn:aws:cloudfront::310792823958:function/ozirealty-console-auth" }]
+    }
+  },
+  "CustomErrorResponses": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "ErrorCode": 404,
+        "ResponsePagePath": "/404.html",
+        "ResponseCode": "404",
+        "ErrorCachingMinTTL": 10
+      }
+    ]
+  },
+  "PriceClass": "PriceClass_All",
+  "HttpVersion": "http2and3"
+}
