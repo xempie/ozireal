@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1787387229102,
+      "tag": "0000_open_sentinels",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787387823626,
+      "tag": "0001_append_only_and_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787388006209,
+      "tag": "0002_dedupe_indexes_not_unique",
+      "breakpoints": true
+    }
+  ]
+}

@@ -12,3 +12,6 @@ infra/demo-credentials.txt
 infra/.*-id
 infra/.*-arn
 infra/.dist-domain
+.pgdata/
+.pgdata.log
+.env.local
