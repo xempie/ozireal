@@ -22,7 +22,9 @@ committed. Root is not used for anything.
 |---|---|
 | S3 bucket | `ozirealty-console-310792823958` (private, ap-southeast-2) |
 | CloudFront distribution | `E3KK59Q508X006` |
+| Public URL | **https://crm.ozirealty.com.au** |
 | CloudFront domain | `d1k9fpihoxh9d8.cloudfront.net` |
+| ACM certificate | `crm.ozirealty.com.au` (us-east-1, DNS-validated, auto-renewing) |
 | Origin access control | `E182T4AZOWPCP2` |
 | Viewer-request function | `ozirealty-console-auth` |
 

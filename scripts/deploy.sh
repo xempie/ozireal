@@ -50,14 +50,19 @@ INV=$(aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths '/
   --query 'Invalidation.Id' --output text)
 aws cloudfront wait invalidation-completed --distribution-id "$DIST_ID" --id "$INV"
 
-DOMAIN="$(cat infra/.dist-domain)"
-echo "==> deployed: https://$DOMAIN"
+SITE="https://crm.ozirealty.com.au"
+echo "==> deployed: $SITE"
 
-# Smoke test: a 200 without credentials would mean the auth function fell off.
-CODE=$(curl -s -o /dev/null -w '%{http_code}' "https://$DOMAIN/")
-if [ "$CODE" != "401" ]; then
-  echo "WARNING: unauthenticated request returned $CODE, expected 401." >&2
-  echo "The basic-auth function may not be attached to the distribution." >&2
-  exit 1
-fi
-echo "    auth gate confirmed (401 without credentials)"
+# Smoke test. The site is public, so a 200 on the home page proves the origin and
+# certificate are fine - and a 200 on a SUB-PATH proves the directory-index rewrite
+# is still attached. Without that function every route except "/" returns 404, which
+# is the failure most likely to slip out unnoticed.
+for path in "/" "/dashboard/" "/contacts/c1/"; do
+  CODE=$(curl -s -o /dev/null -m 20 -w '%{http_code}' "$SITE$path")
+  if [ "$CODE" != "200" ]; then
+    echo "ERROR: $path returned $CODE, expected 200." >&2
+    [ "$path" != "/" ] && echo "The directory-index rewrite function may have fallen off." >&2
+    exit 1
+  fi
+done
+echo "    home, a sub-path and a detail page all return 200"
