@@ -22,6 +22,20 @@
       "when": 1787388006209,
       "tag": "0002_dedupe_indexes_not_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787411744481,
+      "tag": "0003_review_fixes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787411796580,
+      "tag": "0004_cross_module_fks",
+      "breakpoints": true
     }
   ]
 }

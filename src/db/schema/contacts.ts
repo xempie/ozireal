@@ -14,6 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { tenants, users } from "./tenancy";
+import { propertyType as propertyTypeEnum, suburbs } from "./shared";
 
 /**
  * The people side. Person-centric, never deal-centric: one person accumulates roles
@@ -165,7 +166,11 @@ export const contactPreferences = pgTable(
       .references(() => contacts.id, { onDelete: "cascade" })
       .unique(),
 
-    suburbs: text("suburbs").array(),
+    /**
+     * Suburbs live in their own join table (contactPreferenceSuburbs) so they carry a
+     * real FK. §6's stage-1 filter is a suburb equality check, and a free-text
+     * 'Nth Adelaide' would drop the contact from every match without erroring.
+     */
     priceMin: integer("price_min"),
     priceMax: integer("price_max"),
     rentPwMin: integer("rent_pw_min"),
@@ -174,7 +179,9 @@ export const contactPreferences = pgTable(
     bathsMin: integer("baths_min"),
     parkingMin: integer("parking_min"),
     landSizeMin: integer("land_size_min"),
-    propertyTypes: text("property_types").array(),
+    /** The SAME enum the stock side uses. Comparing text[] to an enum silently matched
+     *  nothing: seeded properties held 'house' while preferences held 'House'. */
+    propertyTypes: propertyTypeEnum("property_types").array(),
     timeline: text("timeline"),
     financeStatus: text("finance_status"),
 
@@ -188,6 +195,20 @@ export const contactPreferences = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("contact_preferences_tenant_idx").on(t.tenantId)],
+);
+
+/** A buyer's suburbs, as real references rather than strings. */
+export const contactPreferenceSuburbs = pgTable(
+  "contact_preference_suburbs",
+  {
+    preferenceId: uuid("preference_id")
+      .notNull()
+      .references(() => contactPreferences.id, { onDelete: "cascade" }),
+    suburbId: uuid("suburb_id")
+      .notNull()
+      .references(() => suburbs.id, { onDelete: "restrict" }),
+  },
+  (t) => [uniqueIndex("contact_preference_suburbs_uq").on(t.preferenceId, t.suburbId)],
 );
 
 /**
@@ -356,6 +377,8 @@ export const confirmItems = pgTable(
       () => interactions.id,
       { onDelete: "set null" },
     ),
+    /** Extraction can come from a voice note rather than an interaction. */
+    sourceVoiceNoteId: uuid("source_voice_note_id"),
 
     kind: confirmKind("kind").notNull(),
     summary: text("summary").notNull(),

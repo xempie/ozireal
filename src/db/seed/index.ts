@@ -66,6 +66,19 @@ const propTypeMap: Record<string, string> = {
   Land: "land",
 };
 
+/**
+ * The ASSET's state, which is not the campaign's. A property with a live listing is
+ * "listed"; one whose only campaigns are finished is "off_market"; one that has never
+ * been listed is a "prospect". §4 requires the property to carry this itself.
+ */
+function propertyStatusFor(samplePropertyId: string) {
+  const ls = S.listingsForProperty(samplePropertyId);
+  if (!ls.length) return "prospect";
+  if (ls.some((l) => l.status === "live" || l.status === "under_offer")) return "listed";
+  if (ls.some((l) => l.status === "sold")) return "sold";
+  return "off_market";
+}
+
 /** "12 Powell Street" -> { streetNumber: "12", street: "Powell Street" } */
 function splitAddress(address: string) {
   const m = address.match(/^(\d+[a-zA-Z]?)\s+(.*)$/);
@@ -92,11 +105,13 @@ async function main() {
   // DELETE on interactions and consents, so TRUNCATE (which they do not intercept) is
   // the only way to reset them - which is itself a small proof the guards are real.
   await sql.unsafe(`TRUNCATE TABLE
-    inspection_registrations, inspections, listing_media, matches, approval_items,
+    inspection_registrations, inspections, listing_media, matches, campaign_recipients,
+    approval_items,
     campaigns, proposals, confirm_items, merge_reviews, tasks, calendar_events,
     voice_notes, blog_posts, social_posts, seo_issues, redirects, suburb_pages,
     ai_generations, audit_log, channel_adapters, consent_templates, disclosure_rules,
-    saved_views, consents, contact_intent, contact_preferences, contact_roles,
+    saved_views, consents, contact_intent, contact_preference_suburbs,
+    contact_preferences, contact_roles,
     interactions, listings, properties, contacts, suburbs, users, tenants,
     listing_agents
     RESTART IDENTITY CASCADE`);
@@ -141,13 +156,27 @@ async function main() {
     if (c.preferences) {
       const p = c.preferences;
       const isRental = p.priceMax === 0;
-      await sql`
-        insert into contact_preferences (tenant_id, contact_id, suburbs, price_min,
+      // Lower-cased to match the enum the stock side uses. Title Case here is exactly
+      // what made the stage-1 filter return zero matches.
+      const types = p.propertyTypes.map((t) => t.toLowerCase());
+      const [pref] = await sql<{ id: string }[]>`
+        insert into contact_preferences (tenant_id, contact_id, price_min,
           price_max, beds_min, baths_min, parking_min, property_types, timeline,
           finance_status, soft_requirements)
-        values (${TENANT}, ${cid}, ${p.suburbs}, ${isRental ? null : p.priceMin},
+        values (${TENANT}, ${cid}, ${isRental ? null : p.priceMin},
           ${isRental ? null : p.priceMax}, ${p.bedsMin}, ${p.bathsMin}, ${p.parkingMin},
-          ${p.propertyTypes}, ${p.timeline}, ${p.financeStatus}, ${p.softRequirements})`;
+          ${types}, ${p.timeline}, ${p.financeStatus}, ${p.softRequirements})
+        returning id`;
+
+      for (const suburbName of p.suburbs) {
+        const sid = id.suburb.get(suburbName);
+        if (!sid) {
+          console.warn(`  preference suburb has no suburb row: ${suburbName}`);
+          continue;
+        }
+        await sql`insert into contact_preference_suburbs (preference_id, suburb_id)
+                  values (${pref.id}, ${sid}) on conflict do nothing`;
+      }
     }
 
     if (c.intent) {
@@ -177,12 +206,13 @@ async function main() {
     const { streetNumber, street } = splitAddress(p.address);
     await sql`
       insert into properties (id, tenant_id, street_number, street, suburb_id, state,
-        postcode, property_type, beds, baths, parking, land_area_sqm, floor_area_sqm,
+        postcode, property_type, status, beds, baths, parking, land_area_sqm, floor_area_sqm,
         year_built, condition, features, owner_contact_id, internal_notes,
         internal_price_expectation)
       values (${pid}, ${TENANT}, ${streetNumber}, ${street},
         ${id.suburb.get(p.suburb) ?? null}, ${p.state}, ${p.postcode},
-        ${propTypeMap[p.type] ?? "house"}, ${p.beds}, ${p.baths}, ${p.parking},
+        ${propTypeMap[p.type] ?? "house"}, ${propertyStatusFor(p.id)},
+        ${p.beds}, ${p.baths}, ${p.parking},
         ${p.landSqm || null}, ${p.floorSqm}, ${p.yearBuilt}, ${p.condition},
         ${p.features}, ${id.contact.get(p.ownerContactId) ?? null},
         ${p.internalNotes}, ${p.internalPriceExpectation})`;
@@ -195,13 +225,15 @@ async function main() {
     await sql`
       insert into listings (id, tenant_id, property_id, listing_type, method, status,
         price_display, search_price_min, search_price_max, rent_pw, public_headline,
-        public_copy, slug, listed_at, published_at, sold_at, result_display)
+        public_copy, slug, listed_at, published_at, sold_at, result_display,
+        views_7d, enquiries_7d, traffic_refreshed_at)
       values (${lid}, ${TENANT}, ${id.property.get(l.propertyId)!}, ${l.type},
         ${l.method}, ${l.status}, ${l.priceDisplay || null},
         ${l.type === "rent" ? null : l.searchMin},
         ${l.type === "rent" ? null : l.searchMax}, ${l.rentPw ?? null},
         ${l.headline || null}, ${l.copy || null}, ${l.slug}, ${l.listedAt},
-        ${l.publishedAt}, ${l.soldAt ?? null}, ${l.resultDisplay ?? null})`;
+        ${l.publishedAt}, ${l.soldAt ?? null}, ${l.resultDisplay ?? null},
+        ${l.views7d}, ${l.enquiries7d}, ${new Date()})`;
 
     // The sample data records a photo COUNT, not files. Placeholder media rows keep
     // the count truthful without inventing S3 objects that do not exist.
@@ -238,6 +270,35 @@ async function main() {
         ${n.minutes}, ${n.kind})`;
   }
 
+  /**
+   * Registrations. The sample data records a COUNT per inspection, and the console
+   * renders "N registered". n3 is the same event as calendar event e4 ("Private
+   * viewing - 8 Weerana Road"), so its single registrant is known to be c11; the rest
+   * are filled from contacts matched to that listing, which is what a real
+   * registration would be anyway.
+   */
+  const knownRegistrant: Record<string, string> = { n3: "c11" };
+  for (const n of S.inspections) {
+    if (n.registrations === 0) continue;
+    const candidates = [
+      ...(knownRegistrant[n.id] ? [knownRegistrant[n.id]] : []),
+      ...S.matchesForListing(n.listingId).map((m) => m.contactId),
+      ...S.contacts.map((c) => c.id),
+    ];
+    const chosen: string[] = [];
+    for (const cand of candidates) {
+      if (chosen.length >= n.registrations) break;
+      if (!chosen.includes(cand)) chosen.push(cand);
+    }
+    for (const contactSampleId of chosen) {
+      await sql`
+        insert into inspection_registrations (tenant_id, inspection_id, contact_id, registered_at)
+        values (${TENANT}, ${id.inspection.get(n.id)!},
+          ${id.contact.get(contactSampleId)!}, ${n.startsAt})
+        on conflict do nothing`;
+    }
+  }
+
   /* --------------------------------------------------------------- matches */
   for (const m of S.matches) {
     await sql`
@@ -255,6 +316,31 @@ async function main() {
         created_by_user_id, created_at, sent_at)
       values (${cid}, ${TENANT}, ${id.listing.get(c.listingId) ?? null}, ${c.name},
         ${c.channel}, ${c.status}, ${USER}, ${c.createdAt}, ${c.sentAt ?? null})`;
+  }
+
+  /**
+   * Per-recipient rows. The console shows recipients / approved / blocked / opened /
+   * replied; with this table those become COUNTS over real rows rather than stored
+   * aggregates that can drift from what happened.
+   */
+  for (const c of S2.campaigns) {
+    const pool = S.matchesForListing(c.listingId).map((m) => m.contactId);
+    const filler = S.contacts.map((x) => x.id).filter((x) => !pool.includes(x));
+    const chosen = [...pool, ...filler].slice(0, Math.min(c.recipients, S.contacts.length));
+    chosen.forEach((sampleContactId, i) => {
+      const isBlocked = i < c.blocked;
+      const wasSent = !isBlocked && i < c.approved;
+      void sql`
+        insert into campaign_recipients (tenant_id, campaign_id, contact_id, sent_at,
+          opened_at, replied_at, blocked_reason)
+        values (${TENANT}, ${id.campaign.get(c.id)!},
+          ${id.contact.get(sampleContactId)!},
+          ${wasSent ? (c.sentAt ?? c.createdAt) : null},
+          ${wasSent && i < c.opened ? (c.sentAt ?? c.createdAt) : null},
+          ${wasSent && i < c.replied ? (c.sentAt ?? c.createdAt) : null},
+          ${isBlocked ? "Consent lapsed between drafting and sending" : null})
+        on conflict do nothing`.then(() => {}, () => {});
+    });
   }
 
   /* -------------------------------------------------------- approval queue */
@@ -327,6 +413,29 @@ async function main() {
         ${v.recordedAt}, ${v.status === "processing" ? null : v.recordedAt})`;
   }
 
+  /**
+   * A voice note's extracted tasks had no path into any table. Items already covered
+   * by a confirm_items entry (v1, via interaction i10) are skipped so nothing is
+   * duplicated; the rest - v3's two, which appeared in no table at all - land here.
+   */
+  const alreadyProposed = new Set(S.confirmItems.map((f) => f.summary));
+  for (const v of S2.voiceNotes) {
+    if (!v.extracted.length) continue;
+    const [note] = await sql<{ id: string }[]>`
+      select id from voice_notes where s3_key = ${`voice/${v.id}.webm`} limit 1`;
+    for (const extracted of v.extracted) {
+      if (alreadyProposed.has(extracted)) continue;
+      await sql`
+        insert into confirm_items (tenant_id, contact_id, source_voice_note_id, kind,
+          summary, after_text, confidence, status, committed_at, created_at)
+        values (${TENANT},
+          ${id.contact.get(v.contactId ?? "c1")!}, ${note?.id ?? null}, 'task',
+          ${extracted}, ${extracted}, 0.8,
+          ${v.status === "confirmed" ? "committed" : "pending"},
+          ${v.status === "confirmed" ? v.recordedAt : null}, ${v.recordedAt})`;
+    }
+  }
+
   /* ------------------------------------------------------------ proposals */
   for (const p of S2.proposals) {
     await sql`
@@ -341,10 +450,10 @@ async function main() {
   for (const b of S2.blogPosts) {
     await sql`
       insert into blog_posts (tenant_id, slug, title, status, word_count, published_at,
-        legacy_url, created_at)
+        views_30d, legacy_url, created_at)
       values (${TENANT}, ${b.slug}, ${b.title},
         ${b.status === "in_approval" ? "in_approval" : b.status},
-        ${b.words}, ${b.publishedAt ?? null},
+        ${b.words}, ${b.publishedAt ?? null}, ${b.views30d},
         ${b.legacy ? `https://www.ozirealty.com.au/post/${b.slug}` : null},
         ${b.createdAt})`;
   }
@@ -382,19 +491,22 @@ async function main() {
   for (const g of S.aiGenerations) {
     // The sample data is aggregated per task. Expand to one row per call so the cost
     // dashboard aggregates from real rows rather than pre-summed ones.
-    const perCall = {
-      input: Math.round(g.inputTokens / g.calls),
-      output: Math.round(g.outputTokens / g.calls),
-      cost: g.costAud / g.calls,
+    // Write a sample of rows rather than every call, but scale tokens AND cost by the
+    // same factor so the totals stay self-consistent. Scaling only cost made the cost
+    // dashboard show the right dollars against the wrong tokens - 2.4x out per 1k.
+    const rows = Math.min(g.calls, 40);
+    const perRow = {
+      input: Math.round(g.inputTokens / rows),
+      output: Math.round(g.outputTokens / rows),
+      cost: g.costAud / rows,
     };
-    const rows = Math.min(g.calls, 40); // enough to aggregate over, without 500 inserts
     for (let i = 0; i < rows; i++) {
       await sql`
         insert into ai_generations (tenant_id, task, model, prompt_hash, input_tokens,
           output_tokens, cost_aud, latency_ms, entity_type)
         values (${TENANT}, ${g.task}, ${g.model === "Sonnet" ? "claude-sonnet-5" : "claude-haiku-4-5"},
           ${`sha256:${g.task.replace(/\s+/g, "-").toLowerCase()}`},
-          ${perCall.input}, ${perCall.output}, ${(perCall.cost * (g.calls / rows)).toFixed(6)},
+          ${perRow.input}, ${perRow.output}, ${perRow.cost.toFixed(6)},
           ${g.avgLatencyMs}, 'contact')`;
     }
   }
@@ -440,9 +552,21 @@ async function main() {
   }
 
   /* --------------------------------------------------------------- report */
-  const counts = await sql<{ table_name: string; n: number }[]>`
-    select relname as table_name, n_live_tup as n
-    from pg_stat_user_tables where n_live_tup > 0 order by relname`;
+  // Real COUNT(*), not pg_stat_user_tables - that view is a stale estimate that reads
+  // as zero straight after an insert, which made an entirely successful seed look like
+  // it had written nothing.
+  const tables = await sql<{ table_name: string }[]>`
+    select table_name from information_schema.tables
+    where table_schema = 'public' and table_type = 'BASE TABLE'
+    order by table_name`;
+
+  const counts: { table_name: string; n: number }[] = [];
+  for (const t of tables) {
+    const [row] = await sql.unsafe<{ n: string }[]>(
+      `select count(*)::text as n from "${t.table_name}"`,
+    );
+    if (Number(row.n) > 0) counts.push({ table_name: t.table_name, n: Number(row.n) });
+  }
 
   console.log("rows written:");
   let total = 0;

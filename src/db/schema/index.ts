@@ -6,6 +6,7 @@
  * They arrive in their own migration so Phase 1 is not blocked on an extension it does
  * not yet use.
  */
+export * from "./shared";
 export * from "./tenancy";
 export * from "./contacts";
 export * from "./stock";

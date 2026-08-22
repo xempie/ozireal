@@ -13,6 +13,9 @@ import {
 import { sql } from "drizzle-orm";
 import { tenants, users } from "./tenancy";
 import { contacts } from "./contacts";
+import { propertyType, suburbs } from "./shared";
+
+export { propertyType, suburbs };
 
 /**
  * Stock. A property is the physical asset and outlives its campaigns; a listing is one
@@ -20,13 +23,18 @@ import { contacts } from "./contacts";
  * sold 2019, leased 2022, for sale again now (CLAUDE.md §4).
  */
 
-export const propertyType = pgEnum("property_type", [
-  "house",
-  "unit",
-  "townhouse",
-  "land",
-  "acreage",
-  "commercial",
+/**
+ * The state of the ASSET, distinct from any campaign over it. §4: "Exists
+ * independently of whether it is currently listed" - so a property that has never had
+ * a listing still has to be able to say what it is.
+ */
+export const propertyStatus = pgEnum("property_status", [
+  "prospect",
+  "appraised",
+  "off_market",
+  "listed",
+  "sold",
+  "archived",
 ]);
 
 export const listingType = pgEnum("listing_type", ["sale", "rent"]);
@@ -42,21 +50,6 @@ export const listingStatus = pgEnum("listing_status", [
 
 export const mediaKind = pgEnum("media_kind", ["photo", "floorplan", "video"]);
 export const inspectionKind = pgEnum("inspection_kind", ["open", "private"]);
-
-/** Seeded for South Australia (D2). A FK rather than free text, because the matching
- *  engine's suburb filter is an equality check and free-text suburbs break it silently. */
-export const suburbs = pgTable(
-  "suburbs",
-  {
-    id: uuid("id").defaultRandom().primaryKey(),
-    name: text("name").notNull(),
-    state: text("state").notNull().default("SA"),
-    postcode: text("postcode").notNull(),
-    latitude: doublePrecision("latitude"),
-    longitude: doublePrecision("longitude"),
-  },
-  (t) => [uniqueIndex("suburbs_uq").on(t.name, t.state, t.postcode)],
-);
 
 export const properties = pgTable(
   "properties",
@@ -84,6 +77,8 @@ export const properties = pgTable(
     geocodeSource: text("geocode_source"),
 
     propertyType: propertyType("property_type").notNull(),
+    /** Never derived from listings - see propertyStatus above. */
+    status: propertyStatus("status").notNull().default("prospect"),
     beds: integer("beds"),
     baths: integer("baths"),
     parking: integer("parking"),
@@ -155,6 +150,16 @@ export const listings = pgTable(
     soldAt: timestamp("sold_at", { withTimezone: true }),
     /** The result, only where the agent has chosen to display it. */
     resultDisplay: text("result_display"),
+
+    /**
+     * Rollup counters the public site refreshes. Denormalised on purpose: the console
+     * renders these on five screens and divides them into a conversion rate, and a
+     * per-request fact table is Phase 2B work. A page_views table can back them later
+     * without changing any of the read paths.
+     */
+    views7d: integer("views_7d").notNull().default(0),
+    enquiries7d: integer("enquiries_7d").notNull().default(0),
+    trafficRefreshedAt: timestamp("traffic_refreshed_at", { withTimezone: true }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

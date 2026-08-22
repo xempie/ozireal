@@ -13,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { tenants, users } from "./tenancy";
 import { contacts, consentStatus } from "./contacts";
-import { listings } from "./stock";
+import { listings, properties } from "./stock";
 
 /**
  * Matching, campaigns and the approval queue.
@@ -90,6 +90,36 @@ export const campaigns = pgTable(
   (t) => [index("campaigns_tenant_status_idx").on(t.tenantId, t.status)],
 );
 
+/**
+ * One row per person a campaign reaches. The console shows recipients / approved /
+ * blocked / opened / replied; those are COUNTS over this table rather than stored
+ * aggregates, so they cannot drift from what actually happened.
+ */
+export const campaignRecipients = pgTable(
+  "campaign_recipients",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    campaignId: uuid("campaign_id")
+      .notNull()
+      .references(() => campaigns.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "restrict" }),
+    approvalItemId: uuid("approval_item_id"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    openedAt: timestamp("opened_at", { withTimezone: true }),
+    repliedAt: timestamp("replied_at", { withTimezone: true }),
+    blockedReason: text("blocked_reason"),
+  },
+  (t) => [
+    uniqueIndex("campaign_recipients_uq").on(t.campaignId, t.contactId),
+    index("campaign_recipients_tenant_idx").on(t.tenantId),
+  ],
+);
+
 export const approvalKind = pgEnum("approval_kind", [
   "email",
   "sms",
@@ -118,14 +148,20 @@ export const approvalItems = pgTable(
     kind: approvalKind("kind").notNull(),
     status: approvalStatus("status").notNull().default("pending"),
 
+    /**
+     * restrict, not cascade. This row IS the evidence that a message was approved,
+     * sent, or refused at the consent gate - deleting a contact or a draft campaign
+     * must not quietly destroy it. The same reasoning already governs
+     * interactions.contact_id.
+     */
     contactId: uuid("contact_id").references(() => contacts.id, {
-      onDelete: "cascade",
+      onDelete: "restrict",
     }),
     listingId: uuid("listing_id").references(() => listings.id, {
       onDelete: "set null",
     }),
     campaignId: uuid("campaign_id").references(() => campaigns.id, {
-      onDelete: "cascade",
+      onDelete: "set null",
     }),
 
     draftSubject: text("draft_subject"),
@@ -199,10 +235,12 @@ export const proposals = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "restrict" }),
-    propertyId: uuid("property_id"),
+    propertyId: uuid("property_id").references(() => properties.id, {
+      onDelete: "restrict",
+    }),
     contactId: uuid("contact_id")
       .notNull()
-      .references(() => contacts.id, { onDelete: "cascade" }),
+      .references(() => contacts.id, { onDelete: "restrict" }),
     status: proposalStatus("status").notNull().default("draft"),
     /** A range, never a single number, and never a figure the agent has not signed off. */
     estimateLow: integer("estimate_low"),

@@ -163,6 +163,8 @@ export const blogPosts = pgTable(
     status: publishStatus("status").notNull().default("draft"),
     wordCount: integer("word_count"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    /** Rollup, refreshed by a job - same reasoning as listings.views7d. */
+    views30d: integer("views_30d").notNull().default(0),
     /** The original Wix address, kept so the redirect map stays verifiable. */
     legacyUrl: text("legacy_url"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
