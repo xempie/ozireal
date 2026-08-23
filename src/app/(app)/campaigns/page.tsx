@@ -13,30 +13,56 @@ import {
   TD,
   TR,
   Callout,
+  Empty,
   ProtoNote,
 } from "@/components/ui";
 import { Bars } from "@/components/charts";
-import { campaigns, campaignPerformance } from "@/lib/sample-data-2";
-import { listingById, listingAddress, matchesForListing, contactById } from "@/lib/sample-data";
+import {
+  getCampaignPerformance,
+  getCampaigns,
+  getContacts,
+  getMatchesForListing,
+} from "@/server/queries";
 import { relative } from "@/lib/utils";
 
-const statusTone = {
+const statusTone: Record<string, "neutral" | "queue" | "brand" | "sent"> = {
   draft: "neutral",
   in_approval: "queue",
   sending: "brand",
   sent: "sent",
-} as const;
+  cancelled: "neutral",
+};
 
-const statusLabel = {
+const statusLabel: Record<string, string> = {
   draft: "Draft",
   in_approval: "In approval",
   sending: "Sending",
   sent: "Sent",
-} as const;
+  cancelled: "Cancelled",
+};
 
-export default function CampaignsPage() {
-  const builderListing = listingById("l5");
-  const builderMatches = builderListing ? matchesForListing(builderListing.id) : [];
+export default async function CampaignsPage() {
+  const [campaigns, performance, contactRows] = await Promise.all([
+    getCampaigns(),
+    getCampaignPerformance(),
+    getContacts(),
+  ]);
+
+  /**
+   * The builder shows the campaign that is still being assembled - the draft. Falling
+   * back to whichever campaign has a listing keeps the panel populated rather than
+   * pointing at a listing id that no longer exists.
+   */
+  const builder =
+    campaigns.find((c) => c.status === "draft" && c.listingId) ??
+    campaigns.find((c) => c.listingId) ??
+    null;
+  const builderMatches = builder?.listingId
+    ? await getMatchesForListing(builder.listingId)
+    : [];
+
+  // Consent is per contact and per channel; the list read already carries the current state.
+  const consentsFor = new Map(contactRows.map((c) => [c.id, c.consents]));
 
   return (
     <>
@@ -75,45 +101,44 @@ export default function CampaignsPage() {
             </TR>
           </THead>
           <tbody>
-            {campaigns.map((c) => {
-              const l = listingById(c.listingId);
-              return (
-                <TR key={c.id}>
-                  <TD nowrap className="font-medium">{c.name}</TD>
-                  <TD nowrap>
-                    {l && (
-                      <Link
-                        href={`/listings/${l.id}`}
-                        className="text-2 hover:underline underline-offset-2"
-                      >
-                        {listingAddress(l)}
-                      </Link>
-                    )}
-                  </TD>
-                  <TD>
-                    <Badge tone={c.channel === "sms" ? "channel" : "brand"}>
-                      {c.channel.toUpperCase()}
-                    </Badge>
-                  </TD>
-                  <TD>
-                    <Badge tone={statusTone[c.status]}>{statusLabel[c.status]}</Badge>
-                  </TD>
-                  <TD className="text-right tabular text-2">{c.recipients}</TD>
-                  <TD className="text-right tabular text-2">{c.approved || "—"}</TD>
-                  <TD className="text-right tabular">
-                    {c.blocked > 0 ? (
-                      <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
-                        {c.blocked}
-                      </span>
-                    ) : (
-                      <span className="text-2">0</span>
-                    )}
-                  </TD>
-                  <TD className="text-right tabular text-2">{c.replied || "—"}</TD>
-                  <TD className="text-2 whitespace-nowrap">{relative(c.createdAt)}</TD>
-                </TR>
-              );
-            })}
+            {campaigns.map((c) => (
+              <TR key={c.id}>
+                <TD nowrap className="font-medium">{c.name}</TD>
+                <TD nowrap>
+                  {c.listingId && (
+                    <Link
+                      href={`/listings/${c.listingId}`}
+                      className="text-2 hover:underline underline-offset-2"
+                    >
+                      {c.address}
+                    </Link>
+                  )}
+                </TD>
+                <TD>
+                  <Badge tone={c.channel === "sms" ? "channel" : "brand"}>
+                    {c.channel.toUpperCase()}
+                  </Badge>
+                </TD>
+                <TD>
+                  <Badge tone={statusTone[c.status] ?? "neutral"}>
+                    {statusLabel[c.status] ?? c.status}
+                  </Badge>
+                </TD>
+                <TD className="text-right tabular text-2">{c.recipients}</TD>
+                <TD className="text-right tabular text-2">{c.approved || "—"}</TD>
+                <TD className="text-right tabular">
+                  {c.blocked > 0 ? (
+                    <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
+                      {c.blocked}
+                    </span>
+                  ) : (
+                    <span className="text-2">0</span>
+                  )}
+                </TD>
+                <TD className="text-right tabular text-2">{c.replied || "—"}</TD>
+                <TD className="text-2 whitespace-nowrap">{relative(c.createdAt)}</TD>
+              </TR>
+            ))}
           </tbody>
         </Table>
       </Section>
@@ -121,12 +146,16 @@ export default function CampaignsPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Section title="Performance" hint="sent, opened, replied">
           <Card>
-            <Bars
-              data={campaignPerformance}
-              keys={["Sent", "Opened", "Replied"]}
-              xKey="name"
-              height={230}
-            />
+            {performance.length === 0 ? (
+              <Empty>Nothing sent yet.</Empty>
+            ) : (
+              <Bars
+                data={performance}
+                keys={["Sent", "Opened", "Replied"]}
+                xKey="name"
+                height={230}
+              />
+            )}
             <ProtoNote>
               Reply rate is the number that matters. Opens are a weak signal and get
               weaker every year as mail clients pre-fetch images.
@@ -134,21 +163,22 @@ export default function CampaignsPage() {
           </Card>
         </Section>
 
-        <Section title="Builder" hint="draft campaign for 5 Culvert Street">
+        <Section
+          title="Builder"
+          hint={builder ? `draft campaign for ${builder.address}` : "no draft campaign"}
+        >
           <Card>
-            <CardTitle>
-              {builderListing ? listingAddress(builderListing) : "No listing selected"}
-            </CardTitle>
+            <CardTitle>{builder ? builder.address : "No listing selected"}</CardTitle>
             <p className="text-3 text-[11.5px] -mt-1 mb-3">
               Matched contacts, and what would be drafted for each.
             </p>
 
             <div className="space-y-2">
               {builderMatches.map((m) => {
-                const c = contactById(m.contactId);
-                if (!c) return null;
                 const emailOk =
-                  c.consents.find((x) => x.channel === "email")?.status === "granted";
+                  consentsFor
+                    .get(m.contactId)
+                    ?.find((x) => x.channel === "email")?.status === "granted";
                 return (
                   <div
                     key={m.contactId}
@@ -163,10 +193,10 @@ export default function CampaignsPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <Link
-                          href={`/contacts/${c.id}`}
+                          href={`/contacts/${m.contactId}`}
                           className="text-[12.5px] font-medium hover:underline underline-offset-2"
                         >
-                          {c.firstName} {c.lastName}
+                          {m.contactFirstName} {m.contactLastName}
                         </Link>
                         {emailOk ? (
                           <Badge tone="sent">

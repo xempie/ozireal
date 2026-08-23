@@ -24,29 +24,14 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import {
-  contactById,
-  interactionsFor,
-  matchesForContact,
-  listingById,
-  listingAddress,
-  tasks,
-  contacts,
-} from "@/lib/sample-data";
+  getContact,
+  getInteractionsFor,
+  getMatchesForContact,
+  getListings,
+  getTasks,
+} from "@/server/queries";
+import { channelLabel, propertyTypeLabel, statusLabel } from "@/lib/labels";
 import { relative, dateTime, money, shortDate } from "@/lib/utils";
-
-export function generateStaticParams() {
-  return contacts.map((c) => ({ id: c.id }));
-}
-
-const channelLabel: Record<string, string> = {
-  web_form: "Web form",
-  email: "Email",
-  sms: "SMS",
-  social: "Social",
-  phone: "Phone",
-  voice_note: "Voice note",
-  manual: "Manual",
-};
 
 export default async function ContactDetail({
   params,
@@ -54,18 +39,25 @@ export default async function ContactDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const c = contactById(id);
+  const c = await getContact(id);
   if (!c) notFound();
 
-  const log = interactionsFor(c.id);
-  const contactMatches = matchesForContact(c.id);
+  const [log, contactMatches, listings, tasks] = await Promise.all([
+    getInteractionsFor(c.id),
+    getMatchesForContact(c.id),
+    getListings(),
+    getTasks(),
+  ]);
+
+  /** One pass over the listings already loaded beats a lookup per interaction. */
+  const addressByListingId = new Map(listings.map((l) => [l.id, l.address]));
   const contactTasks = tasks.filter((t) => t.contactId === c.id && !t.done);
 
   return (
     <>
       <PageHeader
         title={`${c.firstName} ${c.lastName}`}
-        subtitle={`${c.roles.join(" · ")} · owned by ${c.owner} · created ${shortDate(c.createdAt)}`}
+        subtitle={`${c.roles.join(" · ")} · owned by ${c.owner ?? "unassigned"} · created ${shortDate(c.createdAt)}`}
         actions={
           <>
             <Button>
@@ -88,21 +80,28 @@ export default async function ContactDetail({
                   rebuilt {relative(c.intent.rebuiltAt)}
                 </span>
               </div>
-              <p className="text-[13.5px] leading-relaxed">{c.intent.brief}</p>
+              <p className="text-[13.5px] leading-relaxed">
+                {c.intent.brief ?? "No brief built yet."}
+              </p>
               <div className="mt-3 pt-3 border-t">
                 <KeyValue
                   cols={3}
                   items={[
-                    ["Intent", <span className="capitalize" key="i">{c.intent.type}</span>],
-                    ["Budget band", c.intent.budgetBand],
-                    ["Timeline", c.intent.timeline],
+                    ["Intent", <span className="capitalize" key="i">{c.intent.type ?? "—"}</span>],
+                    ["Budget band", c.intent.budgetBand ?? "—"],
+                    ["Timeline", c.intent.timeline ?? "—"],
                     [
                       "Sentiment",
                       <span className="capitalize" key="s">
-                        {c.intent.sentiment}
+                        {c.intent.sentiment ?? "—"}
                       </span>,
                     ],
-                    ["Confidence", c.intent.confidence.toFixed(2)],
+                    [
+                      "Confidence",
+                      c.intent.confidence !== null
+                        ? c.intent.confidence.toFixed(2)
+                        : "—",
+                    ],
                     [
                       "Blockers",
                       c.intent.blockers.length ? c.intent.blockers.join("; ") : "None",
@@ -119,39 +118,46 @@ export default async function ContactDetail({
 
           <Section title="Interaction log" hint="append-only, every channel">
             <div className="space-y-2">
-              {log.map((i) => (
-                <Card key={i.id} className="p-3">
-                  <div className="flex items-center gap-2 flex-wrap mb-1.5">
-                    <Badge tone="channel">{channelLabel[i.channel]}</Badge>
-                    <Badge tone={i.direction === "in" ? "brand" : "neutral"}>
-                      {i.direction === "in" ? "inbound" : "outbound"}
-                    </Badge>
-                    <span className="text-[12.5px] font-medium">{i.subject}</span>
-                    <span className="text-3 text-[11.5px] ml-auto">
-                      {dateTime(i.at)}
-                    </span>
-                  </div>
-                  <p className="text-2 text-[12.5px] leading-relaxed whitespace-pre-wrap">
-                    {i.body}
-                  </p>
-                  <div className="flex items-center gap-3 mt-2">
-                    {i.hasRaw && (
-                      <span className="text-3 text-[11.5px] inline-flex items-center gap-1">
-                        <FileText size={11} />
-                        original message stored
+              {log.map((i) => {
+                const address = i.listingId
+                  ? addressByListingId.get(i.listingId)
+                  : undefined;
+                return (
+                  <Card key={i.id} className="p-3">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <Badge tone="channel">
+                        {channelLabel[i.channel] ?? i.channel}
+                      </Badge>
+                      <Badge tone={i.direction === "in" ? "brand" : "neutral"}>
+                        {i.direction === "in" ? "inbound" : "outbound"}
+                      </Badge>
+                      <span className="text-[12.5px] font-medium">{i.subject}</span>
+                      <span className="text-3 text-[11.5px] ml-auto">
+                        {dateTime(i.at)}
                       </span>
-                    )}
-                    {i.listingId && (
-                      <Link
-                        href={`/listings/${i.listingId}`}
-                        className="text-[11.5px] underline underline-offset-2 text-2"
-                      >
-                        {listingAddress(listingById(i.listingId)!)}
-                      </Link>
-                    )}
-                  </div>
-                </Card>
-              ))}
+                    </div>
+                    <p className="text-2 text-[12.5px] leading-relaxed whitespace-pre-wrap">
+                      {i.body}
+                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                      {i.hasRaw && (
+                        <span className="text-3 text-[11.5px] inline-flex items-center gap-1">
+                          <FileText size={11} />
+                          original message stored
+                        </span>
+                      )}
+                      {i.listingId && address && (
+                        <Link
+                          href={`/listings/${i.listingId}`}
+                          className="text-[11.5px] underline underline-offset-2 text-2"
+                        >
+                          {address}
+                        </Link>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
               {log.length === 0 && <Empty>No interactions recorded yet.</Empty>}
             </div>
           </Section>
@@ -161,31 +167,28 @@ export default async function ContactDetail({
               <Empty>No matches — this contact has no stored preferences yet.</Empty>
             ) : (
               <div className="space-y-2">
-                {contactMatches.map((m) => {
-                  const l = listingById(m.listingId);
-                  if (!l) return null;
-                  return (
-                    <Card key={m.listingId} className="p-3">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0">
-                          <Link
-                            href={`/listings/${l.id}`}
-                            className="font-medium text-[13px] hover:underline underline-offset-2"
-                          >
-                            {listingAddress(l)}
-                          </Link>
-                          <div className="text-3 text-[12px] mt-0.5">
-                            {l.priceDisplay || "Price not set"} · {l.status}
-                          </div>
+                {contactMatches.map((m) => (
+                  <Card key={m.listingId} className="p-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0">
+                        <Link
+                          href={`/listings/${m.listingId}`}
+                          className="font-medium text-[13px] hover:underline underline-offset-2"
+                        >
+                          {m.address}
+                        </Link>
+                        <div className="text-3 text-[12px] mt-0.5">
+                          {m.priceDisplay || "Price not set"} ·{" "}
+                          {statusLabel[m.listingStatus] ?? m.listingStatus}
                         </div>
-                        <ScoreBar value={m.score} />
                       </div>
-                      <p className="text-2 text-[12.5px] mt-2 leading-relaxed">
-                        {m.reason}
-                      </p>
-                    </Card>
-                  );
-                })}
+                      <ScoreBar value={m.score} />
+                    </div>
+                    <p className="text-2 text-[12.5px] mt-2 leading-relaxed">
+                      {m.reason}
+                    </p>
+                  </Card>
+                ))}
               </div>
             )}
           </Section>
@@ -197,15 +200,15 @@ export default async function ContactDetail({
             <div className="space-y-2 text-[13px]">
               <div className="flex items-center gap-2">
                 <Mail size={13} className="text-3 shrink-0" />
-                <span className="truncate">{c.email}</span>
+                <span className="truncate">{c.email ?? "No email on file"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Phone size={13} className="text-3 shrink-0" />
-                <span className="tabular">{c.phone}</span>
+                <span className="tabular">{c.phone ?? "No phone on file"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin size={13} className="text-3 shrink-0" />
-                <span>{c.suburb}</span>
+                <span>{c.suburb ?? "No suburb on file"}</span>
               </div>
             </div>
             {c.doNotContact && (
@@ -220,9 +223,11 @@ export default async function ContactDetail({
 
           <Card>
             <CardTitle>Last follow-up</CardTitle>
-            <p className="text-[13px] leading-relaxed">{c.lastFollowupOutcome}</p>
+            <p className="text-[13px] leading-relaxed">
+              {c.lastFollowupOutcome ?? "No follow-up recorded yet."}
+            </p>
             <p className="text-3 text-[11.5px] mt-1.5">
-              {relative(c.lastFollowupAt)}
+              {c.lastFollowupAt ? relative(c.lastFollowupAt) : "—"}
               {c.followupDueAt && ` · next due ${shortDate(c.followupDueAt)}`}
             </p>
             <ProtoNote>
@@ -236,20 +241,32 @@ export default async function ContactDetail({
               <KeyValue
                 cols={1}
                 items={[
-                  ["Suburbs", c.preferences.suburbs.join(", ")],
+                  [
+                    "Suburbs",
+                    c.preferences.suburbs.length
+                      ? c.preferences.suburbs.join(", ")
+                      : "—",
+                  ],
                   [
                     "Price",
-                    c.preferences.priceMax > 0
-                      ? `${money(c.preferences.priceMin)} – ${money(c.preferences.priceMax)}`
+                    c.preferences.priceMax && c.preferences.priceMax > 0
+                      ? `${money(c.preferences.priceMin ?? 0)} – ${money(c.preferences.priceMax)}`
                       : "n/a — rental",
                   ],
                   [
                     "Minimums",
-                    `${c.preferences.bedsMin} bed · ${c.preferences.bathsMin} bath · ${c.preferences.parkingMin} car`,
+                    `${c.preferences.bedsMin ?? 0} bed · ${c.preferences.bathsMin ?? 0} bath · ${c.preferences.parkingMin ?? 0} car`,
                   ],
-                  ["Type", c.preferences.propertyTypes.join(", ")],
-                  ["Timeline", c.preferences.timeline],
-                  ["Finance", c.preferences.financeStatus],
+                  [
+                    "Type",
+                    c.preferences.propertyTypes.length
+                      ? c.preferences.propertyTypes
+                          .map((t) => propertyTypeLabel[t] ?? t)
+                          .join(", ")
+                      : "—",
+                  ],
+                  ["Timeline", c.preferences.timeline ?? "—"],
+                  ["Finance", c.preferences.financeStatus ?? "—"],
                 ]}
               />
               <div className="mt-3 pt-3 border-t">
@@ -257,7 +274,9 @@ export default async function ContactDetail({
                   Soft requirements
                 </div>
                 <p className="text-[12.5px] leading-relaxed italic">
-                  “{c.preferences.softRequirements}”
+                  {c.preferences.softRequirements
+                    ? `“${c.preferences.softRequirements}”`
+                    : "None recorded."}
                 </p>
                 <ProtoNote>
                   This free text is what the similarity search reads. It catches what a
@@ -271,7 +290,10 @@ export default async function ContactDetail({
             <CardTitle>Consent</CardTitle>
             <div className="space-y-3">
               {c.consents.map((k) => (
-                <div key={k.channel} className="text-[12.5px]">
+                <div
+                  key={`${k.channel}-${k.at.toISOString()}`}
+                  className="text-[12.5px]"
+                >
                   <div className="flex items-center gap-2">
                     {k.status === "granted" ? (
                       <ShieldCheck
@@ -293,17 +315,16 @@ export default async function ContactDetail({
                   </div>
                   <div className="text-3 text-[11.5px] mt-1 pl-5 space-y-0.5">
                     <div>{k.sourceForm}</div>
-                    <div>
-                      {shortDate(k.at)} · {k.ip}
-                    </div>
+                    <div>{[shortDate(k.at), k.ip].filter(Boolean).join(" · ")}</div>
                   </div>
-                  {k.wordingShown !== "—" && (
+                  {k.wordingShown && k.wordingShown !== "—" && (
                     <p className="text-3 text-[11px] italic mt-1 pl-5 leading-relaxed">
                       “{k.wordingShown}”
                     </p>
                   )}
                 </div>
               ))}
+              {c.consents.length === 0 && <Empty>No consent recorded yet.</Empty>}
             </div>
             <ProtoNote>
               Provenance is captured at submission and can never be reconstructed
@@ -319,7 +340,12 @@ export default async function ContactDetail({
                   <li key={t.id} className="text-[12.5px]">
                     <div>{t.title}</div>
                     <div className="text-3 text-[11.5px]">
-                      due {shortDate(t.dueAt)} · from {t.source}
+                      {[
+                        t.dueAt ? `due ${shortDate(t.dueAt)}` : null,
+                        t.source ? `from ${t.source}` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </div>
                   </li>
                 ))}

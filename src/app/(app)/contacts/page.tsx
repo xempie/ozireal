@@ -11,10 +11,10 @@ import {
   TR,
   Card,
   CardTitle,
+  Empty,
   ProtoNote,
 } from "@/components/ui";
-import { contacts } from "@/lib/sample-data";
-import { savedViews, contactsBySource } from "@/lib/sample-data-2";
+import { getContacts, getSavedViews, getContactsBySource } from "@/server/queries";
 import { HBars } from "@/components/charts";
 import { relative, money } from "@/lib/utils";
 
@@ -25,6 +25,7 @@ const roleTone = {
   tenant: "neutral",
   referrer: "neutral",
   investor: "ai",
+  business_vendor: "stock",
 } as const;
 
 const filters = [
@@ -36,7 +37,13 @@ const filters = [
   "Last outcome: any",
 ];
 
-export default function ContactsPage() {
+export default async function ContactsPage() {
+  const [contacts, savedViews, contactsBySource] = await Promise.all([
+    getContacts(),
+    getSavedViews(),
+    getContactsBySource(),
+  ]);
+
   return (
     <>
       <PageHeader
@@ -65,13 +72,15 @@ export default function ContactsPage() {
                 <button
                   key={v.name}
                   type="button"
-                  title={v.detail}
+                  title={v.detail ?? undefined}
                   className="text-[12px] border rounded-md px-2.5 py-1.5 surface-3 text-left cursor-default hover:border-[var(--line-strong)] transition-colors"
                 >
                   <span className="font-medium">{v.name}</span>
-                  <span className="tabular text-3 ml-2">{v.count}</span>
                 </button>
               ))}
+              {savedViews.length === 0 && (
+                <span className="text-3 text-[12px]">No saved views yet.</span>
+              )}
             </div>
             <ProtoNote>
               A saved view is a stored filter, not a copy of the data. Hover one to see
@@ -100,12 +109,16 @@ export default function ContactsPage() {
         <Card>
           <CardTitle>Where they came from</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">All time, by channel.</p>
-          <HBars
-            data={contactsBySource}
-            labelKey="source"
-            valueKey="count"
-            height={190}
-          />
+          {contactsBySource.length === 0 ? (
+            <Empty>No data yet.</Empty>
+          ) : (
+            <HBars
+              data={contactsBySource}
+              labelKey="source"
+              valueKey="count"
+              height={190}
+            />
+          )}
         </Card>
       </div>
 
@@ -125,6 +138,7 @@ export default function ContactsPage() {
           {contacts.map((c) => {
             const emailConsent = c.consents.find((x) => x.channel === "email");
             const smsConsent = c.consents.find((x) => x.channel === "sms");
+            const identity = [c.suburb, c.phone].filter(Boolean).join(" · ");
             return (
               <TR key={c.id}>
                 <TD nowrap>
@@ -134,9 +148,7 @@ export default function ContactsPage() {
                   >
                     {c.firstName} {c.lastName}
                   </Link>
-                  <div className="text-3 text-[12px]">
-                    {c.suburb} · {c.phone}
-                  </div>
+                  <div className="text-3 text-[12px]">{identity || "—"}</div>
                 </TD>
                 <TD>
                   <div className="flex flex-wrap gap-1">
@@ -148,11 +160,16 @@ export default function ContactsPage() {
                   </div>
                 </TD>
                 <TD>
-                  {c.intent ? (
+                  {c.intentType ? (
                     <>
-                      <div className="capitalize text-[12.5px]">{c.intent.type}</div>
+                      <div className="capitalize text-[12.5px]">{c.intentType}</div>
                       <div className="text-3 text-[11.5px] capitalize">
-                        {c.intent.sentiment} · {c.intent.confidence.toFixed(2)}
+                        {[
+                          c.sentiment,
+                          c.confidence !== null ? c.confidence.toFixed(2) : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     </>
                   ) : (
@@ -160,17 +177,19 @@ export default function ContactsPage() {
                   )}
                 </TD>
                 <TD className="tabular whitespace-nowrap">
-                  {c.preferences && c.preferences.priceMax > 0 ? (
+                  {c.priceMax && c.priceMax > 0 ? (
                     <span className="text-2 text-[12.5px]">
-                      {money(c.preferences.priceMin)}–{money(c.preferences.priceMax)}
+                      {money(c.priceMin ?? 0)}–{money(c.priceMax)}
                     </span>
                   ) : (
                     <span className="text-3">—</span>
                   )}
                 </TD>
-                <TD className="max-w-[260px] text-2">{c.lastFollowupOutcome}</TD>
+                <TD className="max-w-[260px] text-2">
+                  {c.lastFollowupOutcome ?? "—"}
+                </TD>
                 <TD className="whitespace-nowrap text-2">
-                  {relative(c.lastFollowupAt)}
+                  {c.lastFollowupAt ? relative(c.lastFollowupAt) : "—"}
                 </TD>
                 <TD>
                   <div className="flex flex-wrap gap-1">
@@ -197,6 +216,8 @@ export default function ContactsPage() {
           })}
         </tbody>
       </Table>
+
+      {contacts.length === 0 && <Empty>No contacts yet.</Empty>}
 
       <ProtoNote>
         Phase 1 replaces this with a TanStack Table over the tenant-scoped Drizzle

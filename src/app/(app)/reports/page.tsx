@@ -22,29 +22,82 @@ import {
   MultiLine,
 } from "@/components/charts";
 import {
-  enquiryTrend,
-  followupCompliance,
-  contactsBySource,
-  contactsByIntent,
-  pipelineFunnel,
-  suburbPerformance,
-  campaignPerformance,
-  aiSpendTrend,
-  listingTrafficTrend,
-} from "@/lib/sample-data-2";
-import { listings, listingAddress, statusLabel } from "@/lib/sample-data";
+  getAiSpendByModel,
+  getCampaignPerformance,
+  getContactsByIntent,
+  getContactsBySource,
+  getEnquiriesBySuburb,
+  getEnquiryTrend,
+  getListingPerformance,
+  getPipelineFunnel,
+} from "@/server/queries";
+import { statusLabel } from "@/lib/labels";
 
-export default function ReportsPage() {
-  const onTime = followupCompliance.reduce((s, w) => s + w["On time"], 0);
-  const late = followupCompliance.reduce((s, w) => s + w.Late, 0);
-  const missed = followupCompliance.reduce((s, w) => s + w.Missed, 0);
-  const rate = Math.round((onTime / (onTime + late + missed)) * 100);
+/**
+ * An honest hole where a chart would go.
+ *
+ * Holds the height the chart would have taken so the grid does not reflow, and says
+ * plainly that the rows needed to draw it do not exist yet.
+ */
+function NoData({
+  height = 210,
+  children,
+}: {
+  height?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center justify-center text-center text-3 text-[12.5px]"
+      style={{ height }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default async function ReportsPage() {
+  const [trend, bySource, byIntent, funnel, bySuburb, campaigns, spend, listings] =
+    await Promise.all([
+      getEnquiryTrend(),
+      getContactsBySource(),
+      getContactsByIntent(),
+      getPipelineFunnel(),
+      getEnquiriesBySuburb(),
+      getCampaignPerformance(),
+      getAiSpendByModel(),
+      getListingPerformance(),
+    ]);
+
+  const enquirySeries = trend.map((w) => ({
+    week: w.week,
+    Web: w.Web,
+    Email: w.Email,
+    Social: w.Social,
+    Phone: w.Phone,
+  }));
+  const sourceSeries = bySource.map((s) => ({ source: s.source, count: s.count }));
+  const suburbSeries = bySuburb.map((s) => ({
+    suburb: s.suburb,
+    enquiries: s.enquiries,
+  }));
+  const campaignSeries = campaigns.map((c) => ({
+    name: c.name,
+    Sent: c.Sent,
+    Opened: c.Opened,
+    Replied: c.Replied,
+  }));
+  const spendSeries = spend.map((s) => ({
+    task: s.task,
+    Haiku: s.Haiku ?? 0,
+    Sonnet: s.Sonnet ?? 0,
+  }));
 
   return (
     <>
       <PageHeader
         title="Reports"
-        subtitle="Nine weeks of activity across the agency. Sample data throughout."
+        subtitle="Activity across the agency, counted from the rows the console holds."
         actions={
           <Button>
             <Download size={13} />
@@ -59,28 +112,29 @@ export default function ReportsPage() {
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
             The website is doing the heavy lifting, and its share is growing.
           </p>
-          <StackedArea
-            data={enquiryTrend}
-            keys={["Web", "Email", "Social", "Phone"]}
-            xKey="week"
-            height={240}
-          />
+          {enquirySeries.length > 0 ? (
+            <StackedArea
+              data={enquirySeries}
+              keys={["Web", "Email", "Social", "Phone"]}
+              xKey="week"
+              height={240}
+            />
+          ) : (
+            <NoData height={240}>
+              Not enough history yet to bucket enquiries by week.
+            </NoData>
+          )}
         </Card>
 
         <Card>
           <CardTitle>Follow-up compliance</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
-            {rate}% on time across the period. Late is recoverable; missed is a lost
-            relationship.
+            Late is recoverable; missed is a lost relationship.
           </p>
-          <Bars
-            data={followupCompliance}
-            keys={["On time", "Late", "Missed"]}
-            xKey="week"
-            stacked
-            height={240}
-            colorOffset={5}
-          />
+          <NoData height={240}>
+            No follow-up outcome history yet. Contacts carry the next due date, not a
+            record of whether each past one was met.
+          </NoData>
         </Card>
       </div>
 
@@ -88,18 +142,26 @@ export default function ReportsPage() {
         <Card>
           <CardTitle>Pipeline conversion</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-3">Last 90 days.</p>
-          <Funnel stages={pipelineFunnel} />
+          {funnel.length > 0 ? (
+            <Funnel stages={funnel} />
+          ) : (
+            <NoData height={190}>Nothing has entered the pipeline yet.</NoData>
+          )}
         </Card>
 
         <Card>
           <CardTitle>Where contacts come from</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">All time.</p>
-          <HBars
-            data={contactsBySource}
-            labelKey="source"
-            valueKey="count"
-            height={230}
-          />
+          {sourceSeries.length > 0 ? (
+            <HBars
+              data={sourceSeries}
+              labelKey="source"
+              valueKey="count"
+              height={230}
+            />
+          ) : (
+            <NoData height={230}>No contacts yet.</NoData>
+          )}
         </Card>
 
         <Card>
@@ -107,80 +169,105 @@ export default function ReportsPage() {
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
             From the rolling brief, rebuilt after every interaction.
           </p>
-          <Donut data={contactsByIntent} height={230} />
+          {byIntent.length > 0 ? (
+            <Donut data={byIntent} height={230} />
+          ) : (
+            <NoData height={230}>No briefs built yet.</NoData>
+          )}
         </Card>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2 [&>*:last-child:nth-child(odd)]:md:col-span-2 [&>*:last-child:nth-child(odd)]:lg:col-span-1">
         <Card>
           <CardTitle>Enquiries by suburb</CardTitle>
-          <HBars
-            data={suburbPerformance}
-            labelKey="suburb"
-            valueKey="enquiries"
-            height={210}
-          />
+          {suburbSeries.length > 0 ? (
+            <HBars
+              data={suburbSeries}
+              labelKey="suburb"
+              valueKey="enquiries"
+              height={210}
+            />
+          ) : (
+            <NoData height={210}>No enquiries tied to a listing yet.</NoData>
+          )}
         </Card>
 
         <Card>
           <CardTitle>Campaign performance</CardTitle>
-          <Bars
-            data={campaignPerformance}
-            keys={["Sent", "Opened", "Replied"]}
-            xKey="name"
-            height={210}
-          />
+          {campaignSeries.length > 0 ? (
+            <Bars
+              data={campaignSeries}
+              keys={["Sent", "Opened", "Replied"]}
+              xKey="name"
+              height={210}
+            />
+          ) : (
+            <NoData height={210}>No campaigns have been sent yet.</NoData>
+          )}
         </Card>
 
         <Card>
           <CardTitle>AI spend by model</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
-            Weekly. Haiku carries the volume, Sonnet carries the cost.
+            By task. Haiku carries the volume, Sonnet carries the cost.
           </p>
-          <MultiLine
-            data={aiSpendTrend}
-            keys={["Haiku", "Sonnet"]}
-            xKey="week"
-            height={210}
-            valueFormat="money"
-          />
+          {spendSeries.length > 0 ? (
+            <MultiLine
+              data={spendSeries}
+              keys={["Haiku", "Sonnet"]}
+              xKey="task"
+              height={210}
+              valueFormat="money"
+            />
+          ) : (
+            <NoData height={210}>Nothing has been generated yet.</NoData>
+          )}
         </Card>
       </div>
 
       <Section title="Listing performance">
-        <Table minWidth={820}>
-          <THead>
-            <TR>
-              <TH>Listing</TH>
-              <TH>Status</TH>
-              <TH>Price shown</TH>
-              <TH className="text-right">Views 7d</TH>
-              <TH className="text-right">Enquiries 7d</TH>
-              <TH className="text-right">Photos</TH>
-              <TH className="text-right">Enquiry rate</TH>
-            </TR>
-          </THead>
-          <tbody>
-            {listings
-              .filter((l) => l.views7d > 0)
-              .sort((a, b) => b.views7d - a.views7d)
-              .map((l) => (
-                <TR key={l.id}>
-                  <TD nowrap className="font-medium">{listingAddress(l)}</TD>
-                  <TD className="text-2">{statusLabel[l.status]}</TD>
-                  <TD nowrap className="text-2">{l.priceDisplay || "—"}</TD>
+        {listings.length > 0 ? (
+          <Table minWidth={820}>
+            <THead>
+              <TR>
+                <TH>Listing</TH>
+                <TH>Status</TH>
+                <TH>Price shown</TH>
+                <TH className="text-right">Views 7d</TH>
+                <TH className="text-right">Enquiries 7d</TH>
+                <TH className="text-right">Photos</TH>
+                <TH className="text-right">Enquiry rate</TH>
+              </TR>
+            </THead>
+            <tbody>
+              {listings.map((l, i) => (
+                <TR key={`${l.address}-${i}`}>
+                  <TD nowrap className="font-medium">
+                    {l.address}
+                  </TD>
+                  <TD className="text-2">{statusLabel[l.status] ?? l.status}</TD>
+                  <TD nowrap className="text-2">
+                    {l.priceDisplay || "—"}
+                  </TD>
                   <TD className="text-right tabular text-2">
                     {l.views7d.toLocaleString()}
                   </TD>
                   <TD className="text-right tabular text-2">{l.enquiries7d}</TD>
                   <TD className="text-right tabular text-2">{l.photos}</TD>
                   <TD className="text-right tabular font-medium">
-                    {((l.enquiries7d / l.views7d) * 100).toFixed(1)}%
+                    {l.views7d > 0
+                      ? `${((l.enquiries7d / l.views7d) * 100).toFixed(1)}%`
+                      : "—"}
                   </TD>
                 </TR>
               ))}
-          </tbody>
-        </Table>
+            </tbody>
+          </Table>
+        ) : (
+          <Card>
+            <NoData height={120}>No listing traffic recorded yet.</NoData>
+          </Card>
+        )}
         <ProtoNote>
           Enquiry rate is the honest measure of a listing. High views with a low rate
           usually means the price display or the lead photo is doing the damage.
@@ -189,12 +276,10 @@ export default function ReportsPage() {
 
       <Section title="Website traffic">
         <Card>
-          <MultiLine
-            data={listingTrafficTrend}
-            keys={["Views"]}
-            xKey="week"
-            height={140}
-          />
+          <NoData height={140}>
+            No weekly traffic history yet. Views and enquiries are held as a rolling
+            seven-day count, not a series.
+          </NoData>
           <div className="mt-3">
             <Callout tone="brand" title="One measure per axis, always">
               Views and enquiries differ by two orders of magnitude. Putting both on one

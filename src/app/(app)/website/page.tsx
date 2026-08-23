@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   Globe,
   ExternalLink,
-  Check,
   AlertTriangle,
   ArrowRight,
   RefreshCw,
@@ -20,12 +19,10 @@ import {
   TD,
   TR,
   Callout,
+  Empty,
   ProtoNote,
 } from "@/components/ui";
-import { MultiLine } from "@/components/charts";
-import { suburbPages, redirects, migrationChecklist } from "@/lib/sample-data-2";
-import { listingTrafficTrend } from "@/lib/sample-data-2";
-import { listings, listingAddress } from "@/lib/sample-data";
+import { getRedirects, getSuburbPages, getListings } from "@/server/queries";
 import { relative } from "@/lib/utils";
 
 const redirectTone = {
@@ -34,8 +31,12 @@ const redirectTone = {
   blocked: "blocked",
 } as const;
 
-export default function WebsitePage() {
-  const done = migrationChecklist.filter((c) => c.done).length;
+export default async function WebsitePage() {
+  const [redirects, suburbPages, listings] = await Promise.all([
+    getRedirects(),
+    getSuburbPages(),
+    getListings(),
+  ]);
   const mapped = redirects.filter((r) => r.status === "mapped").length;
   const live = listings.filter((l) => l.status === "live");
 
@@ -57,15 +58,10 @@ export default function WebsitePage() {
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Migration readiness
           </div>
-          <div className="text-[26px] font-semibold tabular mt-1">
-            {done}/{migrationChecklist.length}
-          </div>
-          <div className="h-1.5 rounded-full surface-3 mt-2 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-[var(--accent)]"
-              style={{ width: `${(done / migrationChecklist.length) * 100}%` }}
-            />
-          </div>
+          {/* The cutover checklist is not a table yet, so there is nothing to count.
+              A progress bar drawn from nothing would read as "not started". */}
+          <div className="text-[26px] font-semibold tabular mt-1">—</div>
+          <div className="text-3 text-[11.5px]">No checklist yet</div>
         </Card>
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
@@ -80,12 +76,9 @@ export default function WebsitePage() {
         </Card>
         <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Traffic on the live site</CardTitle>
-          <MultiLine
-            data={listingTrafficTrend}
-            keys={["Views"]}
-            xKey="week"
-            height={92}
-          />
+          {/* views_7d is a rolling counter on each listing, not a stored weekly series,
+              so there is no history to plot until the public site reports it. */}
+          <Empty>No traffic history yet</Empty>
         </Card>
       </div>
 
@@ -101,33 +94,7 @@ export default function WebsitePage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Section title="Cutover checklist">
-          <Card padded={false} className="p-0">
-            {migrationChecklist.map((c) => (
-              <div
-                key={c.task}
-                className="p-3 border-b last:border-b-0 flex items-center gap-2.5"
-              >
-                <span
-                  className={
-                    c.done
-                      ? "h-4 w-4 rounded border grid place-items-center shrink-0 bg-[#008300]/12 border-[#008300]/45"
-                      : "h-4 w-4 rounded border shrink-0"
-                  }
-                >
-                  {c.done && (
-                    <Check size={11} className="text-[#006300] dark:text-[#5fc45f]" />
-                  )}
-                </span>
-                <span
-                  className={
-                    c.done ? "text-[12.5px] text-2 line-through" : "text-[12.5px]"
-                  }
-                >
-                  {c.task}
-                </span>
-              </div>
-            ))}
-          </Card>
+          <Empty>No checklist yet</Empty>
           <ProtoNote>
             Search Console has to be verified and today&apos;s rankings captured{" "}
             <em>before</em> the switch, so any drop afterwards is a measurable fact rather
@@ -145,7 +112,7 @@ export default function WebsitePage() {
                     href={`/listings/${l.id}`}
                     className="text-[12.5px] font-medium hover:underline underline-offset-2"
                   >
-                    {listingAddress(l)}
+                    {l.address}
                   </Link>
                   <Badge tone="sent" className="ml-auto">
                     <RefreshCw size={9} />
@@ -188,7 +155,7 @@ export default function WebsitePage() {
                   )}
                 </TD>
                 <TD>
-                  <Badge tone={redirectTone[r.status as keyof typeof redirectTone]}>
+                  <Badge tone={redirectTone[r.status]}>
                     {r.status === "blocked" && <AlertTriangle size={10} />}
                     {r.status}
                   </Badge>

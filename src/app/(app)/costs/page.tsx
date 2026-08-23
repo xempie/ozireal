@@ -14,28 +14,51 @@ import {
   TR,
   ProtoNote,
   Callout,
+  Empty,
 } from "@/components/ui";
-import { Bars, MultiLine } from "@/components/charts";
-import { aiSpendTrend } from "@/lib/sample-data-2";
-import {
-  aiGenerations,
-  costByDay,
-  totalMonthCost,
-  todayCost,
-  jobQueue,
-  adapters,
-} from "@/lib/sample-data";
+import { Bars } from "@/components/charts";
+import { getAdapters, getAiCostSummary, getJobQueue } from "@/server/queries";
 import { moneyPrecise, relative } from "@/lib/utils";
 
-export default function CostsPage() {
-  const totalCalls = aiGenerations.reduce((s, g) => s + g.calls, 0);
-  const totalTokens = aiGenerations.reduce(
-    (s, g) => s + g.inputTokens + g.outputTokens,
+/** An honest hole where a chart would go, holding the height so the grid does not reflow. */
+function NoData({
+  height = 200,
+  children,
+}: {
+  height?: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="flex items-center justify-center text-center text-3 text-[12.5px]"
+      style={{ height }}
+    >
+      {children}
+    </div>
+  );
+}
+
+export default async function CostsPage() {
+  const [cost, jobQueue, adapters] = await Promise.all([
+    getAiCostSummary(),
+    getJobQueue(),
+    getAdapters(),
+  ]);
+
+  const byTask = cost.byTask;
+  const totalCalls = byTask.reduce((s, g) => s + (g.calls ?? 0), 0);
+  const totalTokens = byTask.reduce(
+    (s, g) => s + (g.inputTokens ?? 0) + (g.outputTokens ?? 0),
     0,
   );
-  const sonnetCost = aiGenerations
-    .filter((g) => g.model === "Sonnet")
-    .reduce((s, g) => s + g.costAud, 0);
+  const sonnet = byTask.filter((g) => g.model === "Sonnet");
+  const sonnetCost = sonnet.reduce((s, g) => s + (g.costAud ?? 0), 0);
+  const sonnetCalls = sonnet.reduce((s, g) => s + (g.calls ?? 0), 0);
+  const sonnetShare =
+    cost.totalMonth > 0 ? Math.round((sonnetCost / cost.totalMonth) * 100) : 0;
+  const sonnetCallShare =
+    totalCalls > 0 ? Math.round((sonnetCalls / totalCalls) * 100) : 0;
+  const spendByDay = cost.byDay.slice(-7).map((d) => ({ day: d.day, Spend: d.aud ?? 0 }));
 
   return (
     <>
@@ -45,10 +68,10 @@ export default function CostsPage() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Stat label="Today" value={moneyPrecise(todayCost)} tone="ai" />
+        <Stat label="Today" value={moneyPrecise(cost.today)} tone="ai" />
         <Stat
           label="Month to date"
-          value={moneyPrecise(totalMonthCost)}
+          value={moneyPrecise(cost.totalMonth)}
           sub={`${totalCalls.toLocaleString()} calls`}
           tone="ai"
         />
@@ -59,82 +82,87 @@ export default function CostsPage() {
         />
         <Stat
           label="Sonnet share"
-          value={`${Math.round((sonnetCost / totalMonthCost) * 100)}%`}
-          sub="of spend, from 13% of calls"
+          value={`${sonnetShare}%`}
+          sub={`of spend, from ${sonnetCallShare}% of calls`}
         />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardTitle>Spend, last seven days</CardTitle>
-          <Bars
-            data={costByDay.map((d) => ({ day: d.day, Spend: d.aud }))}
-            keys={["Spend"]}
-            xKey="day"
-            height={200}
-            valueFormat="money"
-            colorOffset={6}
-          />
+          {spendByDay.length > 0 ? (
+            <Bars
+              data={spendByDay}
+              keys={["Spend"]}
+              xKey="day"
+              height={200}
+              valueFormat="money"
+              colorOffset={6}
+            />
+          ) : (
+            <NoData>No generations logged yet.</NoData>
+          )}
         </Card>
         <Card>
           <CardTitle>Spend by model, weekly</CardTitle>
           <p className="text-3 text-[11.5px] -mt-1 mb-2">
             Haiku carries the call volume; Sonnet carries the cost.
           </p>
-          <MultiLine
-            data={aiSpendTrend}
-            keys={["Haiku", "Sonnet"]}
-            xKey="week"
-            height={200}
-            valueFormat="money"
-          />
+          <NoData>
+            Not enough history to bucket by week yet — generations are logged from the
+            first call onwards.
+          </NoData>
         </Card>
       </div>
 
       <Section title="By task" hint="model choice is the main cost control">
-        <Table>
-          <THead>
-            <TR>
-              <TH>Task</TH>
-              <TH>Model</TH>
-              <TH className="text-right">Calls</TH>
-              <TH className="text-right">In</TH>
-              <TH className="text-right">Out</TH>
-              <TH className="text-right">Latency</TH>
-              <TH className="text-right">Cost</TH>
-            </TR>
-          </THead>
-          <tbody>
-            {aiGenerations
-              .slice()
-              .sort((a, b) => b.costAud - a.costAud)
-              .map((g) => (
-                <TR key={g.task}>
-                  <TD className="font-medium">{g.task}</TD>
-                  <TD>
-                    <Badge tone={g.model === "Sonnet" ? "ai" : "neutral"}>
-                      {g.model}
-                    </Badge>
-                  </TD>
-                  <TD className="text-right tabular text-2">
-                    {g.calls.toLocaleString()}
-                  </TD>
-                  <TD className="text-right tabular text-2">
-                    {(g.inputTokens / 1000).toFixed(0)}k
-                  </TD>
-                  <TD className="text-right tabular text-2">
-                    {(g.outputTokens / 1000).toFixed(0)}k
-                  </TD>
-                  <TD className="text-right tabular text-2">
-                    {(g.avgLatencyMs / 1000).toFixed(1)}s
-                  </TD>
-                  <TD className="text-right tabular font-medium">
-                    {moneyPrecise(g.costAud)}
-                  </TD>
-                </TR>
-              ))}
-          </tbody>
-        </Table>
+        {byTask.length > 0 ? (
+          <Table>
+            <THead>
+              <TR>
+                <TH>Task</TH>
+                <TH>Model</TH>
+                <TH className="text-right">Calls</TH>
+                <TH className="text-right">In</TH>
+                <TH className="text-right">Out</TH>
+                <TH className="text-right">Latency</TH>
+                <TH className="text-right">Cost</TH>
+              </TR>
+            </THead>
+            <tbody>
+              {byTask
+                .slice()
+                .sort((a, b) => (b.costAud ?? 0) - (a.costAud ?? 0))
+                .map((g) => (
+                  <TR key={`${g.task}-${g.model}`}>
+                    <TD className="font-medium">{g.task}</TD>
+                    <TD>
+                      <Badge tone={g.model === "Sonnet" ? "ai" : "neutral"}>
+                        {g.model}
+                      </Badge>
+                    </TD>
+                    <TD className="text-right tabular text-2">
+                      {(g.calls ?? 0).toLocaleString()}
+                    </TD>
+                    <TD className="text-right tabular text-2">
+                      {((g.inputTokens ?? 0) / 1000).toFixed(0)}k
+                    </TD>
+                    <TD className="text-right tabular text-2">
+                      {((g.outputTokens ?? 0) / 1000).toFixed(0)}k
+                    </TD>
+                    <TD className="text-right tabular text-2">
+                      {((g.avgLatencyMs ?? 0) / 1000).toFixed(1)}s
+                    </TD>
+                    <TD className="text-right tabular font-medium">
+                      {moneyPrecise(g.costAud ?? 0)}
+                    </TD>
+                  </TR>
+                ))}
+            </tbody>
+          </Table>
+        ) : (
+          <Empty>No generations logged yet.</Empty>
+        )}
         <div className="mt-3">
           <Callout tone="ai" title="Read this table as a cost lever">
             The two Haiku rows are 87% of all calls and under 8% of the spend. Moving
@@ -146,53 +174,57 @@ export default function CostsPage() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <Section title="Job queue">
-          <Table>
-            <THead>
-              <TR>
-                <TH>Job</TH>
-                <TH className="text-right">Pending</TH>
-                <TH className="text-right">Active</TH>
-                <TH className="text-right">Failed</TH>
-                <TH className="text-right">Dead</TH>
-                <TH></TH>
-              </TR>
-            </THead>
-            <tbody>
-              {jobQueue.map((j) => (
-                <TR key={j.name}>
-                  <TD className="font-mono text-[12px]">{j.name}</TD>
-                  <TD className="text-right tabular text-2">{j.pending}</TD>
-                  <TD className="text-right tabular text-2">{j.active}</TD>
-                  <TD className="text-right tabular">
-                    {j.failed > 0 ? (
-                      <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
-                        {j.failed}
-                      </span>
-                    ) : (
-                      <span className="text-2">0</span>
-                    )}
-                  </TD>
-                  <TD className="text-right tabular">
-                    {j.dead > 0 ? (
-                      <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
-                        {j.dead}
-                      </span>
-                    ) : (
-                      <span className="text-2">0</span>
-                    )}
-                  </TD>
-                  <TD className="text-right">
-                    {j.failed + j.dead > 0 && (
-                      <Button size="sm">
-                        <RefreshCw size={11} />
-                        Retry
-                      </Button>
-                    )}
-                  </TD>
+          {jobQueue.length > 0 ? (
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Job</TH>
+                  <TH className="text-right">Pending</TH>
+                  <TH className="text-right">Active</TH>
+                  <TH className="text-right">Failed</TH>
+                  <TH className="text-right">Dead</TH>
+                  <TH></TH>
                 </TR>
-              ))}
-            </tbody>
-          </Table>
+              </THead>
+              <tbody>
+                {jobQueue.map((j) => (
+                  <TR key={j.name}>
+                    <TD className="font-mono text-[12px]">{j.name}</TD>
+                    <TD className="text-right tabular text-2">{j.pending}</TD>
+                    <TD className="text-right tabular text-2">{j.active}</TD>
+                    <TD className="text-right tabular">
+                      {j.failed > 0 ? (
+                        <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
+                          {j.failed}
+                        </span>
+                      ) : (
+                        <span className="text-2">0</span>
+                      )}
+                    </TD>
+                    <TD className="text-right tabular">
+                      {j.dead > 0 ? (
+                        <span className="text-[#b02f2f] dark:text-[#f08a8a] font-medium">
+                          {j.dead}
+                        </span>
+                      ) : (
+                        <span className="text-2">0</span>
+                      )}
+                    </TD>
+                    <TD className="text-right">
+                      {j.failed + j.dead > 0 && (
+                        <Button size="sm">
+                          <RefreshCw size={11} />
+                          Retry
+                        </Button>
+                      )}
+                    </TD>
+                  </TR>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <Empty>No queue counts yet — the worker is not wired up.</Empty>
+          )}
           <ProtoNote>
             Jobs are small, idempotent and retried with backoff. A failed AI call never
             fails a user request — it lands here instead.
@@ -200,38 +232,44 @@ export default function CostsPage() {
         </Section>
 
         <Section title="Channel adapters">
-          <Table>
-            <THead>
-              <TR>
-                <TH>Channel</TH>
-                <TH>Status</TH>
-                <TH>Last received</TH>
-                <TH className="text-right">Today</TH>
-              </TR>
-            </THead>
-            <tbody>
-              {adapters.map((a) => (
-                <TR key={a.name}>
-                  <TD className="font-medium">{a.name}</TD>
-                  <TD>
-                    {a.status === "ok" ? (
-                      <Badge tone="sent">
-                        <CheckCircle2 size={10} />
-                        ok
-                      </Badge>
-                    ) : (
-                      <Badge tone="queue">
-                        <AlertTriangle size={10} />
-                        degraded
-                      </Badge>
-                    )}
-                  </TD>
-                  <TD className="text-2">{relative(a.lastReceived)}</TD>
-                  <TD className="text-right tabular text-2">{a.today}</TD>
+          {adapters.length > 0 ? (
+            <Table>
+              <THead>
+                <TR>
+                  <TH>Channel</TH>
+                  <TH>Status</TH>
+                  <TH>Last received</TH>
+                  <TH className="text-right">Today</TH>
                 </TR>
-              ))}
-            </tbody>
-          </Table>
+              </THead>
+              <tbody>
+                {adapters.map((a) => (
+                  <TR key={a.name}>
+                    <TD className="font-medium">{a.name}</TD>
+                    <TD>
+                      {a.status === "ok" ? (
+                        <Badge tone="sent">
+                          <CheckCircle2 size={10} />
+                          ok
+                        </Badge>
+                      ) : (
+                        <Badge tone={a.status === "down" ? "blocked" : "queue"}>
+                          <AlertTriangle size={10} />
+                          {a.status}
+                        </Badge>
+                      )}
+                    </TD>
+                    <TD className="text-2">
+                      {a.lastReceived ? relative(a.lastReceived) : "—"}
+                    </TD>
+                    <TD className="text-right tabular text-2">{a.today}</TD>
+                  </TR>
+                ))}
+              </tbody>
+            </Table>
+          ) : (
+            <Empty>No adapters registered yet.</Empty>
+          )}
           <ProtoNote>
             Adding a channel means adding one adapter class and registering it. The
             pipeline behind them is never edited.

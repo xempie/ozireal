@@ -8,13 +8,19 @@ import {
   Empty,
   ProtoNote,
 } from "@/components/ui";
-import { tasks, contactName } from "@/lib/sample-data";
-import { shortDate, TODAY, relative } from "@/lib/utils";
+import { getTasks } from "@/server/queries";
+import { shortDate, relative } from "@/lib/utils";
 
-export default function TasksPage() {
+/** Tasks without a due date sort last rather than pretending to be due now. */
+const dueValue = (d: Date | null) => (d ? d.getTime() : Number.MAX_SAFE_INTEGER);
+
+export default async function TasksPage() {
+  const tasks = await getTasks();
+  const now = Date.now();
+
   const open = tasks
     .filter((t) => !t.done)
-    .sort((a, b) => a.dueAt.getTime() - b.dueAt.getTime());
+    .sort((a, b) => dueValue(a.dueAt) - dueValue(b.dueAt));
   const done = tasks.filter((t) => t.done);
 
   return (
@@ -30,9 +36,10 @@ export default function TasksPage() {
         ) : (
           <div className="space-y-2">
             {open.map((t) => {
-              const overdue = t.dueAt.getTime() < TODAY.getTime() - 86400000;
-              const today =
-                Math.abs(t.dueAt.getTime() - TODAY.getTime()) <= 86400000;
+              const overdue = t.dueAt ? t.dueAt.getTime() < now - 86400000 : false;
+              const today = t.dueAt
+                ? Math.abs(t.dueAt.getTime() - now) <= 86400000
+                : false;
               return (
                 <Card key={t.id} className="p-3">
                   <div className="flex items-start gap-3">
@@ -40,18 +47,22 @@ export default function TasksPage() {
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-medium">{t.title}</div>
                       <div className="text-3 text-[12px] mt-0.5 flex flex-wrap items-center gap-x-2">
-                        <Link
-                          href={`/contacts/${t.contactId}`}
-                          className="hover:underline underline-offset-2"
-                        >
-                          {contactName(t.contactId)}
-                        </Link>
-                        <span>·</span>
-                        <span>from {t.source}</span>
+                        {t.contactId && (
+                          <Link
+                            href={`/contacts/${t.contactId}`}
+                            className="hover:underline underline-offset-2"
+                          >
+                            {t.contactName ?? "Unnamed contact"}
+                          </Link>
+                        )}
+                        {t.contactId && t.source && <span>·</span>}
+                        {t.source && <span>from {t.source}</span>}
                       </div>
                     </div>
                     <div className="shrink-0">
-                      {overdue ? (
+                      {!t.dueAt ? (
+                        <span className="text-3 text-[12px]">No due date</span>
+                      ) : overdue ? (
                         <Badge tone="blocked">
                           <AlertTriangle size={10} />
                           {relative(t.dueAt)}
@@ -83,7 +94,7 @@ export default function TasksPage() {
                 <div className="min-w-0">
                   <div className="text-[13px] line-through">{t.title}</div>
                   <div className="text-3 text-[12px] mt-0.5">
-                    {contactName(t.contactId)}
+                    {t.contactName ?? "No contact"}
                   </div>
                 </div>
               </div>

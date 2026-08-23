@@ -8,24 +8,24 @@ import {
   Button,
   ProtoNote,
 } from "@/components/ui";
-import {
-  listings,
-  listingAddress,
-  statusLabel,
-  type ListingStatus,
-} from "@/lib/sample-data";
+import { getListings } from "@/server/queries";
+import { statusLabel } from "@/lib/labels";
 import { relative } from "@/lib/utils";
 
-const columns: { status: ListingStatus; tone: "queue" | "stock" | "brand" | "sent" | "neutral" }[] =
-  [
-    { status: "draft", tone: "queue" },
-    { status: "live", tone: "stock" },
-    { status: "under_offer", tone: "brand" },
-    { status: "sold", tone: "sent" },
-    { status: "withdrawn", tone: "neutral" },
-  ];
+const columns: {
+  status: string;
+  tone: "queue" | "stock" | "brand" | "sent" | "neutral";
+}[] = [
+  { status: "draft", tone: "queue" },
+  { status: "live", tone: "stock" },
+  { status: "under_offer", tone: "brand" },
+  { status: "sold", tone: "sent" },
+  { status: "withdrawn", tone: "neutral" },
+];
 
-export default function ListingsPage() {
+export default async function ListingsPage() {
+  const listings = await getListings();
+
   return (
     <>
       <PageHeader
@@ -45,7 +45,7 @@ export default function ListingsPage() {
           return (
             <div key={col.status}>
               <div className="flex items-center gap-2 mb-2">
-                <Badge tone={col.tone}>{statusLabel[col.status]}</Badge>
+                <Badge tone={col.tone}>{statusLabel[col.status] ?? col.status}</Badge>
                 <span className="text-3 text-[12px] tabular">{items.length}</span>
               </div>
               <div className="space-y-2">
@@ -55,7 +55,7 @@ export default function ListingsPage() {
                       href={`/listings/${l.id}`}
                       className="text-[13px] font-medium hover:underline underline-offset-2 block"
                     >
-                      {listingAddress(l)}
+                      {l.address}
                     </Link>
                     <div className="text-3 text-[12px] mt-0.5">
                       {l.priceDisplay || (

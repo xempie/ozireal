@@ -1,5 +1,6 @@
-/**
- * The root route renders the sign-in screen rather than redirecting to /login.
- * A static export has no server to issue a 307, so the redirect has to not exist.
- */
-export { default } from "./login/page";
+import { redirect } from "next/navigation";
+
+/** With a server process again, a real redirect is possible. */
+export default function Root() {
+  redirect("/login");
+}

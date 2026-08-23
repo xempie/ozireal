@@ -3,51 +3,27 @@ import {
   PageHeader,
   Section,
   Card,
-  CardTitle,
   Badge,
   KeyValue,
   Callout,
   ProtoNote,
+  Empty,
 } from "@/components/ui";
-import { agency } from "@/lib/sample-data";
+import { getAgency, getSettings } from "@/server/queries";
 
-const consentTemplates = [
-  {
-    form: "Listing enquiry",
-    wording:
-      "I agree to Ozi Realty contacting me about properties and services that match my enquiry. I can unsubscribe at any time.",
-  },
-  {
-    form: "Free property appraisal",
-    wording:
-      "I agree to Ozi Realty contacting me about the appraisal of my property and related services. I can unsubscribe at any time.",
-  },
-  {
-    form: "Suburb insight report",
-    wording:
-      "Send me the report and occasional market updates for this suburb. I can unsubscribe at any time.",
-  },
-];
+/** "Sam Whitfield" -> "SW". Empty when there is no name to take them from. */
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
 
-const disclosures = [
-  {
-    name: "Vendor statement (Form 1)",
-    detail: "Served before the contract becomes binding",
-    state: "SA",
-  },
-  {
-    name: "Cooling-off notice",
-    detail: "Two clear business days, from the later of contract or Form 1",
-    state: "SA",
-  },
-  {
-    name: "Agent licence on marketing",
-    detail: "RLA number shown on every public listing and message",
-    state: "SA",
-  },
-];
+export default async function SettingsPage() {
+  const [agency, settings] = await Promise.all([getAgency(), getSettings()]);
 
-export default function SettingsPage() {
   return (
     <>
       <PageHeader
@@ -62,9 +38,9 @@ export default function SettingsPage() {
               cols={1}
               items={[
                 ["Legal name", agency.name],
-                ["Trading as", agency.tradingName],
-                ["Licence", agency.licence],
-                ["ABN", agency.abn],
+                ["Trading as", agency.tradingName ?? "—"],
+                ["Licence", agency.licence ?? "—"],
+                ["ABN", agency.abn ?? "—"],
                 ["Jurisdiction", agency.jurisdiction],
                 ["Timezone", agency.timezone],
               ]}
@@ -76,11 +52,15 @@ export default function SettingsPage() {
           <Card>
             <div className="flex items-center gap-3">
               <span className="h-8 w-8 rounded-full surface-3 border grid place-items-center text-[11px] font-semibold shrink-0">
-                SW
+                {initials(agency.user.name) || "—"}
               </span>
               <div className="min-w-0">
-                <div className="text-[13px] font-medium">{agency.user.name}</div>
-                <div className="text-3 text-[12px] truncate">{agency.user.email}</div>
+                <div className="text-[13px] font-medium">
+                  {agency.user.name || "No user yet"}
+                </div>
+                <div className="text-3 text-[12px] truncate">
+                  {agency.user.email || "—"}
+                </div>
               </div>
               <Badge tone="brand" className="ml-auto">
                 {agency.user.role}
@@ -98,16 +78,20 @@ export default function SettingsPage() {
         </Section>
 
         <Section title="Consent wording" hint="captured verbatim at submission">
-          <Card padded={false} className="p-0">
-            {consentTemplates.map((t) => (
-              <div key={t.form} className="p-3 border-b last:border-b-0">
-                <div className="text-[12.5px] font-medium">{t.form}</div>
-                <p className="text-2 text-[12px] mt-1 leading-relaxed italic">
-                  “{t.wording}”
-                </p>
-              </div>
-            ))}
-          </Card>
+          {settings.templates.length > 0 ? (
+            <Card padded={false} className="p-0">
+              {settings.templates.map((t) => (
+                <div key={t.form} className="p-3 border-b last:border-b-0">
+                  <div className="text-[12.5px] font-medium">{t.form}</div>
+                  <p className="text-2 text-[12px] mt-1 leading-relaxed italic">
+                    “{t.wording}”
+                  </p>
+                </div>
+              ))}
+            </Card>
+          ) : (
+            <Empty>No consent wording configured yet.</Empty>
+          )}
           <ProtoNote>
             The exact text shown is stored on every consent row. Change the template and
             existing records keep the wording those people actually agreed to.
@@ -115,17 +99,21 @@ export default function SettingsPage() {
         </Section>
 
         <Section title="Disclosure rules" hint="per jurisdiction, never hardcoded">
-          <Card padded={false} className="p-0">
-            {disclosures.map((d) => (
-              <div key={d.name} className="p-3 border-b last:border-b-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[12.5px] font-medium">{d.name}</span>
-                  <Badge tone="stock">{d.state}</Badge>
+          {settings.rules.length > 0 ? (
+            <Card padded={false} className="p-0">
+              {settings.rules.map((d) => (
+                <div key={d.name} className="p-3 border-b last:border-b-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[12.5px] font-medium">{d.name}</span>
+                    <Badge tone="stock">{d.state}</Badge>
+                  </div>
+                  <p className="text-2 text-[12px] mt-0.5">{d.detail}</p>
                 </div>
-                <p className="text-2 text-[12px] mt-0.5">{d.detail}</p>
-              </div>
-            ))}
-          </Card>
+              ))}
+            </Card>
+          ) : (
+            <Empty>No disclosure rules loaded yet.</Empty>
+          )}
           <ProtoNote>
             Seeded with South Australia only (D2). Adding NSW later is a data load, not a
             rewrite — which only holds because nothing in the code hardcodes “SA”.

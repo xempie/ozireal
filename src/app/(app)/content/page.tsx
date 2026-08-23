@@ -13,35 +13,44 @@ import {
   TD,
   TR,
   Callout,
+  Empty,
   ProtoNote,
 } from "@/components/ui";
-import { MultiLine } from "@/components/charts";
-import { blogPosts, socialPosts, contentTrend } from "@/lib/sample-data-2";
-import { listingById, listingAddress } from "@/lib/sample-data";
+import { getBlogPosts, getSocialPosts, getContentTotals } from "@/server/queries";
 import { relative, shortDate } from "@/lib/utils";
 
-const statusTone = {
+const statusTone: Record<string, "neutral" | "queue" | "sent"> = {
   draft: "neutral",
   in_approval: "queue",
   published: "sent",
-} as const;
+  archived: "neutral",
+};
 
-const statusLabel = {
+const statusLabel: Record<string, string> = {
   draft: "Draft",
   in_approval: "In approval",
   published: "Published",
-} as const;
+  archived: "Archived",
+};
 
 const networkIcon = {
-  Instagram,
-  Facebook,
-  LinkedIn: Linkedin,
+  instagram: Instagram,
+  facebook: Facebook,
+  linkedin: Linkedin,
 } as const;
 
-export default function ContentPage() {
-  const published = blogPosts.filter((p) => p.status === "published");
-  const legacy = blogPosts.filter((p) => p.legacy).length;
-  const views = published.reduce((s, p) => s + p.views30d, 0);
+const networkLabel = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+} as const;
+
+export default async function ContentPage() {
+  const [blogPosts, socialPosts, totals] = await Promise.all([
+    getBlogPosts(),
+    getSocialPosts(),
+    getContentTotals(),
+  ]);
 
   return (
     <>
@@ -61,25 +70,22 @@ export default function ContentPage() {
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Published articles
           </div>
-          <div className="text-[26px] font-semibold tabular mt-1">{published.length}</div>
-          <div className="text-3 text-[11.5px]">{legacy} migrated from Wix</div>
+          <div className="text-[26px] font-semibold tabular mt-1">{totals.published}</div>
+          <div className="text-3 text-[11.5px]">{totals.legacy} migrated from Wix</div>
         </Card>
         <Card>
           <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium">
             Views, 30 days
           </div>
           <div className="text-[26px] font-semibold tabular mt-1">
-            {views.toLocaleString()}
+            {totals.views.toLocaleString()}
           </div>
         </Card>
         <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Publishing and readership</CardTitle>
-          <MultiLine
-            data={contentTrend}
-            keys={["Views"]}
-            xKey="month"
-            height={90}
-          />
+          {/* views_30d is a current rollup, not a stored series - there is no month by
+              month history to plot yet, so the panel says so rather than inventing one. */}
+          <Empty>No readership history yet</Empty>
         </Card>
       </div>
 
@@ -119,9 +125,11 @@ export default function ContentPage() {
                   /post/{p.slug}
                 </TD>
                 <TD>
-                  <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
+                  <Badge tone={statusTone[p.status] ?? "neutral"}>
+                    {statusLabel[p.status] ?? p.status}
+                  </Badge>
                 </TD>
-                <TD className="text-right tabular text-2">{p.words}</TD>
+                <TD className="text-right tabular text-2">{p.words ?? "—"}</TD>
                 <TD className="text-right tabular text-2">
                   {p.views30d ? p.views30d.toLocaleString() : "—"}
                 </TD>
@@ -155,23 +163,24 @@ export default function ContentPage() {
         <div className="grid md:grid-cols-3 gap-3">
           {socialPosts.map((s) => {
             const Icon = networkIcon[s.network];
-            const l = s.listingId ? listingById(s.listingId) : undefined;
             return (
               <Card key={s.id}>
                 <div className="flex items-center gap-2 mb-2">
                   <Icon size={14} className="text-3" />
-                  <span className="text-[12.5px] font-semibold">{s.network}</span>
-                  <Badge tone={statusTone[s.status]} className="ml-auto">
-                    {statusLabel[s.status]}
+                  <span className="text-[12.5px] font-semibold">
+                    {networkLabel[s.network]}
+                  </span>
+                  <Badge tone={statusTone[s.status] ?? "neutral"} className="ml-auto">
+                    {statusLabel[s.status] ?? s.status}
                   </Badge>
                 </div>
                 <p className="text-[12.5px] leading-relaxed">{s.body}</p>
-                {l && (
+                {s.listingId && s.address && (
                   <Link
-                    href={`/listings/${l.id}`}
+                    href={`/listings/${s.listingId}`}
                     className="text-[11.5px] text-2 hover:underline underline-offset-2 block mt-2"
                   >
-                    {listingAddress(l)}
+                    {s.address}
                   </Link>
                 )}
                 <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">

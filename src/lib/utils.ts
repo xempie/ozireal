@@ -20,23 +20,19 @@ export const moneyPrecise = (n: number) =>
     minimumFractionDigits: 2,
   }).format(n);
 
-/** Sample data is authored relative to this date so screens always look current. */
-export const TODAY = new Date("2026-08-20T09:00:00+09:30");
-
-export function daysAgo(n: number) {
-  const d = new Date(TODAY);
-  d.setDate(d.getDate() - n);
-  return d;
-}
-
-export function hoursAgo(n: number) {
-  const d = new Date(TODAY);
-  d.setHours(d.getHours() - n);
-  return d;
+/**
+ * Real wall-clock time.
+ *
+ * The prototype pinned "now" to a fixed date so its sample data always looked current.
+ * With real rows that would be a bug: every relative timestamp would drift further from
+ * the truth each day the app ran.
+ */
+function now() {
+  return new Date();
 }
 
 export function relative(date: Date) {
-  const ms = TODAY.getTime() - date.getTime();
+  const ms = now().getTime() - date.getTime();
   const mins = Math.round(ms / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;

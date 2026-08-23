@@ -1,4 +1,4 @@
-import { Scale, BookOpen, SearchX, Send } from "lucide-react";
+import { Scale, SearchX, Send } from "lucide-react";
 import {
   PageHeader,
   Section,
@@ -7,11 +7,28 @@ import {
   Badge,
   Callout,
   ProtoNote,
+  Empty,
 } from "@/components/ui";
-import { complianceExample, complianceEmptyExample, agency } from "@/lib/sample-data";
+import { getAgency } from "@/server/queries";
 
-export default function CompliancePage() {
-  const r = complianceExample.retrieval;
+export default async function CompliancePage() {
+  const agency = await getAgency();
+
+  /**
+   * The retrieval pipeline, as a shape.
+   *
+   * The steps are fixed (§7): filter by jurisdiction, then exact wording, then meaning,
+   * merge, rerank. The counts belong to a query that has been run, and there is nothing
+   * to run one against yet — the corpus is empty until D6 is signed off — so each step
+   * renders an em dash rather than a number nobody measured.
+   */
+  const retrievalSteps = [
+    `Filtered to ${agency.jurisdiction}`,
+    "Exact wording search",
+    "Meaning search",
+    "Merged",
+    "Reranked",
+  ];
 
   return (
     <>
@@ -33,12 +50,14 @@ export default function CompliancePage() {
       <Card className="mb-6">
         <div className="flex items-center gap-2 surface-3 border rounded-md px-3 py-2.5">
           <Scale size={15} className="text-3 shrink-0" />
-          <span className="text-[13px] flex-1">{complianceExample.question}</span>
+          <span className="text-3 text-[13px] flex-1">
+            Ask a question about {agency.jurisdiction} agency legislation
+          </span>
           <Send size={14} className="text-3 shrink-0" />
         </div>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
           <span className="text-3 text-[11.5px]">Jurisdiction</span>
-          <Badge tone="brand">South Australia</Badge>
+          <Badge tone="brand">{agency.jurisdiction}</Badge>
           <span className="text-3 text-[11.5px] basis-full sm:basis-auto">
             filtered before retrieval, so another state&apos;s rules cannot surface
           </span>
@@ -49,26 +68,11 @@ export default function CompliancePage() {
         <div className="lg:col-span-2 space-y-6 min-w-0">
           <Card>
             <CardTitle>Answer</CardTitle>
-            <p className="text-[13.5px] leading-relaxed whitespace-pre-wrap">
-              {complianceExample.answer}
-            </p>
+            <Empty>No answer yet — nothing has been asked.</Empty>
           </Card>
 
           <Section title="Citations" hint="mandatory on every answer">
-            <div className="space-y-2">
-              {complianceExample.citations.map((c) => (
-                <Card key={c.section} className="p-3">
-                  <div className="flex items-start gap-2.5">
-                    <BookOpen size={14} className="text-3 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium">{c.section}</div>
-                      <div className="text-2 text-[12.5px] mt-0.5">{c.instrument}</div>
-                      <div className="text-3 text-[11.5px] mt-1">{c.versionDate}</div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+            <Empty>No citations yet.</Empty>
             <ProtoNote>
               The version date is why the corpus is re-crawled monthly. A silent
               amendment to a cited section is the main way a tool like this becomes
@@ -78,9 +82,6 @@ export default function CompliancePage() {
 
           <Section title="When nothing matches" hint="the state that keeps it honest">
             <Card className="border-[#d03b3b]/35 bg-[#d03b3b]/[0.03]">
-              <div className="text-[12.5px] text-2 mb-2">
-                Asked: “{complianceEmptyExample.question}”
-              </div>
               <div className="flex items-start gap-2.5">
                 <SearchX
                   size={15}
@@ -89,9 +90,9 @@ export default function CompliancePage() {
                 <div>
                   <div className="text-[13px] font-medium">Nothing relevant found</div>
                   <p className="text-2 text-[12.5px] mt-1 leading-relaxed">
-                    The corpus holds South Australian and federal instruments only.
-                    Queensland stamp duty is outside it, so no answer is given — rather
-                    than an answer assembled from something adjacent.
+                    The corpus holds South Australian and federal instruments only. A
+                    question about Queensland stamp duty is outside it, so no answer is
+                    given — rather than an answer assembled from something adjacent.
                   </p>
                 </div>
               </div>
@@ -103,19 +104,13 @@ export default function CompliancePage() {
           <Card>
             <CardTitle>How this answer was retrieved</CardTitle>
             <ol className="space-y-2.5 text-[12.5px]">
-              {[
-                ["Filtered to South Australia", `${r.jurisdictionFiltered} chunks`],
-                ["Exact wording search", `${r.exactHits} hits`],
-                ["Meaning search", `${r.meaningHits} hits`],
-                ["Merged", `${r.afterMerge} unique`],
-                ["Reranked", `${r.afterRerank} passed to the model`],
-              ].map(([label, value], i) => (
+              {retrievalSteps.map((label, i) => (
                 <li key={label} className="flex items-baseline gap-2.5">
                   <span className="h-4 w-4 rounded-full surface-3 border grid place-items-center text-[10px] font-semibold shrink-0 tabular">
                     {i + 1}
                   </span>
                   <span className="flex-1">{label}</span>
-                  <span className="text-3 tabular text-[12px]">{value}</span>
+                  <span className="text-3 tabular text-[12px]">—</span>
                 </li>
               ))}
             </ol>

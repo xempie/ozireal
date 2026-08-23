@@ -35,7 +35,20 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { counts, agency, contacts, listings, listingAddress } from "@/lib/sample-data";
+
+/**
+ * Everything the shell renders arrives as props from the layout. A "use client"
+ * component cannot open a database connection, and passing it down means the counts
+ * are read once per request rather than once per widget.
+ */
+export type ShellData = {
+  agencyName: string;
+  userName: string;
+  userRole: string;
+  licence: string | null;
+  counts: { approvals: number; confirms: number; merges: number; tasksOpen: number };
+  searchItems: { label: string; sub: string; href: string }[];
+};
 
 type Item = {
   href: string;
@@ -45,7 +58,8 @@ type Item = {
   badgeTone?: "queue" | "plain";
 };
 
-const groups: { label: string; items: Item[] }[] = [
+function buildGroups(counts: ShellData["counts"]): { label: string; items: Item[] }[] {
+  return [
   {
     label: "Today",
     items: [
@@ -99,22 +113,22 @@ const groups: { label: string; items: Item[] }[] = [
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
-];
-
-export const allNavItems = groups.flatMap((g) =>
-  g.items.map((i) => ({ ...i, group: g.label })),
-);
+  ];
+}
 
 /* ------------------------------------------------------------- nav content */
 
 function NavList({
   collapsed,
   onNavigate,
+  counts,
 }: {
   collapsed: boolean;
   onNavigate?: () => void;
+  counts: ShellData["counts"];
 }) {
   const pathname = usePathname();
+  const groups = buildGroups(counts);
   return (
     <nav className="flex-1 overflow-y-auto py-3 px-2">
       {groups.map((g) => (
@@ -170,12 +184,12 @@ function NavList({
   );
 }
 
-function UserFooter() {
+function UserFooter({ data }: { data: ShellData }) {
   return (
     <div className="border-t p-3 shrink-0">
-      <div className="text-[12.5px] font-medium truncate">{agency.user.name}</div>
+      <div className="text-[12.5px] font-medium truncate">{data.userName}</div>
       <div className="text-3 text-[11.5px] truncate">
-        {agency.user.role} · {agency.licence}
+        {data.userRole} · {data.licence}
       </div>
     </div>
   );
@@ -186,9 +200,11 @@ function UserFooter() {
 function DesktopSidebar({
   collapsed,
   onToggle,
+  data,
 }: {
   collapsed: boolean;
   onToggle: () => void;
+  data: ShellData;
 }) {
   return (
     <aside
@@ -203,7 +219,7 @@ function DesktopSidebar({
             O
           </span>
           {!collapsed && (
-            <span className="font-semibold text-[14px] truncate">{agency.name}</span>
+            <span className="font-semibold text-[14px] truncate">{data.agencyName}</span>
           )}
         </Link>
         {!collapsed && (
@@ -227,8 +243,8 @@ function DesktopSidebar({
         </button>
       )}
 
-      <NavList collapsed={collapsed} />
-      {!collapsed && <UserFooter />}
+      <NavList collapsed={collapsed} counts={data.counts} />
+      {!collapsed && <UserFooter data={data} />}
     </aside>
   );
 }
@@ -238,8 +254,10 @@ function DesktopSidebar({
 function MobileDrawer({
   open,
   onClose,
+  data,
 }: {
   open: boolean;
+  data: ShellData;
   onClose: () => void;
 }) {
   // Escape closes it, and the body must not scroll behind the overlay.
@@ -282,7 +300,7 @@ function MobileDrawer({
             <span className="h-6 w-6 rounded bg-[var(--accent)] text-white grid place-items-center text-[12px] font-bold shrink-0">
               O
             </span>
-            <span className="font-semibold text-[14px] truncate">{agency.name}</span>
+            <span className="font-semibold text-[14px] truncate">{data.agencyName}</span>
           </Link>
           <button
             onClick={onClose}
@@ -292,8 +310,8 @@ function MobileDrawer({
             <X size={18} />
           </button>
         </div>
-        <NavList collapsed={false} onNavigate={onClose} />
-        <UserFooter />
+        <NavList collapsed={false} onNavigate={onClose} counts={data.counts} />
+        <UserFooter data={data} />
       </aside>
     </>
   );
@@ -335,30 +353,27 @@ function ThemeToggle() {
 
 type Cmd = { label: string; sub: string; href: string };
 
-function useCommands(): Cmd[] {
+/** Nav destinations, plus the contacts and listings the layout looked up. */
+function useCommands(data: ShellData): Cmd[] {
   return React.useMemo(() => {
-    const nav = allNavItems.map((i) => ({
-      label: i.label,
-      sub: i.group,
-      href: i.href,
-    }));
-    const people = contacts.map((c) => ({
-      label: `${c.firstName} ${c.lastName}`,
-      sub: `Contact · ${c.suburb}`,
-      href: `/contacts/${c.id}`,
-    }));
-    const stock = listings.map((l) => ({
-      label: listingAddress(l),
-      sub: `Listing · ${l.status}`,
-      href: `/listings/${l.id}`,
-    }));
-    return [...nav, ...people, ...stock];
-  }, []);
+    const nav = buildGroups(data.counts).flatMap((g) =>
+      g.items.map((i) => ({ label: i.label, sub: g.label, href: i.href })),
+    );
+    return [...nav, ...data.searchItems];
+  }, [data]);
 }
 
-function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+function CommandPalette({
+  open,
+  onClose,
+  data,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: ShellData;
+}) {
   const router = useRouter();
-  const commands = useCommands();
+  const commands = useCommands(data);
   const [q, setQ] = React.useState("");
   const [sel, setSel] = React.useState(0);
 
@@ -458,7 +473,7 @@ function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void 
 
 /* ---------------------------------------------------------------- top bar */
 
-function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
+function TopBar({ onOpenMenu, data }: { onOpenMenu: () => void; data: ShellData }) {
   const [open, setOpen] = React.useState(false);
   const router = useRouter();
 
@@ -518,14 +533,20 @@ function TopBar({ onOpenMenu }: { onOpenMenu: () => void }) {
         </div>
       </header>
 
-      <CommandPalette open={open} onClose={() => setOpen(false)} />
+      <CommandPalette open={open} onClose={() => setOpen(false)} data={data} />
     </>
   );
 }
 
 /* ----------------------------------------------------------------- shell */
 
-export function ConsoleShell({ children }: { children: React.ReactNode }) {
+export function ConsoleShell({
+  children,
+  data,
+}: {
+  children: React.ReactNode;
+  data: ShellData;
+}) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const pathname = usePathname();
@@ -535,10 +556,10 @@ export function ConsoleShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <DesktopSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-      <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
+      <DesktopSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} data={data} />
+      <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} data={data} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar onOpenMenu={() => setMenuOpen(true)} />
+        <TopBar onOpenMenu={() => setMenuOpen(true)} data={data} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 w-full max-w-[1500px] min-w-0">
           {children}
         </main>

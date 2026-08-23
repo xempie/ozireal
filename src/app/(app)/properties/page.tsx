@@ -11,14 +11,12 @@ import {
   TR,
   ProtoNote,
 } from "@/components/ui";
-import {
-  properties,
-  listingsForProperty,
-  contactById,
-  statusLabel,
-} from "@/lib/sample-data";
+import { getProperties } from "@/server/queries";
+import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 
-export default function PropertiesPage() {
+export default async function PropertiesPage() {
+  const properties = await getProperties();
+
   return (
     <>
       <PageHeader
@@ -46,8 +44,7 @@ export default function PropertiesPage() {
         </THead>
         <tbody>
           {properties.map((p) => {
-            const ls = listingsForProperty(p.id);
-            const owner = contactById(p.ownerContactId);
+            const ls = p.listings;
             return (
               <TR key={p.id}>
                 <TD nowrap>
@@ -58,23 +55,23 @@ export default function PropertiesPage() {
                     {p.address}
                   </Link>
                   <div className="text-3 text-[12px]">
-                    {p.suburb} {p.state} {p.postcode}
+                    {[p.suburb, p.state, p.postcode].filter(Boolean).join(" ")}
                   </div>
                 </TD>
-                <TD className="text-2">{p.type}</TD>
+                <TD className="text-2">{propertyTypeLabel[p.type] ?? p.type}</TD>
                 <TD className="tabular whitespace-nowrap text-2">
-                  {p.beds} bed · {p.baths} bath · {p.parking} car
+                  {p.beds ?? "—"} bed · {p.baths ?? "—"} bath · {p.parking ?? "—"} car
                 </TD>
                 <TD nowrap className="tabular text-2">
-                  {p.landSqm > 0 ? `${p.landSqm} m²` : "—"}
+                  {p.landSqm && p.landSqm > 0 ? `${p.landSqm} m²` : "—"}
                 </TD>
                 <TD>
-                  {owner ? (
+                  {p.ownerContactId && p.ownerName ? (
                     <Link
-                      href={`/contacts/${owner.id}`}
+                      href={`/contacts/${p.ownerContactId}`}
                       className="hover:underline underline-offset-2 text-2"
                     >
-                      {owner.firstName} {owner.lastName}
+                      {p.ownerName}
                     </Link>
                   ) : (
                     <span className="text-3">—</span>
@@ -93,7 +90,7 @@ export default function PropertiesPage() {
                               : "neutral"
                         }
                       >
-                        {statusLabel[l.status]}
+                        {statusLabel[l.status] ?? l.status}
                       </Badge>
                     ))}
                     {ls.length === 0 && <span className="text-3">never listed</span>}
@@ -114,6 +111,10 @@ export default function PropertiesPage() {
           })}
         </tbody>
       </Table>
+
+      {properties.length === 0 && (
+        <div className="text-3 text-[13px] mt-3">No properties yet.</div>
+      )}
 
       <ProtoNote>
         Coordinates are empty across the board because no geocoding provider is

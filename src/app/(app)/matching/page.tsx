@@ -10,15 +10,7 @@ import {
   ProtoNote,
   Callout,
 } from "@/components/ui";
-import {
-  listings,
-  listingAddress,
-  matchesForListing,
-  contactById,
-  contacts,
-  matchesForContact,
-  listingById,
-} from "@/lib/sample-data";
+import { getAllMatches, getContact, getContacts, getListings } from "@/server/queries";
 
 const stages = [
   {
@@ -50,13 +42,35 @@ const stages = [
   },
 ];
 
-export default function MatchingPage() {
-  const liveListings = listings.filter(
+export default async function MatchingPage() {
+  /**
+   * One read of every match, grouped in memory for both directions. A query per
+   * listing and a query per contact would be the N+1 the prototype's synchronous
+   * helpers hid.
+   */
+  const [allListings, allMatches, contactRows] = await Promise.all([
+    getListings(),
+    getAllMatches(),
+    getContacts(),
+  ]);
+
+  // getAllMatches is ordered by score descending, so each group keeps that order.
+  const matchesForListing = (listingId: string) =>
+    allMatches.filter((m) => m.listingId === listingId);
+  const matchesForContact = (contactId: string) =>
+    allMatches.filter((m) => m.contactId === contactId);
+
+  const liveListings = allListings.filter(
     (l) => l.status === "live" || l.status === "draft",
   );
-  const activeBuyers = contacts.filter(
-    (c) => c.preferences && matchesForContact(c.id).length > 0,
-  );
+
+  // Soft requirements and the budget band only come back on the detail read.
+  const matched = new Set(allMatches.map((m) => m.contactId));
+  const activeBuyers = (
+    await Promise.all(
+      contactRows.filter((c) => matched.has(c.id)).map((c) => getContact(c.id)),
+    )
+  ).flatMap((c) => (c && c.preferences ? [c] : []));
 
   return (
     <>
@@ -113,36 +127,32 @@ export default function MatchingPage() {
                       href={`/listings/${l.id}`}
                       className="font-medium text-[13px] hover:underline underline-offset-2"
                     >
-                      {listingAddress(l)}
+                      {l.address}
                     </Link>
                     <span className="text-3 text-[12px] ml-auto">
                       {l.priceDisplay || "no price"}
                     </span>
                   </div>
                   <div className="space-y-2.5">
-                    {ms.map((m) => {
-                      const c = contactById(m.contactId);
-                      if (!c) return null;
-                      return (
-                        <div
-                          key={m.contactId}
-                          className="border-l-2 pl-3 border-[var(--line-strong)]"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <Link
-                              href={`/contacts/${c.id}`}
-                              className="text-[12.5px] font-medium hover:underline underline-offset-2"
-                            >
-                              {c.firstName} {c.lastName}
-                            </Link>
-                            <ScoreBar value={m.score} />
-                          </div>
-                          <p className="text-2 text-[12px] mt-1 leading-relaxed">
-                            {m.reason}
-                          </p>
+                    {ms.map((m) => (
+                      <div
+                        key={m.contactId}
+                        className="border-l-2 pl-3 border-[var(--line-strong)]"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <Link
+                            href={`/contacts/${m.contactId}`}
+                            className="text-[12.5px] font-medium hover:underline underline-offset-2"
+                          >
+                            {m.contactFirstName} {m.contactLastName}
+                          </Link>
+                          <ScoreBar value={m.score} />
                         </div>
-                      );
-                    })}
+                        <p className="text-2 text-[12px] mt-1 leading-relaxed">
+                          {m.reason}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </Card>
               );
@@ -164,41 +174,37 @@ export default function MatchingPage() {
                     >
                       {c.firstName} {c.lastName}
                     </Link>
-                    {c.intent && (
+                    {c.intent?.budgetBand && (
                       <span className="text-3 text-[12px] ml-auto">
                         {c.intent.budgetBand}
                       </span>
                     )}
                   </div>
-                  {c.preferences && (
+                  {c.preferences?.softRequirements && (
                     <p className="text-3 text-[11.5px] italic mb-2.5 leading-relaxed">
                       “{c.preferences.softRequirements}”
                     </p>
                   )}
                   <div className="space-y-2.5">
-                    {ms.map((m) => {
-                      const l = listingById(m.listingId);
-                      if (!l) return null;
-                      return (
-                        <div
-                          key={m.listingId}
-                          className="border-l-2 pl-3 border-[var(--line-strong)]"
-                        >
-                          <div className="flex items-center justify-between gap-3">
-                            <Link
-                              href={`/listings/${l.id}`}
-                              className="text-[12.5px] font-medium hover:underline underline-offset-2"
-                            >
-                              {listingAddress(l)}
-                            </Link>
-                            <ScoreBar value={m.score} />
-                          </div>
-                          <p className="text-2 text-[12px] mt-1 leading-relaxed">
-                            {m.reason}
-                          </p>
+                    {ms.map((m) => (
+                      <div
+                        key={m.listingId}
+                        className="border-l-2 pl-3 border-[var(--line-strong)]"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <Link
+                            href={`/listings/${m.listingId}`}
+                            className="text-[12.5px] font-medium hover:underline underline-offset-2"
+                          >
+                            {m.address}
+                          </Link>
+                          <ScoreBar value={m.score} />
                         </div>
-                      );
-                    })}
+                        <p className="text-2 text-[12px] mt-1 leading-relaxed">
+                          {m.reason}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </Card>
               );

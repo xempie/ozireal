@@ -10,19 +10,18 @@ import {
   Empty,
   ProtoNote,
 } from "@/components/ui";
-import {
-  approvals,
-  approvalKindLabel,
-  contactName,
-  listingById,
-  listingAddress,
-  type ApprovalItem,
-} from "@/lib/sample-data";
+import { getApprovals } from "@/server/queries";
+import { approvalKindLabel } from "@/lib/labels";
 import { relative, moneyPrecise } from "@/lib/utils";
 
+type ApprovalItem = Awaited<ReturnType<typeof getApprovals>>[number];
+
 function ConsentPill({ item }: { item: ApprovalItem }) {
-  if (!item.contactId) return null;
-  const changed = item.consentAtDraft !== item.consentNow;
+  // No contact means no consent to show - a social post or an article has no recipient.
+  if (!item.contactId || !item.consentNow) return null;
+  // Only a recorded draft-time value can have changed; a missing one is not a change.
+  const changed =
+    item.consentAtDraft !== null && item.consentAtDraft !== item.consentNow;
   return (
     <span className="inline-flex items-center gap-1.5">
       <Badge tone={item.consentNow === "granted" ? "sent" : "blocked"}>
@@ -39,7 +38,6 @@ function ConsentPill({ item }: { item: ApprovalItem }) {
 }
 
 function DraftCard({ item }: { item: ApprovalItem }) {
-  const listing = item.listingId ? listingById(item.listingId) : undefined;
   return (
     <Card
       className={
@@ -52,9 +50,11 @@ function DraftCard({ item }: { item: ApprovalItem }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Badge tone={item.kind === "sms" ? "channel" : "brand"}>
-              {approvalKindLabel[item.kind]}
+              {approvalKindLabel[item.kind] ?? item.kind}
             </Badge>
-            <span className="font-medium text-[13px]">{item.subject}</span>
+            <span className="font-medium text-[13px]">
+              {item.subject ?? "No subject"}
+            </span>
           </div>
           <div className="text-3 text-[12px] mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             {/* Built as a list so a missing contact never leaves a dangling separator. */}
@@ -65,25 +65,27 @@ function DraftCard({ item }: { item: ApprovalItem }) {
                   href={`/contacts/${item.contactId}`}
                   className="hover:underline underline-offset-2"
                 >
-                  {contactName(item.contactId)}
+                  {item.contactName ?? "Unknown"}
                 </Link>
               ) : null,
-              listing ? (
+              item.listingId ? (
                 <Link
                   key="listing"
-                  href={`/listings/${listing.id}`}
+                  href={`/listings/${item.listingId}`}
                   className="hover:underline underline-offset-2"
                 >
-                  {listingAddress(listing)}
+                  {item.address}
                 </Link>
               ) : null,
               <span key="drafted" className="inline-flex items-center gap-1">
                 <Clock size={10} />
                 drafted {relative(item.createdAt)}
               </span>,
-              <span key="cost">
-                {item.model} · {moneyPrecise(item.costAud)}
-              </span>,
+              item.model ? (
+                <span key="cost">
+                  {item.model} · {moneyPrecise(item.costAud)}
+                </span>
+              ) : null,
             ]
               .filter(Boolean)
               .map((node, i, arr) => (
@@ -112,10 +114,15 @@ function DraftCard({ item }: { item: ApprovalItem }) {
       {item.rejectReason && (
         <div className="mt-3 text-[12.5px] text-2">
           <span className="font-medium">Rejected:</span> {item.rejectReason}
-          <span className="text-3">
-            {" "}
-            — {item.reviewedBy}, {relative(item.reviewedAt!)}
-          </span>
+          {(item.reviewedBy || item.reviewedAt) && (
+            <span className="text-3">
+              {" "}
+              —{" "}
+              {[item.reviewedBy, item.reviewedAt ? relative(item.reviewedAt) : null]
+                .filter(Boolean)
+                .join(", ")}
+            </span>
+          )}
         </div>
       )}
 
@@ -139,11 +146,14 @@ function DraftCard({ item }: { item: ApprovalItem }) {
   );
 }
 
-export default function ApprovalsPage() {
+export default async function ApprovalsPage() {
+  const approvals = await getApprovals();
+
   const pending = approvals.filter((a) => a.status === "pending");
   const blocked = approvals.filter((a) => a.status === "blocked");
+  // "approved" is a decision too - leaving it out would drop the row from every section.
   const history = approvals.filter(
-    (a) => a.status === "sent" || a.status === "rejected",
+    (a) => a.status === "approved" || a.status === "sent" || a.status === "rejected",
   );
 
   return (
@@ -184,11 +194,15 @@ export default function ApprovalsPage() {
       </Section>
 
       <Section title="Recent decisions">
-        <div className="space-y-3">
-          {history.map((a) => (
-            <DraftCard key={a.id} item={a} />
-          ))}
-        </div>
+        {history.length === 0 ? (
+          <Empty>No decisions yet.</Empty>
+        ) : (
+          <div className="space-y-3">
+            {history.map((a) => (
+              <DraftCard key={a.id} item={a} />
+            ))}
+          </div>
+        )}
         <ProtoNote>
           Every decision is kept with who made it and when. The audit trail is what makes
           a send defensible after the fact.

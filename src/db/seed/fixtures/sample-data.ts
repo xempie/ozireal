@@ -10,7 +10,7 @@
  * ones currently on ozirealty.com.au, so the migration screens show real targets.
  */
 
-import { daysAgo, hoursAgo } from "./utils";
+import { daysAgo, hoursAgo } from "./clock";
 
 /* ------------------------------------------------------------------ types */
 

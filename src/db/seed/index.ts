@@ -1,9 +1,10 @@
 /**
- * Seed the database from the prototype's sample data.
+ * Seed the database from the prototype's fixtures.
  *
- * This imports the SAME modules the console renders from, so the database and the UI
- * cannot drift: if a field exists on screen it has to land in a column here, and
- * anything that will not fit is a schema gap rather than a seeding detail.
+ * These fixtures WERE the console's data source. Now that every screen reads from the
+ * database they live here, as seed input only - which is why they moved out of
+ * src/lib: nothing in the application imports them any more, and a grep for
+ * "sample-data" under src/app returning nothing is what proves the conversion is real.
  *
  *   pnpm db:seed
  *
@@ -15,8 +16,8 @@ import "dotenv/config";
 import postgres from "postgres";
 import { randomUUID } from "node:crypto";
 
-import * as S from "../../lib/sample-data";
-import * as S2 from "../../lib/sample-data-2";
+import * as S from "./fixtures/sample-data";
+import * as S2 from "./fixtures/sample-data-2";
 
 const url =
   process.env.DATABASE_URL ?? "postgres://ozirealty@127.0.0.1:5433/ozirealty";

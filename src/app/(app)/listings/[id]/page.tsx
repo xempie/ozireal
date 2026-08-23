@@ -23,20 +23,14 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import {
-  listings,
-  listingById,
-  propertyById,
-  listingAddress,
-  statusLabel,
-  matchesForListing,
-  contactById,
-  inspections,
-} from "@/lib/sample-data";
+  getListing,
+  getProperty,
+  getMatchesForListing,
+  getInspections,
+  getContact,
+} from "@/server/queries";
+import { statusLabel } from "@/lib/labels";
 import { money, shortDate, timeOfDay, relative } from "@/lib/utils";
-
-export function generateStaticParams() {
-  return listings.map((l) => ({ id: l.id }));
-}
 
 export default async function ListingDetail({
   params,
@@ -44,21 +38,49 @@ export default async function ListingDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const l = listingById(id);
+  const l = await getListing(id);
   if (!l) notFound();
-  const p = propertyById(l.propertyId);
-  const listingMatches = matchesForListing(l.id);
-  const insp = inspections.filter((i) => i.listingId === l.id);
+  const p = await getProperty(l.propertyId);
+  const listingMatches = await getMatchesForListing(l.id);
+  const insp = (await getInspections()).filter((i) => i.listingId === l.id);
+
+  /**
+   * Consent state is not carried on the match row, so it is read per matched contact.
+   * getContact returns every consent row newest first, so the first row for a channel
+   * is the current state.
+   */
+  const matchContacts = new Map(
+    (await Promise.all(listingMatches.map((m) => getContact(m.contactId))))
+      .filter((c) => c !== null)
+      .map((c) => [c.id, c] as const),
+  );
+
+  const subtitle = [
+    l.type === "rent" ? "Rental" : "Sale",
+    l.method,
+    `listed ${shortDate(l.listedAt)}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const searchRange =
+    l.type === "rent"
+      ? l.searchMin !== null
+        ? `$${l.searchMin}/wk`
+        : "Not set"
+      : l.searchMin !== null && l.searchMax !== null
+        ? `${money(l.searchMin)} – ${money(l.searchMax)}`
+        : "Not set";
 
   return (
     <>
       <PageHeader
-        title={listingAddress(l)}
-        subtitle={`${l.type === "rent" ? "Rental" : "Sale"} · ${l.method} · listed ${shortDate(l.listedAt)}`}
+        title={l.address}
+        subtitle={subtitle}
         actions={
           <>
             <Badge tone={l.status === "live" ? "stock" : "queue"}>
-              {statusLabel[l.status]}
+              {statusLabel[l.status] ?? l.status}
             </Badge>
             {l.status === "draft" ? (
               <Button variant="primary">Publish</Button>
@@ -118,11 +140,7 @@ export default async function ListingDetail({
                 <div className="text-3 text-[11px] uppercase tracking-[0.05em] font-medium mb-1">
                   Hidden search range
                 </div>
-                <div className="text-[13px] tabular text-2">
-                  {l.type === "rent"
-                    ? `$${l.searchMin}/wk`
-                    : `${money(l.searchMin)} – ${money(l.searchMax)}`}
-                </div>
+                <div className="text-[13px] tabular text-2">{searchRange}</div>
                 <div className="text-3 text-[11.5px] mt-0.5">
                   Drives filters only. Never displayed.
                 </div>
@@ -142,25 +160,27 @@ export default async function ListingDetail({
             ) : (
               <div className="space-y-2">
                 {listingMatches.map((m) => {
-                  const c = contactById(m.contactId);
-                  if (!c) return null;
-                  const emailOk =
-                    c.consents.find((x) => x.channel === "email")?.status === "granted";
+                  const c = matchContacts.get(m.contactId);
+                  const emailConsent = c?.consents.find(
+                    (x) => x.channel === "email",
+                  )?.status;
                   return (
                     <Card key={m.contactId} className="p-3">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
                           <Link
-                            href={`/contacts/${c.id}`}
+                            href={`/contacts/${m.contactId}`}
                             className="font-medium text-[13px] hover:underline underline-offset-2"
                           >
-                            {c.firstName} {c.lastName}
+                            {m.contactFirstName} {m.contactLastName}
                           </Link>
                           <div className="flex items-center gap-1.5 mt-1">
                             <Badge tone={m.stage === "ranked" ? "ai" : "neutral"}>
                               {m.stage === "ranked" ? "AI ranked" : "similarity only"}
                             </Badge>
-                            {!emailOk && <Badge tone="blocked">no email consent</Badge>}
+                            {emailConsent !== "granted" && (
+                              <Badge tone="blocked">no email consent</Badge>
+                            )}
                           </div>
                         </div>
                         <ScoreBar value={m.score} />
@@ -263,18 +283,21 @@ export default async function ListingDetail({
               <KeyValue
                 cols={1}
                 items={[
-                  ["Price expectation", p.internalPriceExpectation],
-                  ["Notes", p.internalNotes],
+                  ["Price expectation", p.internalPriceExpectation ?? "—"],
+                  ["Notes", p.internalNotes ?? "—"],
                   [
                     "Owner",
-                    <Link
-                      key="o"
-                      href={`/contacts/${p.ownerContactId}`}
-                      className="underline underline-offset-2"
-                    >
-                      {contactById(p.ownerContactId)?.firstName}{" "}
-                      {contactById(p.ownerContactId)?.lastName}
-                    </Link>,
+                    p.ownerContactId && p.ownerName ? (
+                      <Link
+                        key="o"
+                        href={`/contacts/${p.ownerContactId}`}
+                        className="underline underline-offset-2"
+                      >
+                        {p.ownerName}
+                      </Link>
+                    ) : (
+                      "—"
+                    ),
                   ],
                 ]}
               />
@@ -295,10 +318,13 @@ export default async function ListingDetail({
                 href={`/properties/${p.id}`}
                 className="text-[13px] font-medium hover:underline underline-offset-2"
               >
-                {p.address}, {p.suburb} {p.postcode}
+                {[p.address, [p.suburb, p.postcode].filter(Boolean).join(" ")]
+                  .filter(Boolean)
+                  .join(", ")}
               </Link>
               <div className="text-3 text-[12px] mt-1">
-                {p.beds} bed · {p.baths} bath · {p.parking} car · {p.landSqm}m²
+                {p.beds ?? "—"} bed · {p.baths ?? "—"} bath · {p.parking ?? "—"} car ·{" "}
+                {p.landSqm ? `${p.landSqm}m²` : "—"}
               </div>
             </Card>
           )}

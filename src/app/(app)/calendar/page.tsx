@@ -10,9 +10,8 @@ import {
   Callout,
   ProtoNote,
 } from "@/components/ui";
-import { calendarEvents, syncState } from "@/lib/sample-data-2";
-import { contactName, listingById, listingAddress } from "@/lib/sample-data";
-import { relative, timeOfDay, TODAY } from "@/lib/utils";
+import { getCalendarEvents } from "@/server/queries";
+import { timeOfDay } from "@/lib/utils";
 
 const kindTone = {
   inspection: "stock",
@@ -24,10 +23,14 @@ const kindTone = {
 
 const DAY_MS = 86400000;
 
-export default function CalendarPage() {
+export default async function CalendarPage() {
+  const calendarEvents = await getCalendarEvents();
+
   // Seven day columns starting today.
+  const today0 = new Date();
+  today0.setHours(0, 0, 0, 0);
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(TODAY.getTime() + i * DAY_MS);
+    const d = new Date(today0.getTime() + i * DAY_MS);
     d.setHours(0, 0, 0, 0);
     return d;
   });
@@ -59,23 +62,21 @@ export default function CalendarPage() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         {(["google", "outlook"] as const).map((p) => {
-          const s = syncState[p];
+          // Connection state, last sync and direction are not recorded yet, so the
+          // only honest figure here is how many events we actually hold from them.
+          const events = calendarEvents.filter((e) => e.provider === p).length;
           return (
             <Card key={p}>
               <div className="flex items-center gap-2">
                 <span className="text-[13px] font-semibold capitalize">{p}</span>
-                <Badge tone={s.connected ? "sent" : "blocked"}>
-                  {s.connected ? "connected" : "disconnected"}
-                </Badge>
+                <Badge tone="neutral">no sync data</Badge>
               </div>
               <div className="text-3 text-[11.5px] mt-1.5 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <RefreshCw size={10} />
-                  synced {relative(s.lastSync)}
+                  no sync recorded
                 </div>
-                <div>
-                  {s.events} events · {s.direction}
-                </div>
+                <div>{events} events</div>
               </div>
             </Card>
           );
@@ -118,50 +119,49 @@ export default function CalendarPage() {
                   {evs.length === 0 && (
                     <div className="text-3 text-[11.5px] py-2">—</div>
                   )}
-                  {evs.map((e) => {
-                    const l = e.listingId ? listingById(e.listingId) : undefined;
-                    return (
-                      <div
-                        key={e.id}
-                        className="surface-2 border rounded-md p-2 text-[12px]"
-                      >
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <span className="tabular text-3 text-[11px]">
-                            {timeOfDay(e.startsAt)}
+                  {evs.map((e) => (
+                    <div
+                      key={e.id}
+                      className="surface-2 border rounded-md p-2 text-[12px]"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className="tabular text-3 text-[11px]">
+                          {timeOfDay(e.startsAt)}
+                        </span>
+                        {!e.ourWrite && (
+                          <span title="External event — we never edit this">
+                            <Lock size={9} className="text-3" />
                           </span>
-                          {!e.ourWrite && (
-                            <span title="External event — we never edit this">
-                              <Lock size={9} className="text-3" />
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-medium leading-snug">{e.title}</div>
+                        )}
+                      </div>
+                      <div className="font-medium leading-snug">{e.title}</div>
+                      {e.kind && (
                         <div className="flex flex-wrap gap-1 mt-1.5">
                           <Badge tone={kindTone[e.kind]}>{e.kind}</Badge>
                         </div>
-                        {(l || e.contactId) && (
-                          <div className="mt-1.5 text-[11px]">
-                            {l && (
-                              <Link
-                                href={`/listings/${l.id}`}
-                                className="text-2 hover:underline underline-offset-2 block truncate"
-                              >
-                                {listingAddress(l)}
-                              </Link>
-                            )}
-                            {e.contactId && (
-                              <Link
-                                href={`/contacts/${e.contactId}`}
-                                className="text-2 hover:underline underline-offset-2 block truncate"
-                              >
-                                {contactName(e.contactId)}
-                              </Link>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                      )}
+                      {(e.listingId || e.contactId) && (
+                        <div className="mt-1.5 text-[11px]">
+                          {e.listingId && (
+                            <Link
+                              href={`/listings/${e.listingId}`}
+                              className="text-2 hover:underline underline-offset-2 block truncate"
+                            >
+                              {e.address}
+                            </Link>
+                          )}
+                          {e.contactId && (
+                            <Link
+                              href={`/contacts/${e.contactId}`}
+                              className="text-2 hover:underline underline-offset-2 block truncate"
+                            >
+                              {e.contactName ?? "Unnamed contact"}
+                            </Link>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             );

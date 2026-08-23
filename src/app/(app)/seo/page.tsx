@@ -15,10 +15,10 @@ import {
   Badge,
   Button,
   Callout,
+  Empty,
   ProtoNote,
 } from "@/components/ui";
-import { MultiLine } from "@/components/charts";
-import { seoIssues, seoTrend } from "@/lib/sample-data-2";
+import { getSeoIssues } from "@/server/queries";
 
 const sev = {
   critical: {
@@ -38,9 +38,10 @@ const sev = {
   },
 };
 
-export default function SeoPage() {
+export default async function SeoPage() {
+  const seoIssues = await getSeoIssues();
   const critical = seoIssues.filter((i) => i.severity === "critical").length;
-  const affected = seoIssues.reduce((s, i) => s + i.affected, 0);
+  const affected = seoIssues.reduce((s, i) => s + (i.affected ?? 0), 0);
 
   return (
     <>
@@ -73,12 +74,9 @@ export default function SeoPage() {
         </Card>
         <Card className="sm:col-span-2 lg:col-span-2">
           <CardTitle>Search impressions and clicks</CardTitle>
-          <MultiLine
-            data={seoTrend}
-            keys={["Impressions", "Clicks"]}
-            xKey="month"
-            height={96}
-          />
+          {/* Search Console is not connected yet, so there are no impressions or clicks
+              to plot. An invented curve here would be indistinguishable from a real one. */}
+          <Empty>No search data yet</Empty>
         </Card>
       </div>
 
@@ -90,7 +88,7 @@ export default function SeoPage() {
         </Callout>
       </div>
 
-      <Section title="Change set" hint="from the crawl on 18 August">
+      <Section title="Change set" hint="open findings from the latest crawl">
         <div className="space-y-3">
           {seoIssues.map((issue) => {
             const s = sev[issue.severity];

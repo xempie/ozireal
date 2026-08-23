@@ -15,18 +15,9 @@ import {
   TR,
   ProtoNote,
 } from "@/components/ui";
-import {
-  properties,
-  propertyById,
-  listingsForProperty,
-  contactById,
-  statusLabel,
-} from "@/lib/sample-data";
-import { shortDate, money } from "@/lib/utils";
-
-export function generateStaticParams() {
-  return properties.map((p) => ({ id: p.id }));
-}
+import { getProperty, getListingsForProperty, getContact } from "@/server/queries";
+import { statusLabel, propertyTypeLabel } from "@/lib/labels";
+import { shortDate } from "@/lib/utils";
 
 export default async function PropertyDetail({
   params,
@@ -34,17 +25,24 @@ export default async function PropertyDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const p = propertyById(id);
+  const p = await getProperty(id);
   if (!p) notFound();
-  const history = listingsForProperty(p.id);
-  const owner = contactById(p.ownerContactId);
+  const history = await getListingsForProperty(p.id);
+  const owner = p.ownerContactId ? await getContact(p.ownerContactId) : null;
+
+  const locality = [p.suburb, p.state, p.postcode].filter(Boolean).join(" ");
+  const subtitle = [
+    locality,
+    propertyTypeLabel[p.type] ?? p.type,
+    p.yearBuilt ? `built ${p.yearBuilt}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  const features = p.features ?? [];
 
   return (
     <>
-      <PageHeader
-        title={p.address}
-        subtitle={`${p.suburb} ${p.state} ${p.postcode} · ${p.type} · built ${p.yearBuilt}`}
-      />
+      <PageHeader title={p.address} subtitle={subtitle} />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -53,13 +51,13 @@ export default async function PropertyDetail({
             <KeyValue
               cols={3}
               items={[
-                ["Bedrooms", p.beds],
-                ["Bathrooms", p.baths],
-                ["Parking", p.parking],
-                ["Land area", p.landSqm > 0 ? `${p.landSqm} m²` : "—"],
-                ["Floor area", `${p.floorSqm} m²`],
-                ["Year built", p.yearBuilt],
-                ["Condition", p.condition],
+                ["Bedrooms", p.beds ?? "—"],
+                ["Bathrooms", p.baths ?? "—"],
+                ["Parking", p.parking ?? "—"],
+                ["Land area", p.landSqm && p.landSqm > 0 ? `${p.landSqm} m²` : "—"],
+                ["Floor area", p.floorSqm ? `${p.floorSqm} m²` : "—"],
+                ["Year built", p.yearBuilt ?? "—"],
+                ["Condition", p.condition ?? "—"],
               ]}
             />
             <div className="mt-3 pt-3 border-t">
@@ -67,11 +65,14 @@ export default async function PropertyDetail({
                 Features
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {p.features.map((f) => (
+                {features.map((f) => (
                   <Badge key={f} tone="stock">
                     {f}
                   </Badge>
                 ))}
+                {features.length === 0 && (
+                  <span className="text-3 text-[12px]">None recorded</span>
+                )}
               </div>
             </div>
           </Card>
@@ -110,7 +111,7 @@ export default async function PropertyDetail({
                               : "neutral"
                         }
                       >
-                        {statusLabel[l.status]}
+                        {statusLabel[l.status] ?? l.status}
                       </Badge>
                     </TD>
                     <TD className="text-2">{l.priceDisplay || "—"}</TD>
@@ -120,6 +121,11 @@ export default async function PropertyDetail({
                     <TD className="text-2">{l.resultDisplay || "—"}</TD>
                   </TR>
                 ))}
+                {history.length === 0 && (
+                  <TR>
+                    <TD className="text-3">Never listed.</TD>
+                  </TR>
+                )}
               </tbody>
             </Table>
             <ProtoNote>
@@ -138,11 +144,11 @@ export default async function PropertyDetail({
               cols={1}
               items={[
                 ["Street", p.address],
-                ["Suburb", `${p.suburb} ${p.state} ${p.postcode}`],
+                ["Suburb", locality || "—"],
                 ["G-NAF identifier", p.gnafPid ?? "not matched (deferred)"],
                 [
                   "Coordinates",
-                  p.lat === null ? "not geocoded (deferred)" : `${p.lat}, ${p.lng}`,
+                  p.lat === null ? "not geocoded (deferred)" : `${p.lat}`,
                 ],
               ]}
             />
@@ -161,7 +167,7 @@ export default async function PropertyDetail({
               >
                 {owner.firstName} {owner.lastName}
               </Link>
-              <div className="text-3 text-[12px] mt-0.5">{owner.email}</div>
+              <div className="text-3 text-[12px] mt-0.5">{owner.email ?? "—"}</div>
               <div className="flex flex-wrap gap-1 mt-2">
                 {owner.roles.map((r) => (
                   <Badge key={r} tone="stock">
@@ -180,8 +186,8 @@ export default async function PropertyDetail({
             <KeyValue
               cols={1}
               items={[
-                ["Price expectation", p.internalPriceExpectation],
-                ["Notes", p.internalNotes],
+                ["Price expectation", p.internalPriceExpectation ?? "—"],
+                ["Notes", p.internalNotes ?? "—"],
               ]}
             />
             <ProtoNote>

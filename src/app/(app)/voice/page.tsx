@@ -10,8 +10,7 @@ import {
   Callout,
   ProtoNote,
 } from "@/components/ui";
-import { voiceNotes } from "@/lib/sample-data-2";
-import { contactName } from "@/lib/sample-data";
+import { getVoiceNotes } from "@/server/queries";
 import { relative, dateTime } from "@/lib/utils";
 
 function duration(sec: number) {
@@ -20,7 +19,9 @@ function duration(sec: number) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-export default function VoicePage() {
+export default async function VoicePage() {
+  const voiceNotes = await getVoiceNotes();
+
   const total = voiceNotes.reduce((s, v) => s + v.seconds, 0);
   const tasks = voiceNotes.reduce((s, v) => s + v.extracted.length, 0);
 
@@ -81,7 +82,7 @@ export default function VoicePage() {
                         href={`/contacts/${v.contactId}`}
                         className="text-[12.5px] text-2 hover:underline underline-offset-2"
                       >
-                        {contactName(v.contactId)}
+                        {v.contactName ?? "Unnamed contact"}
                       </Link>
                     )}
                     {v.status === "processing" && (
@@ -122,10 +123,12 @@ export default function VoicePage() {
                     <p className="text-3 text-[12.5px] italic">
                       Transcription in progress — {relative(v.recordedAt)}.
                     </p>
-                  ) : (
+                  ) : v.transcript ? (
                     <p className="text-2 text-[12.5px] leading-relaxed">
                       “{v.transcript}”
                     </p>
+                  ) : (
+                    <p className="text-3 text-[12.5px] italic">No transcript yet.</p>
                   )}
 
                   {v.extracted.length > 0 && (

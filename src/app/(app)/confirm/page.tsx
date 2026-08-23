@@ -10,22 +10,21 @@ import {
   Empty,
   ProtoNote,
 } from "@/components/ui";
-import {
-  confirmItems,
-  mergeReviews,
-  contactName,
-  contactById,
-  interactions,
-} from "@/lib/sample-data";
+import { getConfirmItems, getMergeReviews } from "@/server/queries";
 import { relative } from "@/lib/utils";
 
-const kindLabel = {
+const kindLabel: Record<string, string> = {
   task: "Task",
   preference_change: "Preference change",
   intent_correction: "Intent correction",
-} as const;
+};
 
-export default function ConfirmPage() {
+export default async function ConfirmPage() {
+  const [confirmItems, mergeReviews] = await Promise.all([
+    getConfirmItems(),
+    getMergeReviews(),
+  ]);
+
   return (
     <>
       <PageHeader
@@ -47,7 +46,7 @@ export default function ConfirmPage() {
         ) : (
           <div className="space-y-3">
             {confirmItems.map((f) => {
-              const source = interactions.find((i) => i.id === f.sourceInteractionId);
+              const source = f.source;
               return (
                 <Card key={f.id}>
                   <div className="flex items-start justify-between gap-4 mb-2">
@@ -55,7 +54,7 @@ export default function ConfirmPage() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge tone="ai">
                           <Sparkles size={10} />
-                          {kindLabel[f.kind]}
+                          {kindLabel[f.kind] ?? f.kind}
                         </Badge>
                         <span className="font-medium text-[13px]">{f.summary}</span>
                       </div>
@@ -64,10 +63,11 @@ export default function ConfirmPage() {
                           href={`/contacts/${f.contactId}`}
                           className="hover:underline underline-offset-2"
                         >
-                          {contactName(f.contactId)}
+                          {f.contactName}
                         </Link>
                         {" · "}
-                        confidence {f.confidence.toFixed(2)} · {relative(f.createdAt)}
+                        {f.confidence !== null && `confidence ${f.confidence.toFixed(2)} · `}
+                        {relative(f.createdAt)}
                       </div>
                     </div>
                   </div>
@@ -103,7 +103,8 @@ export default function ConfirmPage() {
                         “{source.body}”
                       </p>
                       <div className="text-3 text-[11px] mt-1">
-                        {source.subject} · {relative(source.at)}
+                        {source.subject && `${source.subject} · `}
+                        {relative(source.at)}
                       </div>
                     </div>
                   )}
@@ -135,8 +136,7 @@ export default function ConfirmPage() {
         ) : (
           <div className="space-y-3">
             {mergeReviews.map((m) => {
-              const a = contactById(m.aId);
-              const b = contactById(m.bId);
+              const { a, b } = m;
               if (!a || !b) return null;
               return (
                 <Card key={m.id}>
@@ -165,15 +165,15 @@ export default function ConfirmPage() {
                         <dl className="mt-2 space-y-1 text-[12px]">
                           <div className="flex gap-2">
                             <dt className="text-3 w-14 shrink-0">Email</dt>
-                            <dd className="truncate">{p.email}</dd>
+                            <dd className="truncate">{p.emailRaw ?? "—"}</dd>
                           </div>
                           <div className="flex gap-2">
                             <dt className="text-3 w-14 shrink-0">Phone</dt>
-                            <dd className="tabular">{p.phone}</dd>
+                            <dd className="tabular">{p.phoneRaw ?? "—"}</dd>
                           </div>
                           <div className="flex gap-2">
                             <dt className="text-3 w-14 shrink-0">Source</dt>
-                            <dd>{p.source}</dd>
+                            <dd>{p.sourceChannel}</dd>
                           </div>
                           <div className="flex gap-2">
                             <dt className="text-3 w-14 shrink-0">Created</dt>

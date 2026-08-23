@@ -1,55 +1,80 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import { eq, and, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { env } from "@/env";
 import * as schema from "./schema";
 
 /**
  * Database access.
  *
- * §13: multi-tenancy is enforced at the QUERY layer, never in the UI. Launch is a
- * single office (D1), but every tenant-scoped table carries `tenant_id` and reads go
- * through `forTenant()`, because retrofitting either is impractical once data exists.
+ * §13 says multi-tenancy is enforced at the query layer. In practice that is two
+ * layers, because one is not enough:
+ *
+ *   1. Postgres row-level security. The app connects as a NON-owner role, and every
+ *      policy tests `tenant_id = current_tenant_id()`. When `app.tenant_id` is unset
+ *      the policy denies, so a forgotten filter returns NOTHING rather than every
+ *      tenant's rows. Proven in scripts/db-guards.sh.
+ *   2. `withTenant()` below, which sets that value for the scope of a transaction.
+ *
+ * Migrations and the seed connect as the OWNER, which RLS does not apply to - that is
+ * the intended exemption, and is why there is no bypass role for application code to
+ * acquire by accident.
  */
 
 const client = postgres(env.DATABASE_URL, {
   max: env.NODE_ENV === "production" ? 10 : 3,
   idle_timeout: 20,
+  // Dates come back as Date objects; the console formats them itself.
+  transform: { undefined: null },
 });
 
 export const db = drizzle(client, { schema });
 export { schema };
 export type Db = typeof db;
-
-/** Tables that are NOT tenant-scoped. Everything else must carry a tenant filter. */
-const GLOBAL_TABLES = new Set(["suburbs", "tenants"]);
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 /**
- * A tenant-bound handle. `where()` composes the tenant predicate with your own, so a
- * query cannot accidentally omit it:
+ * Run queries as a given tenant.
  *
- *   const t = forTenant(tenantId);
- *   await db.select().from(contacts).where(t.where(contacts, eq(contacts.id, id)));
- *
- * This is a guard rail, not a security boundary on its own - Phase 1.1 adds row-level
- * security in Postgres so the database enforces it even if application code slips.
+ * `set_local` scopes the setting to the transaction, so it cannot leak to the next
+ * request that borrows the same pooled connection - the failure mode that makes
+ * connection-level tenancy dangerous under concurrency.
  */
-export function forTenant(tenantId: string) {
-  return {
-    tenantId,
-    where<T extends { tenantId: unknown; _: { name: string } }>(
-      table: T,
-      ...extra: (SQL | undefined)[]
-    ): SQL | undefined {
-      if (GLOBAL_TABLES.has(table._.name)) {
-        return extra.length ? and(...extra) : undefined;
-      }
-      return and(
-        eq(table.tenantId as never, tenantId),
-        ...extra.filter(Boolean),
-      );
-    },
-  };
+export async function withTenant<T>(
+  tenantId: string,
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select set_config('app.tenant_id', ${tenantId}, true)`);
+    return fn(tx);
+  });
 }
 
-export type TenantDb = ReturnType<typeof forTenant>;
+/**
+ * The current tenant.
+ *
+ * Launch is one office and one user (D1), so this resolves the single seeded row.
+ * Phase B2 replaces the body with the Auth.js session's tenantId; every caller
+ * already goes through here, so nothing else changes.
+ */
+let cachedTenantId: string | null = null;
+
+export async function currentTenantId(): Promise<string> {
+  if (cachedTenantId) return cachedTenantId;
+  const rows = await db.execute<{ id: string }>(
+    sql`select id from tenants order by created_at limit 1`,
+  );
+  const id = rows[0]?.id;
+  if (!id) {
+    throw new Error(
+      "No tenant row found. Run `pnpm db:reset` to migrate and seed the database.",
+    );
+  }
+  cachedTenantId = id;
+  return id;
+}
+
+/** The common case: run a query as the current tenant. */
+export async function query<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return withTenant(await currentTenantId(), fn);
+}

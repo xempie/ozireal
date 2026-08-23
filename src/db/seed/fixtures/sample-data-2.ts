@@ -5,7 +5,7 @@
  * this is a schema, and Phase 1+ replaces the module with real queries.
  */
 
-import { daysAgo, hoursAgo } from "./utils";
+import { daysAgo, hoursAgo } from "./clock";
 
 /* -------------------------------------------------------- analytics series */
 
