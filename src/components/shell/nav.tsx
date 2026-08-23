@@ -515,8 +515,10 @@ function TopBar({ onOpenMenu, data }: { onOpenMenu: () => void; data: ShellData 
         </button>
 
         <div className="ml-auto flex items-center gap-0.5 sm:gap-1.5 shrink-0">
+          {/* It is still a prototype - no auth, inert write buttons - but the data is
+              real now, and a label claiming otherwise is just wrong. */}
           <span className="text-3 text-[11.5px] hidden xl:inline mr-1.5">
-            Prototype · sample data
+            Prototype · live data
           </span>
           <ThemeToggle />
           <button

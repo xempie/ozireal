@@ -68,28 +68,44 @@ demonstrate this, and the insert failed. Fixed in migration `0002`.
 
 ---
 
-## Phase B1 — Make the console read real data
+## Phase B1 — Make the console read real data  *(done)*
 
 The console currently imports arrays. This phase replaces that with queries and nothing
 else — no new features, no new screens.
 
-- [ ] **B1.1 Drop `output: "export"`,** add a `Dockerfile`-free Node target, confirm
+- [x] **B1.1 Dropped `output: "export"`.** add a `Dockerfile`-free Node target, confirm
       `pnpm build && pnpm start` serves every route.
-- [ ] **B1.2 Query layer.** One module per area under `src/server/queries/`, each
+- [x] **B1.2 Query layer.** One module per area under `src/server/queries/`, each
       returning exactly the shape the existing screens already consume, so pages change
       one import line rather than being rewritten.
-- [ ] **B1.3 Row-level security.** `forTenant()` is a guard rail, not a boundary.
+- [x] **B1.3 Row-level security.** `forTenant()` is a guard rail, not a boundary.
       Enable RLS on every tenant-scoped table with a policy on
       `current_setting('app.tenant_id')`, set per connection. Then a missed `where`
       returns nothing instead of everything.
-- [ ] **B1.4 Convert the read paths**, screen by screen, deleting the corresponding
+- [x] **B1.4 Converted the read paths**, screen by screen, deleting the corresponding
       sample-data export as each one lands. **`sample-data.ts` reaching zero exports is
       the definition of done for this phase.**
-- [ ] **B1.5 Vitest against a real database.** Migrate + seed into a scratch schema per
+- [x] **B1.5 Vitest against a real database.** Migrate + seed into a scratch schema per
       run. The guard script becomes a test file.
 
-**Closes when:** the console renders identically to the prototype with `sample-data.ts`
-deleted, and `pnpm test` passes against a live database.
+**Closed.** 21 routes serve live data, `sample-data.ts` is out of the application, and
+35 tests pass against a real database.
+
+### What B1 taught us
+
+- **A funnel that widens is measuring two things.** The first pipeline query counted
+  inbound *interactions* at stage one and *contacts* at stage two, so it reported 8
+  briefed from 6 enquiries. A test asserting each stage is a subset of the one above
+  caught it; the query now counts one population throughout.
+- **Next will happily prerender a CRM.** Without `force-dynamic` the console built at
+  compile time and baked the build machine's data into static HTML - the dashboard
+  would have shown yesterday's queue counts until the next deploy.
+- **A pinned clock is fine for fixtures and a bug for real rows.** `relative()` measured
+  against a hardcoded date; every timestamp would have drifted further from the truth
+  each day the app ran.
+- **Some charts should be empty.** Weekly trends return nothing until `hasHistory()`
+  passes, because the seed holds current state rather than months of it. A chart drawn
+  from invented history is worse than an empty one - nobody can tell it is wrong.
 
 ---
 

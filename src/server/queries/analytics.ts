@@ -88,61 +88,75 @@ export async function getEnquiriesBySuburb() {
   });
 }
 
-/** The pipeline, counted at each stage from the rows that actually exist. */
+/**
+ * The pipeline.
+ *
+ * Every stage counts CONTACTS, and each is a strict subset of the one above. The first
+ * version counted inbound interactions at stage one and contacts at stage two, which
+ * are different populations - so the funnel could widen as it went down, and did:
+ * 8 briefed from 6 enquiries. A funnel that grows is measuring two things.
+ */
 export async function getPipelineFunnel() {
   return query(async (tx) => {
-    const n = async (q: Promise<{ n: number }[]>) => (await q)[0]?.n ?? 0;
+    const [row] = await tx
+      .select({
+        enquired: sql<number>`count(*) filter (
+          where exists (select 1 from interactions i
+                        where i.contact_id = c.id and i.direction = 'in')
+        )::int`,
+        briefed: sql<number>`count(*) filter (
+          where exists (select 1 from interactions i
+                        where i.contact_id = c.id and i.direction = 'in')
+            and exists (select 1 from contact_intent ci where ci.contact_id = c.id)
+        )::int`,
+        qualified: sql<number>`count(*) filter (
+          where exists (select 1 from interactions i
+                        where i.contact_id = c.id and i.direction = 'in')
+            and exists (select 1 from contact_intent ci where ci.contact_id = c.id)
+            and exists (select 1 from contact_preferences cp where cp.contact_id = c.id)
+        )::int`,
+        inspected: sql<number>`count(*) filter (
+          where exists (select 1 from inspection_registrations r where r.contact_id = c.id)
+        )::int`,
+        offered: sql<number>`count(*) filter (
+          where exists (
+            select 1 from inspection_registrations r
+            join inspections n on n.id = r.inspection_id
+            join listings l on l.id = n.listing_id
+            where r.contact_id = c.id and l.status in ('under_offer','sold','leased')
+          )
+        )::int`,
+      })
+      .from(sql`contacts c`)
+      .where(sql`c.tombstoned_at is null`);
 
-    const enquiries = await n(
-      tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(interactions)
-        .where(eq(interactions.direction, "in")),
-    );
-    const briefed = await n(
-      tx.select({ n: sql<number>`count(*)::int` }).from(contactIntent),
-    );
-    const qualified = await n(
-      tx
-        .select({ n: sql<number>`count(distinct contact_id)::int` })
-        .from(sql`contact_preferences`),
-    );
-    const inspected = await n(
-      tx
-        .select({ n: sql<number>`count(distinct contact_id)::int` })
-        .from(inspectionRegistrations),
-    );
-    const offered = await n(
-      tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(listings)
-        .where(eq(listings.status, "under_offer")),
-    );
-    const settled = await n(
-      tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(listings)
-        .where(eq(listings.status, "sold")),
-    );
-    const openMerges = await n(
-      tx
-        .select({ n: sql<number>`count(*)::int` })
-        .from(mergeReviews)
-        .where(eq(mergeReviews.status, "open")),
-    );
+    const [openMerges] = await tx
+      .select({ n: sql<number>`count(*)::int` })
+      .from(mergeReviews)
+      .where(eq(mergeReviews.status, "open"));
 
-    return [
-      { label: "Enquiries received", value: enquiries, note: "all channels" },
+    const stages = [
+      { label: "Enquired", value: row.enquired, note: "contacts with an inbound touch" },
       {
-        label: "Contact resolved and briefed",
-        value: briefed,
-        note: openMerges ? `${openMerges} still in merge review` : undefined,
+        label: "Resolved and briefed",
+        value: row.briefed,
+        note: openMerges.n ? `${openMerges.n} still in merge review` : undefined,
       },
-      { label: "Qualified - preferences captured", value: qualified },
-      { label: "Inspected at least once", value: inspected },
-      { label: "Offer or application made", value: offered },
-      { label: "Settled or leased", value: settled },
-    ].filter((s) => s.value > 0);
+      { label: "Qualified - preferences captured", value: row.qualified },
+      { label: "Inspected at least once", value: row.inspected },
+      { label: "Offer or application made", value: row.offered },
+    ];
+
+    // A later stage can only ever be a subset. Clamp rather than render a funnel that
+    // widens, which would be a visible lie about the data.
+    let ceiling = Number.POSITIVE_INFINITY;
+    return stages
+      .map((s) => {
+        const value = Math.min(s.value, ceiling);
+        ceiling = value;
+        return { ...s, value };
+      })
+      .filter((s) => s.value > 0);
   });
 }
 
