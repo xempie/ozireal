@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import { query } from "@/db";
 import {
   contacts,
@@ -103,12 +103,28 @@ export async function getContact(id: string) {
         followupDueAt: contacts.followupDueAt,
         doNotContact: contacts.doNotContact,
         createdAt: contacts.createdAt,
+        mergedIntoId: contacts.mergedIntoId,
       })
       .from(contacts)
       .leftJoin(users, eq(users.id, contacts.ownerUserId))
       .where(eq(contacts.id, id))
       .limit(1);
     if (!c) return null;
+
+    /**
+     * Records merged into this one. Their interactions and consents stay attached to
+     * them - both tables are append-only, so a merge supersedes rather than repoints -
+     * which means the survivor's page has to go and get them, and has to say where
+     * they came from rather than presenting them as its own.
+     */
+    const mergedIn = await tx
+      .select({
+        id: contacts.id,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(contacts)
+      .where(eq(contacts.mergedIntoId, id));
 
     const [intent] = await tx
       .select()
@@ -140,14 +156,16 @@ export async function getContact(id: string) {
      * trail rather than only the current state, because that trail IS the defence if
      * a send is ever challenged.
      */
+    const historyIds = [id, ...mergedIn.map((m) => m.id)];
     const consentRows = await tx
       .select()
       .from(consents)
-      .where(eq(consents.contactId, id))
+      .where(inArray(consents.contactId, historyIds))
       .orderBy(desc(consents.occurredAt));
 
     return {
       ...c,
+      mergedIn,
       roles: roles.map((r) => r.role),
       intent: intent
         ? {
@@ -175,21 +193,48 @@ export async function getContact(id: string) {
             softRequirements: prefs.softRequirements,
           }
         : null,
+      /**
+       * Includes consent captured against records merged into this one. It has to:
+       * a withdrawal recorded on the duplicate is still a withdrawal, and dropping it
+       * because the row hangs off a superseded id would mean sending to someone who
+       * asked us not to. When the send gate lands (B4) it reads this same union, and
+       * the strictest state across it wins.
+       */
       consents: consentRows.map((k) => ({
+        id: k.id,
         channel: k.channel,
         status: k.status,
         sourceForm: k.sourceForm,
         wordingShown: k.wordingShown,
         ip: k.ipAddress,
         at: k.occurredAt,
+        viaMergedRecord:
+          k.contactId === id
+            ? null
+            : (mergedIn.find((m) => m.id === k.contactId) ?? null),
       })),
     };
   });
 }
 
+/**
+ * The interaction log for one person — including history captured against records that
+ * were merged into this one. Those rows keep their original contact_id (interactions
+ * are append-only and cannot be repointed), so the union happens on read, and each row
+ * says which record it came from rather than quietly presenting it as this one's.
+ */
 export async function getInteractionsFor(contactId: string) {
-  return query((tx) =>
-    tx
+  return query(async (tx) => {
+    const merged = await tx
+      .select({
+        id: contacts.id,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+      })
+      .from(contacts)
+      .where(eq(contacts.mergedIntoId, contactId));
+
+    const rows = await tx
       .select({
         id: interactions.id,
         contactId: interactions.contactId,
@@ -203,10 +248,21 @@ export async function getInteractionsFor(contactId: string) {
       })
       .from(interactions)
       .where(
-        and(eq(interactions.contactId, contactId), isNull(interactions.tombstonedAt)),
+        and(
+          inArray(interactions.contactId, [contactId, ...merged.map((m) => m.id)]),
+          isNull(interactions.tombstonedAt),
+        ),
       )
-      .orderBy(desc(interactions.occurredAt)),
-  );
+      .orderBy(desc(interactions.occurredAt));
+
+    return rows.map((r) => ({
+      ...r,
+      viaMergedRecord:
+        r.contactId === contactId
+          ? null
+          : (merged.find((m) => m.id === r.contactId) ?? null),
+    }));
+  });
 }
 
 /** Contacts whose follow-up is due, most overdue first. */

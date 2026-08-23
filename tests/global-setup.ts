@@ -39,4 +39,6 @@ export default async function setup() {
   });
 
   process.env.DATABASE_URL = TEST_URL;
+  // Tests exercise the query layer directly, with no HTTP request and no session.
+  process.env.OZI_SYSTEM_TENANT = "1";
 }

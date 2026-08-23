@@ -8,6 +8,9 @@
 import "dotenv/config";
 import * as Q from "../src/server/queries";
 
+// A script has no session, so opt in to the system tenant. Refused in production.
+process.env.OZI_SYSTEM_TENANT = "1";
+
 type Check = [name: string, run: () => Promise<unknown>];
 
 const checks: Check[] = [

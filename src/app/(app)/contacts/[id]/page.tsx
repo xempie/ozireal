@@ -7,7 +7,6 @@ import {
   Sparkles,
   ShieldCheck,
   ShieldAlert,
-  Plus,
   FileText,
 } from "lucide-react";
 import {
@@ -16,7 +15,6 @@ import {
   Card,
   CardTitle,
   Badge,
-  Button,
   KeyValue,
   Callout,
   ScoreBar,
@@ -32,6 +30,10 @@ import {
 } from "@/server/queries";
 import { channelLabel, propertyTypeLabel, statusLabel } from "@/lib/labels";
 import { relative, dateTime, money, shortDate } from "@/lib/utils";
+import {
+  LogInteractionButton,
+  RecordOutcomeButton,
+} from "@/components/forms/contact-forms";
 
 export default async function ContactDetail({
   params,
@@ -59,15 +61,43 @@ export default async function ContactDetail({
         title={`${c.firstName} ${c.lastName}`}
         subtitle={`${c.roles.join(" · ")} · owned by ${c.owner ?? "unassigned"} · created ${shortDate(c.createdAt)}`}
         actions={
-          <>
-            <Button>
-              <Plus size={13} />
-              Log interaction
-            </Button>
-            <Button variant="primary">Record outcome</Button>
-          </>
+          // A superseded record takes no new activity. Leaving the buttons here would
+          // contradict the banner below and split one person's history across two
+          // records again, which is the thing the merge just undid.
+          c.mergedIntoId ? null : (
+            <>
+              <LogInteractionButton contactId={c.id} />
+              <RecordOutcomeButton contactId={c.id} />
+            </>
+          )
         }
       />
+
+      {c.mergedIntoId && (
+        <div className="mb-6">
+          <Callout tone="queue" title="This record was merged">
+            It was superseded by{" "}
+            <Link
+              href={`/contacts/${c.mergedIntoId}`}
+              className="underline underline-offset-2 font-medium"
+            >
+              the older record
+            </Link>
+            , which is where new activity should go. Nothing here was deleted — the
+            interactions and consents below stay attached to this record because
+            reassigning them would falsify who actually gave that consent, and when.
+          </Callout>
+        </div>
+      )}
+
+      {c.mergedIn.length > 0 && (
+        <div className="mb-6">
+          <Callout tone="queue" title="Includes merged records">
+            {c.mergedIn.map((m) => `${m.firstName} ${m.lastName}`).join(", ")} was merged
+            into this one. Their history appears below, marked with where it came from.
+          </Callout>
+        </div>
+      )}
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -153,6 +183,12 @@ export default async function ContactDetail({
                         >
                           {address}
                         </Link>
+                      )}
+                      {i.viaMergedRecord && (
+                        <span className="text-3 text-[11.5px]">
+                          from merged record {i.viaMergedRecord.firstName}{" "}
+                          {i.viaMergedRecord.lastName}
+                        </span>
                       )}
                     </div>
                   </Card>
@@ -291,7 +327,7 @@ export default async function ContactDetail({
             <div className="space-y-3">
               {c.consents.map((k) => (
                 <div
-                  key={`${k.channel}-${k.at.toISOString()}`}
+                  key={k.id}
                   className="text-[12.5px]"
                 >
                   <div className="flex items-center gap-2">
@@ -316,6 +352,12 @@ export default async function ContactDetail({
                   <div className="text-3 text-[11.5px] mt-1 pl-5 space-y-0.5">
                     <div>{k.sourceForm}</div>
                     <div>{[shortDate(k.at), k.ip].filter(Boolean).join(" · ")}</div>
+                    {k.viaMergedRecord && (
+                      <div>
+                        captured against {k.viaMergedRecord.firstName}{" "}
+                        {k.viaMergedRecord.lastName}, merged into this record
+                      </div>
+                    )}
                   </div>
                   {k.wordingShown && k.wordingShown !== "—" && (
                     <p className="text-3 text-[11px] italic mt-1 pl-5 leading-relaxed">

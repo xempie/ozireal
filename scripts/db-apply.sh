@@ -25,9 +25,11 @@ for f in "$ROOT"/drizzle/*.sql; do
   if [ "$(q "select count(*) from drizzle.__drizzle_migrations where hash='$hash';")" != "0" ]; then
     printf "  skip   %s\n" "$name"; skipped=$((skipped+1)); continue
   fi
-  # ON_ERROR_STOP so a failure is loud, not a silent partial apply.
+  # ON_ERROR_STOP so a failure is loud, not a silent partial apply; -1 so the whole
+  # file is one transaction and a failure half way through rolls back rather than
+  # leaving the schema in a state no migration file describes.
   if "$PSQL" -w -U "$USER" -h "$HOST" -p "$PORT" -d "$DB" \
-       -v ON_ERROR_STOP=1 -q -f "$f" > /tmp/mig.log 2>&1; then
+       -v ON_ERROR_STOP=1 -1 -q -f "$f" > /tmp/mig.log 2>&1; then
     q "insert into drizzle.__drizzle_migrations (hash, created_at)
        values ('$hash', $(date +%s)000);" >/dev/null
     printf "  apply  %s\n" "$name"; applied=$((applied+1))

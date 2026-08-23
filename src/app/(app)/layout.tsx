@@ -1,4 +1,5 @@
 import { ConsoleShell, type ShellData } from "@/components/shell/nav";
+import { SignOutButton } from "@/components/shell/sign-out";
 import { getAgency, getCounts, getContacts, getListings } from "@/server/queries";
 
 /**
@@ -48,5 +49,9 @@ export default async function ConsoleLayout({
     ],
   };
 
-  return <ConsoleShell data={data}>{children}</ConsoleShell>;
+  return (
+    <ConsoleShell data={data} signOut={<SignOutButton />}>
+      {children}
+    </ConsoleShell>
+  );
 }

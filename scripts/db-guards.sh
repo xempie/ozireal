@@ -100,6 +100,12 @@ expect_error "merge review: a contact cannot duplicate itself" \
 expect_ok "merge review: two contacts CAN share a phone number" \
   "select count(*) from contacts group by tenant_id, phone_e164 having count(*)>1;"
 
+echo "Contact merge (0006)"
+expect_error "merge: a record cannot be merged into itself" \
+  "update contacts set merged_into_id = id, tombstoned_at = now() where id = (select id from contacts where merged_into_id is null limit 1);"
+expect_error "merge: a merged record cannot stay live in the list" \
+  "update contacts a set merged_into_id = (select b.id from contacts b where b.id <> a.id and b.merged_into_id is null limit 1) where a.id = (select id from contacts where merged_into_id is null and tombstoned_at is null limit 1);"
+
 echo
 printf '%d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

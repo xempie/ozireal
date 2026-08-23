@@ -109,16 +109,44 @@ else — no new features, no new screens.
 
 ---
 
-## Phase B2 — Auth and writes
+## Phase B2 — Auth and writes ✅ done
 
-- [ ] **B2.1 Auth.js v5**, Google + Microsoft Entra, single-address allowlist (D1).
+- [x] **B2.1 Auth.js v5**, Google + Microsoft Entra, single-address allowlist (D1).
       Session carries `tenantId` and role; the RLS setting is bound from the session.
-- [ ] **B2.2 Server Actions with Zod on every input.** Every one — §13.
-- [ ] **B2.3 Contact CRUD and the manual adapter.** The first real write path.
-- [ ] **B2.4 Record a follow-up outcome.** Small, and the single most-used control in
-      the product.
-- [ ] **B2.5 Optimistic UI + error states.** The prototype's buttons are inert; they
-      become real here, including what happens when a write fails.
+      Providers register only when their credentials exist, so a missing secret is a
+      missing button rather than a crash. Development sign-in needs `NODE_ENV` to not
+      be production **and** `AUTH_DEV_LOGIN=1` **and** the allowlist. With an empty
+      allowlist, sign-in fails closed.
+- [x] **B2.2 Server Actions with Zod on every input.** Every one — §13. `defineAction`
+      takes the schema as an argument, so an action cannot be written without one. It
+      also refuses without a session, opens the transaction with `app.tenant_id` set,
+      writes the audit row, and translates database constraint names into sentences.
+      `ActionError` marks a refusal the handler phrased deliberately; anything else
+      becomes a generic message rather than leaking a stack trace.
+- [x] **B2.3 Contact CRUD and the manual adapter.** The first real write path. A
+      collision neither refuses nor merges: it writes the record and opens a merge
+      review, because refusing loses the enquiry and merging decides something only a
+      person may decide.
+- [x] **B2.4 Record a follow-up outcome.** Also writes an interaction, so the outcome
+      has evidence behind it rather than being a claim on its own.
+- [x] **B2.5 Forms wired into the screens, with error and pending states.** `useAction`
+      surfaces three visible states — sending, failed with the server's reason, and
+      done. Field errors come from the same Zod schema the server validated against,
+      so the message under an input cannot drift out of step with the rule.
+- [x] **Contact merge, for real** (migration 0006). The button in the confirm queue
+      previously closed the review and merged nothing. It now supersedes: the older
+      record survives, the newer is tombstoned pointing at it, roles and open tasks and
+      any blank identity field move across, and do-not-contact can only tighten.
+      Interactions and consents deliberately stay where they were captured — both are
+      append-only, and reassigning a consent row would falsify the one fact it exists
+      to prove — so reads follow the pointer instead and label what came from where. A
+      trigger refuses chains, so following it is always exactly one hop.
+- [x] **Writes are refused against superseded and tombstoned records** in the action,
+      not just hidden in the interface.
+
+Verified by `pnpm test` (69, against a real Postgres), `pnpm db:guards` (22),
+`pnpm verify:writes` (11 checks driving the real browser against the real database)
+and `pnpm verify:forms` (each dialog at 390/820/1440, overflow and tap-target size).
 
 ---
 

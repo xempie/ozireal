@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { Check, X, Pencil, GitMerge, ArrowRight, Sparkles } from "lucide-react";
+import { GitMerge, ArrowRight, Sparkles } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   Badge,
-  Button,
   Callout,
   Empty,
   ProtoNote,
 } from "@/components/ui";
 import { getConfirmItems, getMergeReviews } from "@/server/queries";
 import { relative } from "@/lib/utils";
+import {
+  ConfirmItemButtons,
+  MergeReviewButtons,
+} from "@/components/forms/contact-forms";
 
 const kindLabel: Record<string, string> = {
   task: "Task",
@@ -109,20 +112,7 @@ export default async function ConfirmPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <Button variant="primary" size="sm">
-                      <Check size={12} />
-                      Commit
-                    </Button>
-                    <Button size="sm">
-                      <Pencil size={12} />
-                      Edit then commit
-                    </Button>
-                    <Button variant="danger" size="sm">
-                      <X size={12} />
-                      Discard
-                    </Button>
-                  </div>
+                  <ConfirmItemButtons id={f.id} />
                 </Card>
               );
             })}
@@ -186,12 +176,7 @@ export default async function ConfirmPage() {
 
                   <p className="text-2 text-[12.5px] mt-3">{m.matchedOn}</p>
 
-                  <div className="flex flex-wrap items-center gap-2 mt-3">
-                    <Button variant="primary" size="sm">
-                      Merge into the older record
-                    </Button>
-                    <Button size="sm">Keep both</Button>
-                  </div>
+                  <MergeReviewButtons id={m.id} />
                   <ProtoNote>
                     The phone numbers are identical, which is a strong signal — but the
                     emails differ, so a human decides. Auto-merging on name similarity is

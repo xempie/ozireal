@@ -11,6 +11,7 @@ import {
   index,
   uniqueIndex,
   date,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { tenants, users } from "./tenancy";
@@ -107,6 +108,17 @@ export const contacts = pgTable(
      * request that would otherwise destroy the evidence for past sends (§4, §10).
      */
     tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }),
+
+    /**
+     * Set when a human resolves a merge review. The loser keeps its own rows -
+     * interactions and consents are append-only and cannot be repointed without
+     * destroying the provenance they exist to prove - so a merge supersedes rather
+     * than rewrites, and reads of the survivor follow this pointer to pick up the
+     * history. Depth is always one hop; a trigger refuses chains (migration 0006).
+     */
+    mergedIntoId: uuid("merged_into_id").references((): AnyPgColumn => contacts.id, {
+      onDelete: "restrict",
+    }),
 
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

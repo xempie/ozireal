@@ -29,7 +29,6 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeft,
-  LogOut,
   CornerDownLeft,
   Menu,
   X,
@@ -473,10 +472,16 @@ function CommandPalette({
 
 /* ---------------------------------------------------------------- top bar */
 
-function TopBar({ onOpenMenu, data }: { onOpenMenu: () => void; data: ShellData }) {
+function TopBar({
+  onOpenMenu,
+  data,
+  signOut,
+}: {
+  onOpenMenu: () => void;
+  data: ShellData;
+  signOut: React.ReactNode;
+}) {
   const [open, setOpen] = React.useState(false);
-  const router = useRouter();
-
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -521,14 +526,7 @@ function TopBar({ onOpenMenu, data }: { onOpenMenu: () => void; data: ShellData 
             Prototype · live data
           </span>
           <ThemeToggle />
-          <button
-            onClick={() => router.push("/login")}
-            className="text-3 hover:text-[var(--text)] transition-colors p-2 rounded-md hover:surface-3"
-            title="Sign out"
-            aria-label="Sign out"
-          >
-            <LogOut size={16} />
-          </button>
+          {signOut}
           <span className="h-8 w-8 rounded-full surface-3 border grid place-items-center text-[11px] font-semibold ml-0.5 shrink-0">
             SW
           </span>
@@ -545,9 +543,12 @@ function TopBar({ onOpenMenu, data }: { onOpenMenu: () => void; data: ShellData 
 export function ConsoleShell({
   children,
   data,
+  signOut,
 }: {
   children: React.ReactNode;
   data: ShellData;
+  /** Rendered on the server, because signing out clears a signed cookie. */
+  signOut: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [menuOpen, setMenuOpen] = React.useState(false);
@@ -561,7 +562,7 @@ export function ConsoleShell({
       <DesktopSidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} data={data} />
       <MobileDrawer open={menuOpen} onClose={() => setMenuOpen(false)} data={data} />
       <div className="flex-1 min-w-0 flex flex-col">
-        <TopBar onOpenMenu={() => setMenuOpen(true)} data={data} />
+        <TopBar onOpenMenu={() => setMenuOpen(true)} data={data} signOut={signOut} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 w-full max-w-[1500px] min-w-0">
           {children}
         </main>

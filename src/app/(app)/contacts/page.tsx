@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Filter, Plus, Ban } from "lucide-react";
+import { Filter, Ban } from "lucide-react";
 import {
   PageHeader,
   Badge,
@@ -17,6 +17,7 @@ import {
 import { getContacts, getSavedViews, getContactsBySource } from "@/server/queries";
 import { HBars } from "@/components/charts";
 import { relative, money } from "@/lib/utils";
+import { NewContactButton } from "@/components/forms/contact-forms";
 
 const roleTone = {
   buyer: "brand",
@@ -55,10 +56,7 @@ export default async function ContactsPage() {
               <Filter size={13} />
               Saved views
             </Button>
-            <Button variant="primary">
-              <Plus size={13} />
-              New contact
-            </Button>
+            <NewContactButton />
           </>
         }
       />
@@ -220,9 +218,10 @@ export default async function ContactsPage() {
       {contacts.length === 0 && <Empty>No contacts yet.</Empty>}
 
       <ProtoNote>
-        Phase 1 replaces this with a TanStack Table over the tenant-scoped Drizzle
-        client. Consent state is shown here because it decides what you are allowed to
-        do with a row — it is not an afterthought column.
+        These rows come from Postgres through the tenant-scoped client, and{" "}
+        <strong>New contact</strong> writes to it. Sorting and filtering are still to
+        come. Consent state is a column because it decides what you are allowed to do
+        with a row — it is not an afterthought.
       </ProtoNote>
     </>
   );

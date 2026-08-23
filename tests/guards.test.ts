@@ -179,3 +179,25 @@ describe("the evidence log cannot point at things that never existed", () => {
     expect(msg).toMatch(/property_id/);
   });
 });
+
+describe("a merge points somewhere real, exactly one hop away", () => {
+  it("refuses a record merged into itself", async () => {
+    const msg = await rejects(
+      `update contacts set merged_into_id = id, tombstoned_at = now()
+       where id = (select id from contacts where merged_into_id is null limit 1)`,
+    );
+    expect(msg).toMatch(/contacts_merge_is_consistent/);
+  });
+
+  it("refuses a merged record that is still live in the list", async () => {
+    // Without the tombstone the loser keeps appearing everywhere while its history
+    // has moved, which is worse than not merging at all.
+    const msg = await rejects(
+      `update contacts a set merged_into_id =
+         (select b.id from contacts b where b.id <> a.id and b.merged_into_id is null limit 1)
+       where a.id = (select id from contacts where merged_into_id is null
+                     and tombstoned_at is null limit 1)`,
+    );
+    expect(msg).toMatch(/contacts_merge_is_consistent/);
+  });
+});
