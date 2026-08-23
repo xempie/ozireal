@@ -292,6 +292,15 @@ export const interactions = pgTable(
     index("interactions_contact_idx").on(t.contactId, t.occurredAt),
     index("interactions_tenant_idx").on(t.tenantId, t.occurredAt),
     index("interactions_thread_idx").on(t.threadRef),
+    /**
+     * Replay dedupe (migration 0007). Everything upstream delivers at-least-once -
+     * SNS retries, browsers resubmit - so a second delivery of the same message must
+     * land on this and be dropped, not become a second interaction. Partial: manual
+     * entries have no message id, and two phone calls are two interactions.
+     */
+    uniqueIndex("interactions_replay_uq")
+      .on(t.tenantId, t.channel, t.messageId)
+      .where(sql`${t.messageId} is not null`),
   ],
 );
 

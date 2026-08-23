@@ -535,6 +535,8 @@ async function main() {
   const consentWording =
     "I agree to Ozi Realty contacting me about properties and services that match my enquiry. I can unsubscribe at any time.";
   for (const [form, wording] of [
+    // The default form the public endpoint serves (B3.4).
+    ["Website enquiry", consentWording],
     ["Listing enquiry", consentWording],
     ["Free property appraisal", consentWording.replace("properties and services that match my enquiry", "the appraisal of my property and related services")],
     ["Suburb insight report", "Send me the report and occasional market updates for this suburb. I can unsubscribe at any time."],

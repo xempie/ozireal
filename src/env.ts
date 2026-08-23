@@ -22,9 +22,19 @@ const schema = z.object({
   /** "1" enables a passwordless local sign-in. Refused in production, see src/auth.ts. */
   AUTH_DEV_LOGIN: z.string().optional(),
 
+  // Intake (B3).
+  REDIS_URL: z.string().url().optional(),
+  /** Signs the public form's anti-spam token. Falls back to AUTH_SECRET. */
+  FORM_TOKEN_SECRET: z.string().min(16).optional(),
+  /** Lets tests post to /api/inbound/ses without an SNS signature. Dev/test only —
+   *  the route refuses this path outright in production. */
+  INGEST_TEST_SECRET: z.string().min(8).optional(),
+  /** The SNS topic inbound mail arrives from. REQUIRED in production — a valid SNS
+   *  signature proves Amazon sent it, not that OUR topic did. */
+  SES_TOPIC_ARN: z.string().startsWith("arn:aws:sns:").optional(),
+
   // Everything below arrives in later phases. Optional now so the app boots before the
   // integrations exist, but validated the moment a value is present.
-  REDIS_URL: z.string().url().optional(),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   VOYAGE_API_KEY: z.string().min(1).optional(),
   DEEPGRAM_API_KEY: z.string().min(1).optional(),

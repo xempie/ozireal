@@ -32,6 +32,12 @@ export const tenants = pgTable("tenants", {
    */
   jurisdiction: text("jurisdiction").notNull().default("SA"),
   timezone: text("timezone").notNull().default("Australia/Adelaide"),
+  /**
+   * What the public enquiry form authenticates with. The tenant id itself is not a
+   * secret - it appears in URLs and logs - so the endpoint is addressed by this
+   * instead, and rotating it is writing a new value rather than re-keying the tenant.
+   */
+  formKey: uuid("form_key").notNull().defaultRandom().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

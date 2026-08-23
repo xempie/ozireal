@@ -1,0 +1,469 @@
+{
+  "edges": {
+    "cases": [
+      {
+        "name": "clean-first-enquiry",
+        "input": {
+          "firstName": "Priya",
+          "lastName": "Raman",
+          "email": "priya.raman@example.com",
+          "phone": "0412 998 877"
+        },
+        "existing": "No contacts in the book at all.",
+        "expect": "new",
+        "why": "Nothing exists to match, so the resolver creates a record rather than erroring — the baseline every other case builds on."
+      },
+      {
+        "name": "mobile-national-spaced-format",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "0412 345 678"
+        },
+        "existing": "One contact, Jane Citizen, phone_e164 '+61412345678', no email.",
+        "expect": "existing",
+        "why": "The trunk-zero rule collapses '0412 345 678' to the identical E.164 key, and a single clean phone hit with a consistent name is exactly the dedupe CLAUDE.md section 4 prescribes."
+      },
+      {
+        "name": "mobile-plus61-inbound",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "+61412345678"
+        },
+        "existing": "Jane Citizen created from raw phone '0412 345 678', stored phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "Normalisation is symmetric — the national and the +61 written forms collapse to one key, mirroring the existing 'matches on phone even when typed in different formats' test."
+      },
+      {
+        "name": "mobile-61-without-plus",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "61412345678"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "A leading 61 with no '+' (typical of portal feeds and copy-paste) is the same country-coded number, and toE164 already prefixes the '+' for it."
+      },
+      {
+        "name": "mobile-parenthesised-hyphenated",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "(04) 1234-5678"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "Parentheses, hyphens and grouping are presentation only — the digit string is 0412345678, the same key."
+      },
+      {
+        "name": "mobile-with-annotation",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "0412 345 678 (work)"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "Human annotations contribute no digits, so normalisation strips them and the key still matches cleanly."
+      },
+      {
+        "name": "mobile-plus61-with-trunk-zero",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": null,
+          "phone": "+61 (0) 412 345 678"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "The parenthesised trunk zero in this very common written form must be dropped once +61 is present — a naive normaliser yields '+610412345678' and silently duplicates every such enquiry."
+      },
+      {
+        "name": "landline-national-format",
+        "input": {
+          "firstName": "Raj",
+          "lastName": "Patel",
+          "email": null,
+          "phone": "08 8123 4567"
+        },
+        "existing": "Raj Patel, phone_e164 '+61881234567', email raj.patel@example.com.",
+        "expect": "existing",
+        "why": "'08 8123 4567' normalises to the identical E.164 landline key and the name agrees, so this is a safe single-candidate match."
+      },
+      {
+        "name": "landline-international-format",
+        "input": {
+          "firstName": "Raj",
+          "lastName": "Patel",
+          "email": null,
+          "phone": "+61 8 8123 4567"
+        },
+        "existing": "Raj Patel created from raw phone '08 8123 4567', stored phone_e164 '+61881234567'.",
+        "expect": "existing",
+        "why": "Both landline spellings collapse to '+61881234567', proving format symmetry holds for landlines as well as mobiles."
+      },
+      {
+        "name": "landline-shared-household",
+        "input": {
+          "firstName": "Meera",
+          "lastName": "Patel",
+          "email": "meera.p@example.com",
+          "phone": "08 8123 4567"
+        },
+        "existing": "Raj Patel with phone_e164 '+61881234567' and email raj.patel@example.com.",
+        "expect": "ambiguous",
+        "why": "A landline is a household key, not a personal one — the differing name and email say this is plausibly a different person at the same number, which is precisely what the merge review queue exists to decide."
+      },
+      {
+        "name": "landline-matches-two-contacts",
+        "input": {
+          "firstName": "R",
+          "lastName": "Patel",
+          "email": null,
+          "phone": "08 8123 4567"
+        },
+        "existing": "Two open contacts, Raj Patel and Meera Patel, both holding phone_e164 '+61881234567'.",
+        "expect": "ambiguous",
+        "why": "One key returning two candidates can never be auto-picked — choosing either would be an unauthorised identity decision."
+      },
+      {
+        "name": "uk-international-number",
+        "input": {
+          "firstName": "Oliver",
+          "lastName": "Hart",
+          "email": null,
+          "phone": "+44 7911 123456"
+        },
+        "existing": "Oliver Hart (overseas investor), phone_e164 '+447911123456', no email.",
+        "expect": "existing",
+        "why": "toE164 preserves an explicit foreign country code untouched, and exact E.164 equality is as safe for +44 as for +61 — normalisation must never force-prefix +61 onto an already-international number."
+      },
+      {
+        "name": "junk-phone-only",
+        "input": {
+          "firstName": "Somebody",
+          "lastName": "Keen",
+          "email": null,
+          "phone": "call me"
+        },
+        "existing": "A contact also named Somebody Keen, with a real phone and email.",
+        "expect": "new",
+        "why": "'call me' yields no digits so toE164 returns null, leaving no dedupe key at all, and the coinciding name is never a match signal."
+      },
+      {
+        "name": "junk-phone-but-valid-email",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": "call me after 5"
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com'.",
+        "expect": "existing",
+        "why": "The unparseable phone degrades to null and is simply ignored — one key failing to parse must not poison the clean email match."
+      },
+      {
+        "name": "local-number-without-area-code",
+        "input": {
+          "firstName": "Raj",
+          "lastName": "Patel",
+          "email": null,
+          "phone": "8123 4567"
+        },
+        "existing": "Raj Patel with phone_e164 '+61881234567'.",
+        "expect": "new",
+        "why": "Eight digits with no area code cannot be completed to E.164 without guessing ('+6181234567' is not '+61881234567'), and a fabricated key must match nothing rather than fuzzily hit the landline."
+      },
+      {
+        "name": "plus-addressed-email",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane+realestate@example.com",
+          "phone": null
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com' (raw 'jane@example.com').",
+        "expect": "existing",
+        "why": "normaliseEmail strips plus-addressing before comparison, so a duplicate cannot hide behind a tag — the convention the existing createContact test already fixes."
+      },
+      {
+        "name": "email-case-insensitive",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "JANE@Example.COM",
+          "phone": null
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com'.",
+        "expect": "existing",
+        "why": "Email comparison is case-insensitive end to end — local part and domain are lower-cased at write time and at lookup time."
+      },
+      {
+        "name": "email-trailing-dot-and-space",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com. ",
+          "phone": null
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com'.",
+        "expect": "existing",
+        "why": "Policy: trailing whitespace is a paste artefact and a trailing domain dot is the DNS root label — both denote the same mailbox, so normalisation strips them (note current normaliseEmail trims the space but keeps the dot, so this case pins the fix)."
+      },
+      {
+        "name": "gmail-dot-variant",
+        "input": {
+          "firstName": "John",
+          "lastName": "Smith",
+          "email": "john.smith@gmail.com",
+          "phone": null
+        },
+        "existing": "John Smith with email_normalised 'johnsmith@gmail.com'.",
+        "expect": "existing",
+        "why": "Policy: Google documents that dots in gmail.com/googlemail.com locals are ignored, so both spellings are provably one mailbox — strip dots for those two domains only, making this as safe as the plus-address stripping already in place."
+      },
+      {
+        "name": "non-gmail-dot-variant",
+        "input": {
+          "firstName": "John",
+          "lastName": "Smith",
+          "email": "john.smith@bigpond.com",
+          "phone": null
+        },
+        "existing": "John Smith with email_normalised 'johnsmith@bigpond.com'.",
+        "expect": "new",
+        "why": "Outside Gmail's documented behaviour, RFC 5321 makes the local part opaque and dotted/undotted can be two real mailboxes owned by two real people, so no key matches — and a near-miss on a non-guaranteed transformation is not grounds for a review either."
+      },
+      {
+        "name": "email-match-name-wildly-different",
+        "input": {
+          "firstName": "Bruce",
+          "lastName": "Chen",
+          "email": "dsouza.family@example.com",
+          "phone": null
+        },
+        "existing": "Annette D'Souza with email_normalised 'dsouza.family@example.com'.",
+        "expect": "ambiguous",
+        "why": "An exact email key with a flatly conflicting name is the shared-family-mailbox pattern — a plausible match that would be unsafe to auto-merge, so it goes to the review queue."
+      },
+      {
+        "name": "email-match-nickname-variant",
+        "input": {
+          "firstName": "Jo",
+          "lastName": "Nguyen",
+          "email": "joanne.n@example.com",
+          "phone": null
+        },
+        "existing": "Joanne Nguyen with email_normalised 'joanne.n@example.com'.",
+        "expect": "existing",
+        "why": "The key matches and a diminutive of the recorded first name is corroboration rather than conflict — treating every nickname as a different person would fork records constantly."
+      },
+      {
+        "name": "mobile-match-new-email-same-name",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@newisp.com.au",
+          "phone": "0412 345 678"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678' and email_normalised 'jane@oldisp.com.au'.",
+        "expect": "existing",
+        "why": "An exact personal-mobile key with a consistent name is a safe match; the unfamiliar email is a proposed update for the confirm queue (rule 5), not evidence of a different person."
+      },
+      {
+        "name": "mobile-match-different-person-details",
+        "input": {
+          "firstName": "Liam",
+          "lastName": "Torres",
+          "email": "liam.t@example.com",
+          "phone": "0412 345 678"
+        },
+        "existing": "Jane Citizen with phone_e164 '+61412345678' and email 'jane@oldisp.com.au'.",
+        "expect": "ambiguous",
+        "why": "Mobiles are recycled and shared within families, so an exact number carrying a conflicting name AND a conflicting email is plausible-but-unsafe — review, never auto-merge."
+      },
+      {
+        "name": "email-match-unknown-phone",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": "0455 000 222"
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com' and phone_e164 '+61412345678'; no contact holds +61455000222.",
+        "expect": "existing",
+        "why": "One key hitting cleanly while the other key matches nothing is a safe match — the new number is additional data to propose, not a reason for doubt."
+      },
+      {
+        "name": "both-keys-same-record",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "Jane+portal@Example.com",
+          "phone": "(04) 1234 5678"
+        },
+        "existing": "Jane Citizen with email_normalised 'jane@example.com' and phone_e164 '+61412345678'.",
+        "expect": "existing",
+        "why": "Both normalised keys agree on the same contact — the strongest possible signal, so it must resolve even though both inbound values are format variants."
+      },
+      {
+        "name": "email-hits-A-phone-hits-B",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": "0498 765 432"
+        },
+        "existing": "Record A holds email_normalised 'jane@example.com'; a different record B (Marco Rossi) holds phone_e164 '+61498765432'.",
+        "expect": "ambiguous",
+        "why": "Two keys naming two different contacts is a conflict only a person can resolve — and is often the moment an existing duplicate pair is first discovered."
+      },
+      {
+        "name": "two-records-share-normalised-email",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": null
+        },
+        "existing": "Two open contacts both normalising to 'jane@example.com' — an unresolved duplicate pair with an open merge review (the schema deliberately allows this).",
+        "expect": "ambiguous",
+        "why": "Picking either record would silently pre-empt the open human decision the merge review exists for, so the enquiry attaches to the review instead."
+      },
+      {
+        "name": "phone-tiebreak-among-duplicates-forbidden",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": "0412 345 678"
+        },
+        "existing": "Records A and B both hold email_normalised 'jane@example.com'; only A also holds phone_e164 '+61412345678'.",
+        "expect": "ambiguous",
+        "why": "Using the phone to pick A out of an unresolved duplicated-email pair is an auto-merge in disguise — the tie-break is the human's call, not the resolver's."
+      },
+      {
+        "name": "same-name-only-never-matches",
+        "input": {
+          "firstName": "Sarah",
+          "lastName": "Jones",
+          "email": "sarah.jones@fastmail.com",
+          "phone": "0400 111 222"
+        },
+        "existing": "Sarah Jones with a completely different email and phone; neither inbound key matches any contact.",
+        "expect": "new",
+        "why": "Section 4 dedupes on normalised email and E.164 phone only — a shared name is demographic coincidence, must NEVER auto-match, and should not even queue a review or every second Sarah Jones buries the real duplicates."
+      },
+      {
+        "name": "no-keys-at-all",
+        "input": {
+          "firstName": "Alex",
+          "lastName": "Wu",
+          "email": "",
+          "phone": "   "
+        },
+        "existing": "Alex Wu with full email and phone details.",
+        "expect": "new",
+        "why": "Empty and whitespace-only strings normalise to null exactly like absent fields, and with both keys null the only remaining signal is the name, which never matches."
+      },
+      {
+        "name": "tombstoned-record-match",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "jane@example.com",
+          "phone": null
+        },
+        "existing": "Jane Citizen, email_normalised 'jane@example.com', tombstoned_at set after a privacy deletion request, do_not_contact true.",
+        "expect": "existing",
+        "why": "Identity survives a privacy mark — resolving to the tombstoned record lets downstream enforcement refuse activity and honour do-not-contact, whereas creating a fresh record would launder the removal request into a contactable duplicate."
+      },
+      {
+        "name": "merged-loser-email-match",
+        "input": {
+          "firstName": "Dana",
+          "lastName": "Duplicate",
+          "email": "dana@example.com",
+          "phone": null
+        },
+        "existing": "Contact L (holding email_normalised 'dana@example.com') was merged into contact S: L has merged_into_id = S and is tombstoned; S survives.",
+        "expect": "existing",
+        "why": "The one-hop merged_into_id pointer must be followed and S returned — L is superseded, not a separate person, and logging against L is refused anyway per the superseded-record tests."
+      },
+      {
+        "name": "merged-loser-and-survivor-both-hit",
+        "input": {
+          "firstName": "Dana",
+          "lastName": "Original",
+          "email": "dana.new@example.com",
+          "phone": "0433 900 123"
+        },
+        "existing": "Survivor S holds email_normalised 'dana.new@example.com'; loser L (merged into S) still holds phone_e164 '+61433900123'.",
+        "expect": "existing",
+        "why": "After pointer resolution both keys collapse to the single contact S, so what looks like a two-candidate conflict is one person — candidates must be deduplicated by resolved id before the ambiguity check."
+      },
+      {
+        "name": "whitespace-and-typography-in-name",
+        "input": {
+          "firstName": "  Zoë ",
+          "lastName": " O’Brien ",
+          "email": "zoe@example.com",
+          "phone": null
+        },
+        "existing": "Zoe O'Brien with email_normalised 'zoe@example.com' (plain ASCII name, straight apostrophe).",
+        "expect": "existing",
+        "why": "The email key decides; names are compared only for conflict detection and only after trimming, whitespace-collapsing and diacritic/quote folding, so typography is never a conflict."
+      },
+      {
+        "name": "nfc-vs-nfd-unicode-name",
+        "input": {
+          "firstName": "José",
+          "lastName": "García",
+          "email": null,
+          "phone": "0412 700 800"
+        },
+        "existing": "José García (name stored NFC-composed) with phone_e164 '+61412700800'; the inbound name arrives NFD-decomposed from a web form.",
+        "expect": "existing",
+        "why": "NFC and NFD are byte-different but visually identical, so names must be unicode-normalised before comparison — an accent encoding must never turn a clean phone match into a false conflict."
+      },
+      {
+        "name": "secondary-email-match",
+        "input": {
+          "firstName": "Jane",
+          "lastName": "Citizen",
+          "email": "j.citizen@work.example.com",
+          "phone": null
+        },
+        "existing": "Jane Citizen with primary email_normalised 'jane@example.com' and secondary_email 'j.citizen@work.example.com'.",
+        "expect": "existing",
+        "why": "The secondary email column exists precisely because one person owns several mailboxes, so a normalised hit on it is the same single-candidate key match as a primary hit."
+      }
+    ]
+  },
+  "verdict": {
+    "wrong": [],
+    "missing": [
+      "Tombstoned record holds the matching key: the stated rule 'tombstoned records never match' has zero coverage — need a case where the only email/phone hit is a tombstoned contact and the verdict is 'new' (not 'existing', not 'ambiguous').",
+      "Key shared by one tombstoned record and one open record: the tombstone must be invisible, leaving a clean single-candidate 'existing' match on the open record rather than a two-candidate 'ambiguous'.",
+      "Enquiry key matches a record that was merged away: the stated rule 'merged records resolve to their survivor' has zero coverage — need a case asserting the resolver returns the survivor as 'existing', never the merged-away id.",
+      "Chained merges (A merged into B, B merged into C): resolution must follow the chain transitively to the final survivor without looping.",
+      "Junk email handling is entirely untested — every junk-input case is phone-side. Need the symmetric pair: junk email (e.g. 'n/a', 'none supplied') + valid matching phone must still resolve 'existing' (bad email must not poison the phone key), and junk email + no phone yields 'new'.",
+      "Portal/role email blocklist: AU portal feeds (realestate.com.au, Domain) inject shared noreply/reply-relay addresses, and offices share info@ mailboxes — without an exclusion list one such email silently funnels every enquirer into a single contact. Need cases asserting these addresses are never used as dedupe keys.",
+      "Two open contacts sharing the same MOBILE (e.g. a couple sharing a phone): the one-key-two-candidates 'ambiguous' branch is only tested on a landline — pin that it is key-type-agnostic.",
+      "Wrong-length AU numbers (9-digit '0412 345 67', 11-digit '0412 345 6789'): toE164 must return null rather than a padded/truncated fabricated key — only the 8-digit missing-area-code shape is currently tested.",
+      "13/1300/1800 business numbers: shared non-personal numbers common in real-estate signatures — define policy (they should never be a personal dedupe key / never auto-match).",
+      "gmail.com <-> googlemail.com cross-domain equivalence: the stated Gmail policy names both domains, but no case pins that john.smith@googlemail.com matches johnsmith@gmail.com.",
+      "Plus-addressed email with a CONFLICTING name (e.g. 'Bruce Chen' sending from annette+agent@...): should follow the same shared-mailbox 'ambiguous' path as email-match-name-wildly-different. Also decide whether plus-stripping should be provider-scoped: stripping '+tag' universally on example.com contradicts the RFC-5321-opacity rationale the table itself uses to forbid dot-stripping on bigpond.com — one policy or the other must give.",
+      "Enquiry attaching to an open merge review via the PHONE key: review-attachment is only tested through a shared email (two-records-share-normalised-email) — pin that the attach-to-review behaviour is key-agnostic.",
+      "Foreign number typed in national format without '+' (e.g. UK '07911 123456'): naive AU coercion fabricates '+617911123456' — normalisation must validate against the AU numbering plan and yield null rather than a bogus key that can silently collide.",
+      "The final case 'same-name-only-never-matches' arrived truncated mid-fixture ('neither inbo...') — confirm it ends with expect 'new' and that no review is raised on name coincidence alone."
+    ]
+  }
+}

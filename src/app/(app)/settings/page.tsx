@@ -10,6 +10,7 @@ import {
   Empty,
 } from "@/components/ui";
 import { getAgency, getSettings } from "@/server/queries";
+import { QueueHealthCard } from "@/components/jobs/queue-health";
 
 /** "Sam Whitfield" -> "SW". Empty when there is no name to take them from. */
 function initials(name: string) {
@@ -118,6 +119,10 @@ export default async function SettingsPage() {
             Seeded with South Australia only (D2). Adding NSW later is a data load, not a
             rewrite — which only holds because nothing in the code hardcodes “SA”.
           </ProtoNote>
+        </Section>
+
+        <Section title="Background jobs" hint="the dead-letter view">
+          <QueueHealthCard />
         </Section>
       </div>
 

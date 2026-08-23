@@ -150,21 +150,52 @@ and `pnpm verify:forms` (each dialog at 390/820/1440, overflow and tap-target si
 
 ---
 
-## Phase B3 — Intake pipeline
+## Phase B3 — Intake pipeline ✅ done
 
-- [ ] **B3.1 Redis + BullMQ**, `worker.service`, retry and backoff defaults, a
-      dead-letter view. A failed AI call must never fail a user request (§8).
-- [ ] **B3.2 The adapter interface and registry** from §5, plus the fixed pipeline as a
-      single function. Written once; never edited per channel.
-- [ ] **B3.3 Identity resolution.** `resolveContact()` → existing | new | ambiguous,
-      feeding `merge_reviews`. Table-driven tests over phone formats, plus-addressed
-      emails and name collisions are the deliverable as much as the code.
-- [ ] **B3.4 Web form adapter.** Public Route Handler, per-tenant key, spam guard, and
-      consent capture recording form, wording, IP and timestamp. **This provenance can
-      only be captured at submission and can never be reconstructed.**
-- [ ] **B3.5 Email adapter (SES).** MX on `in.ozirealty.com.au` → receipt rule → raw
-      MIME to S3 → SNS → Route Handler. Verify SES inbound is available in
-      ap-southeast-2 *before* building this.
+- [x] **B3.1 Redis + BullMQ.** `src/server/jobs/` — one queue, 5 attempts with
+      exponential backoff, failed jobs KEPT and shown in a dead-letter view on
+      /settings with per-job retry. Enqueueing is best-effort and happens only after
+      the transaction commits: a dead Redis costs freshness, never data (§8). Local
+      dev uses a portable Redis via `pnpm redis` (Memurai's MSI needs elevation this
+      box cannot grant); the instance gets real Redis + `infra/worker.service`.
+- [x] **B3.2 The adapter interface and registry** (§5) and the fixed pipeline:
+      `ingest → resolve → interaction row (+consents) → SummariseInteraction →
+      RebuildContactIntent`. Split at the transaction boundary (`ingestInTx` /
+      `ingestNormalised`) so Server Actions join with their own transaction and the
+      B2 manual-entry action now rides the same pipeline instead of a parallel
+      insert. Replay dedupe on (tenant, channel, message_id) — migration 0007 —
+      because SNS redelivers and browsers resubmit.
+- [x] **B3.3 Identity resolution.** `resolveContact()` → existing | new | ambiguous.
+      Keys are normalised email (gmail-dot collapse, plus-strip, root-dot strip) and
+      E.164 phone (never fabricated — an area-code-less number matches nothing).
+      Personal keys (email, mobile) attach unless the name flatly conflicts; a
+      landline is a household key and needs the name to agree; two candidates, or
+      email-hits-A-phone-hits-B, is always ambiguous — the enquiry lands on a fresh
+      record with merge reviews raised, nothing auto-merges. Tombstoned records are
+      invisible (a returning enquirer starts fresh — attaching would resurrect what
+      they asked to be forgotten); merged records resolve to their survivor. The
+      table of 27 resolver cases + normalisation suites came from a generated
+      37-case table that was adversarially reviewed before a line was written
+      (docs/research/b3-identity-cases.json).
+- [x] **B3.4 Web form adapter.** `POST /api/forms/[key]` — addressed by per-tenant
+      key, defended by size caps → honeypot (silent-accept, logged) → Redis rate
+      limits (fail OPEN: an outage never eats a lead) → a signed token that proves
+      the form was fetched from us, ≥3s ago, ≤24h ago, once (single-use nonce = the
+      replay key). The GET issues the token and the consent wording; the token pins
+      the wording's hash, so the consent row records what was actually on screen.
+      A tick without wording records nothing — it would be worthless as evidence.
+- [x] **B3.5 Email adapter (SES).** SES inbound receiving verified available in
+      ap-southeast-2 first (endpoints table row confirmed, adversarially
+      re-checked). `POST /api/inbound/ses` verifies the SNS signature before
+      parsing anything (cert URL must be Amazon's, canonical string per message
+      type, SHA1/SHA256), auto-confirms subscriptions, takes MIME inline or from
+      S3, and the adapter parses identity/thread-root/text with mailparser. SNS
+      redelivery collapses via the same replay index. DNS + receipt-rule wiring is
+      B6 (needs the AWS account).
+
+Verified by `pnpm test` (163, real Postgres), `pnpm verify:intake` (18 live HTTP
+checks against the running server: guards refuse, enquiries land with provenance,
+replays collapse, jobs enqueue), and a running worker draining the queue.
 
 ---
 

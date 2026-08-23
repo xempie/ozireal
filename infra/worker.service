@@ -1,0 +1,28 @@
+# BullMQ worker (B3.1) — runs beside the web app on the single instance (cost
+# option A). Install:
+#   sudo cp infra/worker.service /etc/systemd/system/ozirealty-worker.service
+#   sudo systemctl enable --now ozirealty-worker
+#
+# Redis on the same instance: `sudo apt install redis-server` (7.x on Ubuntu 24.04),
+# then set maxmemory-policy noeviction in /etc/redis/redis.conf — BullMQ's stated
+# requirement; evicting a queue key under memory pressure silently loses jobs.
+
+[Unit]
+Description=OziRealty background worker (BullMQ)
+After=network.target redis-server.service postgresql.service
+Wants=redis-server.service
+
+[Service]
+Type=simple
+User=ozirealty
+WorkingDirectory=/srv/ozirealty
+EnvironmentFile=/srv/ozirealty/.env.production
+ExecStart=/usr/bin/node node_modules/tsx/dist/cli.mjs src/server/jobs/worker.ts
+Restart=always
+RestartSec=5
+# The worker is a good citizen on a small instance: it yields to the web app.
+Nice=10
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

@@ -18,6 +18,14 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Everything except Next internals, the auth endpoints themselves, and static files.
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|robots.txt).*)"],
+  /**
+   * Everything except Next internals, the auth endpoints, static files, and the two
+   * deliberately public intake routes (B3): the enquiry form and the SES webhook.
+   * Those defend themselves — per-tenant key, signed token and rate limits on the
+   * form; an SNS signature on the webhook. A session requirement here would just
+   * mean no enquiry could ever arrive.
+   */
+  matcher: [
+    "/((?!api/auth|api/forms|api/inbound|_next/static|_next/image|favicon.ico|robots.txt).*)",
+  ],
 };

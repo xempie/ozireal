@@ -19,7 +19,12 @@ const nextConfig: NextConfig = {
    */
   ...(process.env.STANDALONE === "1" ? { output: "standalone" as const } : {}),
   images: { unoptimized: true },
-  serverExternalPackages: ["postgres"],
+  /**
+   * Kept out of the webpack bundle and loaded from node_modules at runtime: postgres
+   * for the same reason as ever, bullmq/ioredis because bullmq probes for optional
+   * drivers (valkey-glide) with dynamic requires that webpack can only warn about.
+   */
+  serverExternalPackages: ["postgres", "bullmq", "ioredis"],
 };
 
 export default nextConfig;

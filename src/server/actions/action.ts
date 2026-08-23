@@ -44,6 +44,15 @@ export type ActionContext = {
   userId: string;
   userName: string;
   /**
+   * Run something after the transaction commits — and only if it commits.
+   *
+   * Exists for job enqueues (B3): a job enqueued from inside the transaction can
+   * race a rollback and run against rows that never existed. Callbacks are
+   * best-effort by design; a failure is logged, never surfaced, because by then
+   * the user's write has already durably succeeded.
+   */
+  afterCommit: (fn: () => Promise<unknown>) => void;
+  /**
    * Record what just happened. Distinct from the interaction log: that records what
    * happened with a CONTACT, this records what a PERSON did to the system.
    */
@@ -86,6 +95,7 @@ export function defineAction<S extends z.ZodTypeAny, T>(config: {
       };
     }
 
+    const afterCommit: Array<() => Promise<unknown>> = [];
     try {
       const data = await withTenant(session.user.tenantId, async (tx) => {
         const ctx: ActionContext = {
@@ -93,6 +103,7 @@ export function defineAction<S extends z.ZodTypeAny, T>(config: {
           tenantId: session.user.tenantId,
           userId: session.user.id,
           userName: session.user.name ?? session.user.email ?? "Unknown",
+          afterCommit: (fn) => afterCommit.push(fn),
           audit: async (entry) => {
             await tx.insert(auditLog).values({
               tenantId: session.user.tenantId,
@@ -109,6 +120,13 @@ export function defineAction<S extends z.ZodTypeAny, T>(config: {
         };
         return config.handler(parsed.data, ctx);
       });
+
+      // The transaction is committed; the callbacks run outside it, best-effort.
+      for (const fn of afterCommit) {
+        await fn().catch((e) =>
+          console.error("[action] afterCommit callback failed:", e?.message ?? e),
+        );
+      }
 
       return { ok: true, data };
     } catch (e) {
@@ -167,20 +185,9 @@ function humanise(message: string): string {
   return "Something went wrong and the change was not saved.";
 }
 
-/** Australian mobile/landline to E.164, or null when it cannot be read as one. */
-export function toE164(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const digits = raw.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) return digits;
-  if (digits.startsWith("0")) return `+61${digits.slice(1)}`;
-  if (digits.startsWith("61")) return `+${digits}`;
-  return digits.length >= 8 ? `+61${digits}` : null;
-}
-
-/** Lower-case and drop plus-addressing — what deduplication compares on. */
-export function normaliseEmail(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const [local, domain] = raw.trim().toLowerCase().split("@");
-  if (!domain) return null;
-  return `${local.split("+")[0]}@${domain}`;
-}
+/**
+ * Normalisation moved to src/lib/normalise.ts when B3 gave it a second consumer (the
+ * worker process, which must not import this file — it pulls in @/auth and Next).
+ * Re-exported so B2-era imports keep working.
+ */
+export { toE164, normaliseEmail } from "@/lib/normalise";

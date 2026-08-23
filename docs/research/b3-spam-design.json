@@ -1,0 +1,56 @@
+{
+  "guards": [
+    {
+      "name": "Payload size cap (runs first)",
+      "how": "Reject before parsing: check Content-Length, then read the body as a counted stream with a hard 32 KB cap instead of calling request.formData() blind — chunked encoding can lie about Content-Length. Then Zod with .strict() (per CLAUDE.md §13, every input) and per-field caps: name 200, email 320, phone 32, message 5000 chars; unknown fields rejected. Over-cap returns a truthful 413.",
+      "tradeoff": "Almost none — the cost is a manual stream read instead of the convenient formData() helper, and a rare legitimate essay-length enquiry gets a 413 instead of silently truncating."
+    },
+    {
+      "name": "Honeypot field",
+      "how": "A text input with a plausible name (e.g. 'website'), hidden by a stylesheet class (absolute off-screen positioning, not an inline display:none, which naive bots specifically skip), with tabindex=-1, autocomplete=off, aria-hidden=true. Non-empty value → silent-accept: return the generic success response, write nothing, quarantine the payload.",
+      "tradeoff": "Catches only unsophisticated bots — anything that renders CSS walks past it. Browser autofill occasionally populates it for real users, which is exactly why failures go to quarantine for human review rather than the void; a pure drop silently loses a real lead."
+    },
+    {
+      "name": "Minimum-fill-time trap (signed server token, no client JS)",
+      "how": "At render the Server Component embeds a hidden field: HMAC(formId|tenantKey|issuedAt|nonce, server secret).issuedAt.nonce. On POST: verify the signature, require 3s ≤ elapsed ≤ 24h, and burn the nonce in Redis (SET NX EX 86400) so each token submits exactly once — the nonce is what stops a bot farming one valid token and replaying it.",
+      "tradeoff": "Collides with §16's ISR: a cached page embeds the build-time issuedAt, so min-time always passes and stale pages 403 real users near the 24h boundary. The form fragment must render dynamically (Suspense hole / force-dynamic on form-bearing routes), giving up some ISR benefit on listing pages. Also honest: elapsed time measures render-to-submit, not typing — a patient bot passes trivially. Burned nonces turn back-button resubmits into the duplicate-collapse success path, which is acceptable."
+    },
+    {
+      "name": "Per-IP rate limit (Redis)",
+      "how": "Client IP taken only from the hop CloudFront appended (Caddy configured to trust CloudFront ranges only — never the first X-Forwarded-For entry, which the client controls; same derivation feeds the consent ip_address). Redis INCR+EXPIRE two-window sliding counters keyed rl:ip:{tenant}:{ip}: 5/10min and 20/day per tenant, 50/day cross-tenant. Over-limit returns a truthful 429 + Retry-After.",
+      "tradeoff": "AU mobile carriers CGNAT aggressively, so thousands of real users share one IP — limits must stay loose, which means per-IP alone never stops a distributed botnet (that is the tenant breaker's job). Redis is on-instance (§2): on outage, fail OPEN with a Sentry alert — losing a real lead costs the business more than an hour of spam does."
+    },
+    {
+      "name": "Per-tenant circuit breaker (Redis)",
+      "how": "Counter per tenantKey per hour, ~120/hr. When tripped, the route flips to quarantine-only mode: submissions still get the success response but go to the quarantine store instead of creating contacts and enqueueing SummariseInteraction/RebuildContactIntent. This is the guard that actually caps spend — §5's pipeline fires two paid AI jobs per submission, so the marginal cost of spam is the Anthropic bill and a poisoned contact list, not the Postgres row. Alert the agent on trip.",
+      "tradeoff": "A genuine spike (hot listing launch) parks real leads in quarantine until a human releases them — a staffed delay, deliberately chosen over an unbounded AI bill. Threshold needs tuning against real traffic; 120/hr is a starting guess for a one-office tenant."
+    },
+    {
+      "name": "Duplicate-submission collapse (Redis idempotency key)",
+      "how": "SHA-256(tenantKey | formId | emailNormalised-or-phoneE164 | SHA-256(message)) via SET NX EX 600. A hit returns the original success response and writes nothing — mandatory ordering, because interactions are append-only (§4) and a duplicate row can never be cleaned up, only tombstoned. Catches double-clicks, browser retries, and back-button reposts with zero client JS.",
+      "tradeoff": "An identical repeat enquiry inside 10 minutes is collapsed (acceptable — the text is byte-identical), and anything differing by one character passes. This is an idempotency/UX guard, not an anti-spam wall; do not credit it as one."
+    },
+    {
+      "name": "Content heuristic: URL cap",
+      "how": "Quarantine any message containing more than 2 URLs or any markup (href/BBCode) — one cheap regex after Zod. Link-stuffing is the dominant residual spam shape once dumb bots are honeypotted out.",
+      "tradeoff": "Crude. A legitimate buyer pasting three listing links gets quarantined instead of ingested — recoverable via review, but it is a false-positive source."
+    },
+    {
+      "name": "Disposition policy: silent-accept + quarantine (cross-cutting)",
+      "how": "Honeypot, min-time, and heuristic failures return the same generic success page as a real submission and divert the payload to a quarantine store (Postgres table with TTL cleanup, or S3) reviewed periodically from the CRM. Only size (413), unknown tenantKey (404), and rate limits (429) tell the truth, since hiding those defends nothing.",
+      "tradeoff": "A small recurring human review cost, and it cannot fully blind an attacker (timing side channels remain). But every guard above has a legitimate-user false-positive mode, and for a lead-capture business a silently discarded real lead is the single worst outcome — quarantine converts 'lost' into 'delayed'."
+    }
+  ],
+  "consentFields": [
+    "source_form — stable versioned form identifier, e.g. public/{tenantKey}/enquiry/{listingSlug}@v3; the version suffix ties the row to the exact form revision that was live",
+    "wording_shown — the exact consent sentence rendered, resolved SERVER-SIDE from a signed wording-version id embedded in the form; never taken from the POST body, or a bot writes its own consent wording into your legal evidence",
+    "channel — one consents row per ticked channel, using the consent_channel enum (email / sms / phone); a single checkbox covering multiple channels produces multiple rows with the same wording",
+    "status = 'granted' — written only for an explicitly ticked, unticked-by-default marketing checkbox; submitting the enquiry is NOT marketing consent under the Spam Act, only a basis to reply about that specific enquiry, so no checkbox means no consent row",
+    "ip_address — from the trusted CloudFront-appended hop, the same derivation the rate limiter uses (one function, one truth)",
+    "occurred_at — server clock at POST processing time; never client-supplied",
+    "evidence_s3_key — raw submission snapshot archived to S3 ap-southeast-2: full sanitised payload, user agent, referring page URL, wording version id, and the fill-time token's issuedAt; the columns are the queryable summary, this object is what you hand a lawyer",
+    "contact_id linkage note — the consent row attaches to the contact row created at submission even if it is a possible duplicate; §4/schema comments allow duplicates to exist pending merge review, and merge supersedes via merged_into_id without repointing consent rows, preserving provenance"
+  ],
+  "rateLimit": "Redis (on-instance, per §2) is the store — TTL-native counters, and Postgres must not take a write per probe request. Per-IP: 5/10min and 20/day per (tenantKey, IP), 50/day cross-tenant, keys rl:ip:{tenant}:{ip} via INCR+EXPIRE two-window sliding; truthful 429 + Retry-After. Per-tenant: 120/hour circuit breaker that flips the route to quarantine-only mode (success response, no contact write, no AI jobs enqueued) — its purpose is capping downstream BullMQ/Anthropic spend, not protecting Postgres. IP derived only from the CloudFront-appended hop with Caddy trusting CloudFront ranges exclusively. On Redis outage: fail open, log, Sentry alert — a lost lead outweighs an hour of spam. Postgres holds the durable consent evidence, never the counters.",
+  "notes": "Honest limits of the no-captcha stance: this stack stops naive bots, replay, floods, and accidental duplicates, but a targeted attacker running a real browser through residential proxies beats every guard here — the circuit breaker plus quarantine converts that from 'poisoned contact list and AI bill' into 'bounded review work', which is the correct failure mode for a one-office tenant under cost discipline. Check ordering is cheapest-first: size cap → tenantKey resolution (404) → per-IP limit → tenant breaker → Zod → honeypot → token/min-time/nonce → duplicate key → heuristics → write. The consent write, contact create, and interaction insert happen in one transaction, then jobs are enqueued (§8: a failed AI call never fails the user request — enqueue after commit, never inside it). Everything flows through the Phase 1 web-form channel adapter per §5 and §16 — this route is adapter plumbing, not a second form path. The single real architecture cost is the min-fill-time token forcing a dynamic render of the form fragment on otherwise-ISR listing pages; if that ISR loss is unacceptable, drop the min-time check and keep the signed single-use nonce (still blocks replay) — the min-time signal is the weakest guard here anyway. Per §15, consent wording and this design touch consent/compliance, so a human signs off before implementation."
+}

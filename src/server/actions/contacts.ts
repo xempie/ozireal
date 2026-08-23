@@ -14,6 +14,9 @@ import {
 } from "@/db/schema";
 import type { Tx } from "@/db";
 import { defineAction, ActionError, toE164, normaliseEmail } from "./action";
+import { manualAdapter } from "@/server/intake/adapters/manual";
+import { ingestInTx } from "@/server/intake/pipeline";
+import { enqueue } from "@/server/jobs/queues";
 
 /**
  * Contact writes — the first real write path in the product.
@@ -269,6 +272,10 @@ export const recordFollowupOutcome = defineAction({
       })
       .where(eq(contacts.id, input.contactId));
 
+    ctx.afterCommit(() =>
+      enqueue("RebuildContactIntent", { tenantId: ctx.tenantId, entityId: input.contactId }),
+    );
+
     await ctx.audit({
       kind: "edit",
       action: "Recorded a follow-up outcome",
@@ -304,31 +311,40 @@ export const logInteraction = defineAction({
   async handler(input, ctx) {
     await assertWritable(ctx.tx, input.contactId);
 
-    const [created] = await ctx.tx
-      .insert(interactions)
-      .values({
-        tenantId: ctx.tenantId,
-        contactId: input.contactId,
-        channel: input.channel,
-        direction: input.direction,
-        occurredAt: input.occurredAt ?? new Date(),
-        subject: input.subject || null,
-        body: input.body,
-        createdByUserId: ctx.userId,
-      })
-      .returning({ id: interactions.id });
+    /**
+     * B3 made this a real adapter: the typed-up call goes through the SAME pipeline
+     * core as an email or a web form — same interaction row, same summarise and
+     * rebuild jobs afterwards. The action contributes what only it knows (the
+     * signed-in user, the audit row) and the jobs wait for the commit.
+     */
+    const normalised = await manualAdapter.ingest({
+      contactId: input.contactId,
+      channel: input.channel === "email" || input.channel === "web_form" ? "manual" : input.channel,
+      direction: input.direction,
+      subject: input.subject || null,
+      body: input.body,
+      occurredAt: input.occurredAt,
+    });
+    const result = await ingestInTx(
+      ctx.tx,
+      { ...normalised, recordedByUserId: ctx.userId },
+      ctx.tenantId,
+    );
+    for (const job of result.jobs) {
+      ctx.afterCommit(() => enqueue(job.name, job.payload));
+    }
 
     await ctx.audit({
       kind: "edit",
       action: `Logged a ${input.channel} interaction`,
       target: input.subject || input.body.slice(0, 60),
       entityType: "interaction",
-      entityId: created.id,
+      entityId: result.interactionId,
     });
 
     revalidatePath(`/contacts/${input.contactId}`);
     revalidatePath("/dashboard");
-    return { id: created.id };
+    return { id: result.interactionId };
   },
 });
 
