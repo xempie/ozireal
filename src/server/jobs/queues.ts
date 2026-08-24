@@ -84,20 +84,52 @@ export function getQueue(): Queue<JobPayload, unknown, JobName> {
 /**
  * Enqueue, best-effort.
  *
- * The jobId makes enqueueing idempotent per (job, entity): replaying a delivery or
- * re-running a pipeline enqueues the same work once. BullMQ dedupes on jobId while
- * the previous job is still pending/active — good enough, since handlers are
- * idempotent anyway.
+ * The jobId collapses a burst: ten emails from one person in a minute should mean
+ * one brief rebuild, not ten paid Sonnet calls.
  *
- * Returns whether it landed; never throws. The caller has already committed the
- * database row that matters.
+ * But BullMQ's jobId is not a debounce — "if you attempt to add a job with an id
+ * that already exists, it will not be added", and that holds for FINISHED jobs
+ * too, for as long as the key survives. With removeOnComplete at 24h and
+ * removeOnFail false, the naive version means: a contact whose brief was rebuilt
+ * this morning gets no rebuild from this afternoon's email, and a contact whose
+ * rebuild ever failed gets no rebuild EVER again. Both are silent.
+ *
+ * So a finished job with this id is removed first, and only a live one (waiting,
+ * delayed or active) is allowed to absorb the new request. That keeps the collapse
+ * and drops the trap. Found by the B4 review.
  */
 export async function enqueue(name: JobName, payload: JobPayload): Promise<boolean> {
+  // BullMQ reserves ':' as its key separator and refuses it in custom ids.
+  const jobId = `${name}-${payload.entityId}`;
   try {
-    await getQueue().add(name, payload, {
-      // BullMQ reserves ':' as its key separator and refuses it in custom ids.
-      jobId: `${name}-${payload.entityId}`,
-    });
+    const queue = getQueue();
+
+    const existing = await queue.getJob(jobId);
+    if (existing) {
+      const state = await existing.getState();
+      if (state === "completed" || state === "failed") {
+        await existing.remove();
+      } else if (state === "active") {
+        /**
+         * Mid-flight: it has already read the rows it is going to read, so folding
+         * into it would silently drop whatever just landed — a brief permanently
+         * missing the interaction that triggered the rebuild. Schedule a trailing
+         * run instead, under a minute-bucketed id so a burst still collapses to at
+         * most one follow-up per minute.
+         */
+        const bucket = Math.floor(Date.now() / 60_000);
+        await queue.add(name, payload, {
+          jobId: `${jobId}-after-${bucket}`,
+          delay: 30_000,
+        });
+        return true;
+      } else {
+        // Waiting or delayed: not started yet, so it will see the new rows too.
+        return true;
+      }
+    }
+
+    await queue.add(name, payload, { jobId });
     return true;
   } catch (e) {
     console.error(

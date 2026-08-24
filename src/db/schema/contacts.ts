@@ -285,6 +285,13 @@ export const interactions = pgTable(
       onDelete: "set null",
     }),
 
+    /**
+     * Derived by the extraction job (B4) — a cache of the body, not evidence. The
+     * append-only trigger leaves this column out of its frozen tuple, so a stale
+     * summary can be rebuilt while the body it derives from cannot be touched.
+     */
+    aiSummary: text("ai_summary"),
+
     tombstonedAt: timestamp("tombstoned_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

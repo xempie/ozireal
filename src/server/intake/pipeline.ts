@@ -130,9 +130,13 @@ export async function ingestInTx(
     contactId: resolution.contactId,
     resolution: resolution.outcome,
     duplicate: false,
+    /**
+     * §8's chain is sequential: the extraction handler enqueues the rebuild when it
+     * finishes, so the brief reads summaries rather than full bodies. Enqueueing
+     * both here would just race them.
+     */
     jobs: [
       { name: "SummariseInteraction", payload: { tenantId, entityId: interaction.id } },
-      { name: "RebuildContactIntent", payload: { tenantId, entityId: resolution.contactId } },
     ],
   };
 }

@@ -16,3 +16,4 @@ infra/.dist-domain
 .pgdata.log
 .env.local
 .tools/
+.batches/

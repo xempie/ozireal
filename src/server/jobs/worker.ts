@@ -22,21 +22,25 @@ type Handler = (job: Job<JobPayload, unknown, JobName>) => Promise<unknown>;
 
 const handlers: Record<JobName, Handler> = {
   /**
-   * B4 gives these bodies (Claude summarisation, intent rebuild). B3 registers them
-   * so the pipeline's enqueues have somewhere to land and the retry/backoff/dead-
-   * letter machinery is proven under load before any AI depends on it.
+   * B4: Haiku extracts, Sonnet writes (§9). A TaskOutputError (schema-invalid
+   * model output) rides the normal retry train — the next attempt usually parses —
+   * and parks in the dead-letter view with the raw response ledgered if it never
+   * does. A ClaudeError with retryable=false (bad key, bad request) fails fast
+   * for the same five attempts but tells the operator what to actually fix.
    */
   async SummariseInteraction(job) {
-    return { pending: "B4", interactionId: job.data.entityId };
+    const { summariseInteraction } = await import("@/server/ai/handlers");
+    return summariseInteraction(job.data.tenantId, job.data.entityId);
   },
   async RebuildContactIntent(job) {
-    return { pending: "B4", contactId: job.data.entityId };
+    const { rebuildContactIntent } = await import("@/server/ai/handlers");
+    return rebuildContactIntent(job.data.tenantId, job.data.entityId);
   },
   async MatchContacts(job) {
-    return { pending: "B4", propertyId: job.data.entityId };
+    return { pending: "B5", propertyId: job.data.entityId };
   },
   async DailyBrief(job) {
-    return { pending: "B4", tenantId: job.data.tenantId };
+    return { pending: "B5", tenantId: job.data.tenantId };
   },
 };
 

@@ -7,14 +7,21 @@ import {
   contacts,
   contactRoles,
   contactPreferences,
+  contactPreferenceSuburbs,
   interactions,
   mergeReviews,
   confirmItems,
   tasks,
+  suburbs,
 } from "@/db/schema";
 import type { Tx } from "@/db";
 import { defineAction, ActionError, toE164, normaliseEmail } from "./action";
 import { manualAdapter } from "@/server/intake/adapters/manual";
+import {
+  taskProposal,
+  preferenceChangeProposal,
+  type PreferenceChangeProposal,
+} from "@/server/ai/proposals";
 import { ingestInTx } from "@/server/intake/pipeline";
 import { enqueue } from "@/server/jobs/queues";
 
@@ -56,6 +63,93 @@ async function assertWritable(tx: Tx, contactId: string) {
     );
   }
   return c;
+}
+
+/**
+ * Apply a committed preference change (B4.5).
+ *
+ * Numeric fields coerce and range-check; text fields cap; suburbs resolve BY NAME
+ * against the suburbs table — a name that resolves to nothing is reported back
+ * rather than silently dropped, because "committed" must mean "applied". Suburb
+ * changes ADD, never remove: a proposal sourced from "we're also open to Prospect"
+ * must not delete the suburbs the person already wanted.
+ */
+async function applyPreferenceChange(
+  tx: Tx,
+  tenantId: string,
+  contactId: string,
+  p: PreferenceChangeProposal,
+) {
+  // The one-row-per-contact preferences record, created on first commit.
+  let [prefs] = await tx
+    .select({ id: contactPreferences.id })
+    .from(contactPreferences)
+    .where(eq(contactPreferences.contactId, contactId))
+    .limit(1);
+  if (!prefs) {
+    [prefs] = await tx
+      .insert(contactPreferences)
+      .values({ tenantId, contactId })
+      .returning({ id: contactPreferences.id });
+  }
+
+  const numeric: Partial<Record<PreferenceChangeProposal["field"], [number, number]>> = {
+    priceMin: [0, 50_000_000],
+    priceMax: [0, 50_000_000],
+    bedsMin: [0, 12],
+    bathsMin: [0, 12],
+    parkingMin: [0, 12],
+  };
+
+  if (p.field === "suburbs") {
+    const names = Array.isArray(p.value) ? p.value : [String(p.value)];
+    const unresolved: string[] = [];
+    for (const name of names) {
+      const [s] = await tx
+        .select({ id: suburbs.id })
+        .from(suburbs)
+        .where(sql`lower(${suburbs.name}) = lower(${name.trim()})`)
+        .limit(1);
+      if (!s) {
+        unresolved.push(name);
+        continue;
+      }
+      await tx
+        .insert(contactPreferenceSuburbs)
+        .values({ preferenceId: prefs.id, suburbId: s.id })
+        .onConflictDoNothing();
+    }
+    if (unresolved.length === names.length) {
+      throw new ActionError(
+        `None of those suburbs (${unresolved.join(", ")}) matched the suburb list, so nothing was applied. Check the spelling on the contact's preferences instead.`,
+      );
+    }
+    return;
+  }
+
+  const range = numeric[p.field];
+  if (range) {
+    // "Several" stripped of non-digits is "" and Number("") is 0 — a value that
+    // WOULD pass the range check while meaning nothing. Digits must actually exist.
+    const cleaned = typeof p.value === "number" ? null : String(p.value).replace(/[^\d.]/g, "");
+    const n = typeof p.value === "number" ? p.value : cleaned ? Number(cleaned) : NaN;
+    if (!Number.isFinite(n) || n < range[0] || n > range[1]) {
+      throw new ActionError(
+        `"${String(p.value)}" is not a usable value for ${p.field}, so nothing was applied.`,
+      );
+    }
+    await tx
+      .update(contactPreferences)
+      .set({ [p.field]: Math.round(n) })
+      .where(eq(contactPreferences.id, prefs.id));
+    return;
+  }
+
+  // timeline | financeStatus | softRequirements — bounded free text.
+  await tx
+    .update(contactPreferences)
+    .set({ [p.field]: String(p.value).slice(0, 500) })
+    .where(eq(contactPreferences.id, prefs.id));
 }
 
 const CONTACT_ROLES = [
@@ -416,16 +510,37 @@ export const commitConfirmItem = defineAction({
     if (!item) throw new ActionError("That proposal is no longer in the queue.");
     if (item.status !== "pending") throw new ActionError("That proposal was already handled.");
 
+    /**
+     * B4.5: committing APPLIES the structured proposal — parsing data, never prose.
+     * Each kind revalidates confirm_items.proposed against the same Zod schema the
+     * extraction wrote it with; a proposal that no longer parses is refused rather
+     * than half-applied.
+     */
     if (item.kind === "task") {
+      const proposed = taskProposal.nullable().catch(null).parse(item.proposed);
       await ctx.tx.insert(tasks).values({
         tenantId: ctx.tenantId,
         contactId: item.contactId,
         title: item.summary,
         status: "open",
+        dueAt:
+          proposed?.dueInDays != null
+            ? new Date(Date.now() + proposed.dueInDays * 86_400_000)
+            : null,
         sourceInteractionId: item.sourceInteractionId,
         sourceLabel: "Committed from the confirm queue",
         assignedToUserId: ctx.userId,
       });
+    }
+
+    if (item.kind === "preference_change") {
+      const parsed = preferenceChangeProposal.safeParse(item.proposed);
+      if (!parsed.success) {
+        throw new ActionError(
+          "This proposal has no applicable data attached and cannot be committed. Discard it and make the change on the contact instead.",
+        );
+      }
+      await applyPreferenceChange(ctx.tx, ctx.tenantId, item.contactId, parsed.data);
     }
 
     await ctx.tx

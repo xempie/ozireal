@@ -199,20 +199,68 @@ replays collapse, jobs enqueue), and a running worker draining the queue.
 
 ---
 
-## Phase B4 — AI
+## Phase B4 — AI ✅ done (live verification awaits an API key)
 
-- [ ] **B4.1 `callClaude()`** over direct `fetch`, no SDK (§9). Every call writes an
-      `ai_generations` row: model, prompt hash, tokens, cost, latency, related entity.
-- [ ] **B4.2 `runTask(schema, prompt)`** — prompt for JSON, parse, Zod-validate. On
-      failure, fail the job and store the raw response; never let malformed output reach
-      the database.
-- [ ] **B4.3 `/prompts` as versioned files,** not inline strings.
-- [ ] **B4.4 SummariseInteraction → RebuildContactIntent.** Haiku extracts, Sonnet
-      writes the rolling brief. Intent is derived so a direct write is fine; anything
-      touching preferences or tasks goes to `confirm_items`.
-- [ ] **B4.5 The confirm queue commit action.** The proposal becomes a real row only
-      when a human presses the button (rule 5).
-- [ ] **B4.6 Prompt caching and the Batch API** for the non-urgent jobs (§9).
+- [x] **B4.1 `callClaude()`** — direct fetch, no SDK. Tiers not model ids at call
+      sites (haiku extracts, sonnet writes); ids and pricing in one place, checked
+      against the current docs (Sonnet 5 $2/$10, Haiku 4.5 $1/$5). Every successful
+      call writes `ai_generations`: model, tokens, cache reads, cost in AUD,
+      latency, and the entity that caused the spend. 429/5xx throw retryable and
+      ride BullMQ's backoff; 400/401 throw non-retryable — retrying our own bad
+      request helps nobody.
+- [x] **B4.2 `runTask(schema, prompt)`** — balanced-JSON extraction (fences and
+      preambles tolerated, truncation refused), Zod-gated. On invalid output the
+      generation row flips to failed WITH the raw response kept for prompt tuning,
+      and the job fails into the retry train. Malformed output reaches no table —
+      proven by a test that watches the tables.
+- [x] **B4.3 `/prompts` as versioned files.** `extract-interaction.v1.md` and
+      `rolling-brief.v1.md` — drafted by a design pass over the real schema and
+      sample voice, vocabulary aligned to the DB enums. The version is the
+      filename; the ledger's prompt hash ties every generation to it.
+- [x] **B4.4 SummariseInteraction → RebuildContactIntent**, sequential as §8 draws
+      it: the pipeline enqueues extraction; extraction enqueues the rebuild, so
+      briefs read summaries (a fraction of the tokens of full bodies). Intent is
+      derived → direct upsert. Tasks and preference changes → `confirm_items`
+      with structured `proposed` JSON. Idempotent under at-least-once delivery:
+      re-runs skip on the existing summary and dedupe proposals. No API key →
+      honest skip, repaired later by `pnpm ai:backfill`. Merged-in history feeds
+      the brief; tombstoned and merged-away records are skipped.
+- [x] **B4.5 The commit action applies data, never prose.** Proposals revalidate
+      against the same Zod schemas at commit: tasks carry their due date; numeric
+      fields range-check (and "several" is refused, not silently applied as 0);
+      suburbs resolve by name and ADD without removing; a suburb that resolves to
+      nothing refuses loudly, because "committed" must mean "applied".
+- [x] **B4.6 Caching + Batch.** The brief's stable prefix is marked cacheable
+      (Sonnet's 1024-token minimum noted — below it the mark is silently inert).
+      `pnpm ai:backfill` re-derives missing summaries either as normal jobs or via
+      the Message Batches API at half price — same prompt, same schema, same apply
+      function as the live path; the discount buys latency, never behaviour.
+
+Four defects the B4 review found and this phase fixes:
+
+- **The job queue silently dropped work.** BullMQ's `jobId` is not a debounce — it
+  refuses an add whose id already exists, *including for finished jobs*. With
+  `removeOnFail: false`, one failed `RebuildContactIntent` would have blocked that
+  contact's brief **permanently**; with `removeOnComplete` at 24h, this afternoon's
+  email produced no rebuild after this morning's. `enqueue()` now removes a
+  finished job before adding, folds into a waiting one, and schedules a trailing
+  run behind an active one (which has already read its rows).
+- **Truncation burned money.** A `max_tokens` stop produced unparseable JSON and
+  five paid retries of a deterministically identical failure. `stop_reason` is now
+  read; truncation ledgers the (genuinely billed) tokens, keeps the partial text
+  and fails non-retryably with the fix named.
+- **The batch path could double-apply.** A batch can take hours, during which the
+  live handler may summarise the same interaction; two runs word a summary
+  differently, so the proposal dedupe would miss it and the human would see the
+  same proposal twice. Batch results now re-check `ai_summary` before applying.
+- **A submitted batch's id was only ever in stdout.** It is money already spent
+  with results retrievable for 29 days, so it is now written to `.batches/` and
+  resumable with `--resume=<id>` instead of being paid for twice.
+
+Verified by `pnpm test` (191, Claude mocked at the fetch boundary, everything else
+real Postgres and real Redis). `pnpm verify:ai` runs one REAL extraction + rebuild
+end to end and prints the ledger — it needs `ANTHROPIC_API_KEY` in `.env.local`
+and skips honestly until one is provided.
 
 ---
 
