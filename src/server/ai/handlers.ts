@@ -54,7 +54,7 @@ export const extraction = z.object({
 export type Extraction = z.infer<typeof extraction>;
 
 export async function summariseInteraction(tenantId: string, interactionId: string) {
-  if (!hasApiKey()) return { skipped: "no-api-key" };
+  if (!(await hasApiKey(tenantId))) return { skipped: "no-api-key" };
 
   const ctx = await withTenant(tenantId, async (tx) => {
     const [i] = await tx
@@ -237,7 +237,7 @@ const briefOutput = z.object({
 });
 
 export async function rebuildContactIntent(tenantId: string, contactId: string) {
-  if (!hasApiKey()) return { skipped: "no-api-key" };
+  if (!(await hasApiKey(tenantId))) return { skipped: "no-api-key" };
 
   const ctx = await withTenant(tenantId, async (tx) => {
     const [c] = await tx

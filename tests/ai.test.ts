@@ -48,8 +48,11 @@ afterAll(async () => {
   await sql?.end();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   process.env.ANTHROPIC_API_KEY = "test-key-not-real";
+  // The key now resolves from tenant_secrets first, environment second. Clear any
+  // stored row so these tests exercise the fallback deterministically.
+  await sql`delete from tenant_secrets where name = 'ANTHROPIC_API_KEY'`;
   enqueued.length = 0;
 });
 

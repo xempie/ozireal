@@ -13,7 +13,8 @@ import { summariseInteraction, rebuildContactIntent } from "@/server/ai/handlers
  */
 
 async function main() {
-  if (!hasApiKey()) {
+  const tenantId = await systemTenantId();
+  if (!(await hasApiKey(tenantId))) {
     console.log(
       "SKIP  ANTHROPIC_API_KEY is not set.\n" +
         "      Add it to .env.local, then: pnpm verify:ai\n" +
@@ -23,7 +24,6 @@ async function main() {
   }
   
   const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
-  const tenantId = await systemTenantId();
   const stamp = Date.now().toString().slice(-6);
   
   let failures = 0;

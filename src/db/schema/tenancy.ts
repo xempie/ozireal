@@ -3,8 +3,10 @@ import {
   uuid,
   text,
   timestamp,
+  integer,
   pgEnum,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 /**
@@ -57,4 +59,35 @@ export const users = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("users_tenant_idx").on(t.tenantId)],
+);
+
+/**
+ * Provider credentials the agency enters in Settings (migration 0009).
+ *
+ * AES-256-GCM ciphertext; the wrapping key stays in the environment. `lastFour` is
+ * clear text on purpose — the screen must show WHICH key is set without decrypting,
+ * and four characters identify a key to its owner while being useless to anyone else.
+ */
+export const tenantSecrets = pgTable(
+  "tenant_secrets",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    name: text("name").notNull(),
+
+    ciphertext: text("ciphertext").notNull(),
+    iv: text("iv").notNull(),
+    authTag: text("auth_tag").notNull(),
+    keyVersion: integer("key_version").notNull().default(1),
+
+    lastFour: text("last_four").notNull(),
+    updatedByUserId: uuid("updated_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("tenant_secrets_uq").on(t.tenantId, t.name)],
 );

@@ -87,14 +87,26 @@ export class ClaudeError extends Error {
   }
 }
 
-export function hasApiKey(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY;
+/**
+ * The key comes from what the agency entered in Settings, falling back to the
+ * environment for the worker, tests and CI. Tenant-scoped because the credential
+ * is the agency's, not the server's — which is also what lets it be changed
+ * without a deploy.
+ */
+export async function hasApiKey(tenantId: string): Promise<boolean> {
+  const { getSecret } = await import("@/server/secrets");
+  return !!(await getSecret(tenantId, "ANTHROPIC_API_KEY"));
 }
 
 export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const { getSecret } = await import("@/server/secrets");
+  const apiKey = await getSecret(call.tenantId, "ANTHROPIC_API_KEY");
   if (!apiKey) {
-    throw new ClaudeError("ANTHROPIC_API_KEY is not set", undefined, false);
+    throw new ClaudeError(
+      "No Anthropic API key. Add one in Settings → Credentials.",
+      undefined,
+      false,
+    );
   }
 
   const model = MODELS[call.model];

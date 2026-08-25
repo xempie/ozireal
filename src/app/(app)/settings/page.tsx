@@ -11,6 +11,9 @@ import {
 } from "@/components/ui";
 import { getAgency, getSettings } from "@/server/queries";
 import { QueueHealthCard } from "@/components/jobs/queue-health";
+import { CredentialsCard } from "@/components/settings/credentials";
+import { getSecretStatus, secretsConfigured } from "@/server/secrets";
+import { currentTenantId } from "@/db";
 
 /** "Sam Whitfield" -> "SW". Empty when there is no name to take them from. */
 function initials(name: string) {
@@ -23,7 +26,13 @@ function initials(name: string) {
 }
 
 export default async function SettingsPage() {
-  const [agency, settings] = await Promise.all([getAgency(), getSettings()]);
+  const [agency, settings, tenantId] = await Promise.all([
+    getAgency(),
+    getSettings(),
+    currentTenantId(),
+  ]);
+  const secretStatuses = await getSecretStatus(tenantId);
+  const encryptionReady = secretsConfigured();
 
   return (
     <>
@@ -123,6 +132,17 @@ export default async function SettingsPage() {
 
         <Section title="Background jobs" hint="the dead-letter view">
           <QueueHealthCard />
+        </Section>
+
+        <Section title="Credentials" hint="encrypted; entered here, not in a file">
+          <CredentialsCard statuses={secretStatuses} encryptionReady={encryptionReady} />
+          <ProtoNote>
+            Stored with AES-256-GCM, so a database dump yields ciphertext. The
+            wrapping key stays in the server environment — one secret outside the
+            database is the most this arrangement can remove, and it is the one that
+            matters. Keys are never sent back to this screen; only the last four
+            characters are, so you can tell which key is which.
+          </ProtoNote>
         </Section>
       </div>
 
