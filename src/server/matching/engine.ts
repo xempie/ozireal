@@ -13,6 +13,7 @@ import {
   matchRuns,
 } from "@/db/schema";
 import { hasApiKey } from "@/server/ai/claude";
+import { getLlmConfig } from "@/server/ai/config";
 import { runTask } from "@/server/ai/run-task";
 import { loadPrompt } from "@/server/ai/prompts";
 import { hasPgvector } from "@/server/ai/embed";
@@ -256,15 +257,17 @@ export async function matchContactsForListing(
   shortlist = shortlist.slice(0, STAGE2_LIMIT);
 
   /** Stage 3: Claude ranks and writes the sentence. */
+  const config = await getLlmConfig(tenantId);
   const prompt = loadPrompt("rank-matches.v1");
   const { data, generationId } = await runTask(rankOutput, {
     task: "rank-matches:listing",
     model: "sonnet",
+    output: "structured",
     tenantId,
     entity: { type: "listing", id: listingId },
     promptVersion: prompt.version,
     system: [{ text: prompt.text, cache: true }],
-    maxTokens: 2000,
+    maxTokens: config.rankingMaxTokens,
     messages: [
       {
         role: "user",
@@ -456,15 +459,17 @@ export async function matchListingsForContact(
   }
   shortlist = shortlist.slice(0, STAGE2_LIMIT);
 
+  const config = await getLlmConfig(tenantId);
   const prompt = loadPrompt("rank-matches.v1");
   const { data, generationId } = await runTask(rankOutput, {
     task: "rank-matches:contact",
     model: "sonnet",
+    output: "structured",
     tenantId,
     entity: { type: "contact", id: contactId },
     promptVersion: prompt.version,
     system: [{ text: prompt.text, cache: true }],
-    maxTokens: 2000,
+    maxTokens: config.rankingMaxTokens,
     messages: [
       {
         role: "user",

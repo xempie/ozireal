@@ -4,6 +4,8 @@ import {
   text,
   timestamp,
   integer,
+  real,
+  numeric,
   pgEnum,
   index,
   uniqueIndex,
@@ -91,3 +93,49 @@ export const tenantSecrets = pgTable(
   },
   (t) => [uniqueIndex("tenant_secrets_uq").on(t.tenantId, t.name)],
 );
+
+/**
+ * LLM configuration, one row per tenant (migration 0011).
+ *
+ * Model ids, temperatures, token ceilings, pricing and the monthly spend cap —
+ * every decision the agency should be able to see and change without a deploy.
+ * The structured temperature is pinned to 0 by a CHECK constraint: those tasks
+ * are parsed by Zod, and there is no such thing as a creative JSON schema.
+ */
+export const llmSettings = pgTable("llm_settings", {
+  tenantId: uuid("tenant_id")
+    .primaryKey()
+    .references(() => tenants.id, { onDelete: "restrict" }),
+
+  fastModel: text("fast_model").notNull().default("claude-haiku-4-5"),
+  writingModel: text("writing_model").notNull().default("claude-sonnet-5"),
+
+  structuredTemperature: real("structured_temperature").notNull().default(0),
+  proseTemperature: real("prose_temperature").notNull().default(0.3),
+
+  extractionMaxTokens: integer("extraction_max_tokens").notNull().default(1200),
+  briefMaxTokens: integer("brief_max_tokens").notNull().default(1000),
+  rankingMaxTokens: integer("ranking_max_tokens").notNull().default(2000),
+
+  monthlyBudgetAud: numeric("monthly_budget_aud", { precision: 10, scale: 2 }),
+  budgetAction: text("budget_action").notNull().default("block"),
+
+  fastInputUsdPerMtok: numeric("fast_input_usd_per_mtok", { precision: 10, scale: 4 })
+    .notNull()
+    .default("1.00"),
+  fastOutputUsdPerMtok: numeric("fast_output_usd_per_mtok", { precision: 10, scale: 4 })
+    .notNull()
+    .default("5.00"),
+  writingInputUsdPerMtok: numeric("writing_input_usd_per_mtok", { precision: 10, scale: 4 })
+    .notNull()
+    .default("2.00"),
+  writingOutputUsdPerMtok: numeric("writing_output_usd_per_mtok", { precision: 10, scale: 4 })
+    .notNull()
+    .default("10.00"),
+  audPerUsd: numeric("aud_per_usd", { precision: 10, scale: 4 }).notNull().default("1.55"),
+
+  updatedByUserId: uuid("updated_by_user_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

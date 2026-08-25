@@ -1,4 +1,5 @@
-import { MODELS, type ModelTier, type SystemBlock } from "./claude";
+import { type ModelTier, type SystemBlock } from "./claude";
+import { getLlmConfig } from "./config";
 
 /**
  * Message Batches (B4.6, §9): half price for anything that can wait an hour.
@@ -25,12 +26,20 @@ export type BatchRequest = {
   /** ^[a-zA-Z0-9_-]{1,64}$ and unique within the batch. */
   customId: string;
   model: ModelTier;
+  /** Same meaning as on a live call: structured output is pinned at temperature 0. */
+  output?: "structured" | "prose";
   system?: SystemBlock[];
   messages: { role: "user" | "assistant"; content: string }[];
   maxTokens?: number;
 };
 
-export async function createBatch(requests: BatchRequest[]): Promise<{ id: string }> {
+export async function createBatch(
+  tenantId: string,
+  requests: BatchRequest[],
+): Promise<{ id: string }> {
+  // Batch work uses the SAME configured models and temperatures as a live call.
+  // A discount must buy latency, never different behaviour.
+  const config = await getLlmConfig(tenantId);
   const res = await fetch(BASE, {
     method: "POST",
     headers: headers(),
@@ -38,8 +47,12 @@ export async function createBatch(requests: BatchRequest[]): Promise<{ id: strin
       requests: requests.map((r) => ({
         custom_id: r.customId,
         params: {
-          model: MODELS[r.model],
+          model: r.model === "haiku" ? config.fastModel : config.writingModel,
           max_tokens: r.maxTokens ?? 1200,
+          temperature:
+            (r.output ?? "structured") === "structured"
+              ? config.structuredTemperature
+              : config.proseTemperature,
           ...(r.system?.length
             ? {
                 system: r.system.map((b) =>

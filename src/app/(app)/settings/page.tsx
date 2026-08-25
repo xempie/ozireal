@@ -13,6 +13,9 @@ import { getAgency, getSettings } from "@/server/queries";
 import { QueueHealthCard } from "@/components/jobs/queue-health";
 import { CredentialsCard } from "@/components/settings/credentials";
 import { getSecretStatus, secretsConfigured } from "@/server/secrets";
+import { LlmSettingsForm } from "@/components/settings/llm-settings";
+import { readLlmSettings } from "@/server/queries/llm";
+import { getLlmConfig, getBudgetState } from "@/server/ai/config";
 import { currentTenantId } from "@/db";
 
 /** "Sam Whitfield" -> "SW". Empty when there is no name to take them from. */
@@ -33,6 +36,26 @@ export default async function SettingsPage() {
   ]);
   const secretStatuses = await getSecretStatus(tenantId);
   const encryptionReady = secretsConfigured();
+  const [llmRow, llmDefaults, budget] = await Promise.all([
+    readLlmSettings(tenantId),
+    getLlmConfig(tenantId),
+    getBudgetState(tenantId),
+  ]);
+  const llmValues = {
+    fastModel: llmRow?.fastModel ?? llmDefaults.fastModel,
+    writingModel: llmRow?.writingModel ?? llmDefaults.writingModel,
+    proseTemperature: llmRow?.proseTemperature ?? llmDefaults.proseTemperature,
+    extractionMaxTokens: llmRow?.extractionMaxTokens ?? llmDefaults.extractionMaxTokens,
+    briefMaxTokens: llmRow?.briefMaxTokens ?? llmDefaults.briefMaxTokens,
+    rankingMaxTokens: llmRow?.rankingMaxTokens ?? llmDefaults.rankingMaxTokens,
+    monthlyBudgetAud: llmRow?.monthlyBudgetAud ?? null,
+    budgetAction: llmRow?.budgetAction ?? llmDefaults.budgetAction,
+    fastInputUsdPerMtok: llmRow?.fastInputUsdPerMtok ?? String(llmDefaults.pricing.fast.input),
+    fastOutputUsdPerMtok: llmRow?.fastOutputUsdPerMtok ?? String(llmDefaults.pricing.fast.output),
+    writingInputUsdPerMtok: llmRow?.writingInputUsdPerMtok ?? String(llmDefaults.pricing.writing.input),
+    writingOutputUsdPerMtok: llmRow?.writingOutputUsdPerMtok ?? String(llmDefaults.pricing.writing.output),
+    audPerUsd: llmRow?.audPerUsd ?? String(llmDefaults.audPerUsd),
+  };
 
   return (
     <>
@@ -132,6 +155,10 @@ export default async function SettingsPage() {
 
         <Section title="Background jobs" hint="the dead-letter view">
           <QueueHealthCard />
+        </Section>
+
+        <Section title="AI configuration" hint="models, limits and the spend cap">
+          <LlmSettingsForm values={llmValues} budget={budget} />
         </Section>
 
         <Section title="Credentials" hint="encrypted; entered here, not in a file">

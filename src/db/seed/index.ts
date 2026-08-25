@@ -545,6 +545,17 @@ async function main() {
               values (${TENANT}, ${form}, ${wording})`;
   }
 
+  /**
+   * LLM defaults for the tenant (migration 0011).
+   *
+   * The migration back-fills existing tenants, but it runs BEFORE this seed
+   * creates one — so on a fresh database there would be no row at all. Reads
+   * fall back to defaults either way, but an admin UPDATE would silently touch
+   * nothing, which is the kind of quiet no-op that wastes an afternoon.
+   */
+  await sql`insert into llm_settings (tenant_id) values (${TENANT})
+            on conflict (tenant_id) do nothing`;
+
   for (const [name, detail] of [
     ["Vendor statement (Form 1)", "Served before the contract becomes binding"],
     ["Cooling-off notice", "Two clear business days, from the later of contract or Form 1"],

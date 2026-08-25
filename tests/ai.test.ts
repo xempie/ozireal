@@ -135,6 +135,7 @@ describe("callClaude writes the ledger", () => {
     const r = await callClaude({
       task: "test-ledger",
       model: "haiku",
+      output: "structured",
       tenantId,
       entity: { type: "interaction", id: entityId },
       messages: [{ role: "user", content: "hi" }],
@@ -157,7 +158,7 @@ describe("callClaude writes the ledger", () => {
     mockFetch(() => new Response("rate limited", { status: 429 }));
     const before = await sql<{ n: number }[]>`select count(*)::int as n from ai_generations`;
     await expect(
-      callClaude({ task: "t", model: "haiku", tenantId, messages: [{ role: "user", content: "x" }] }),
+      callClaude({ task: "t", model: "haiku", output: "structured" as const, tenantId, messages: [{ role: "user", content: "x" }] }),
     ).rejects.toMatchObject({ retryable: true });
     const after = await sql<{ n: number }[]>`select count(*)::int as n from ai_generations`;
     expect(after[0].n).toBe(before[0].n);
@@ -166,14 +167,14 @@ describe("callClaude writes the ledger", () => {
   it("throws non-retryable on 400 — retrying our own bad request helps nobody", async () => {
     mockFetch(() => new Response("bad request", { status: 400 }));
     await expect(
-      callClaude({ task: "t", model: "haiku", tenantId, messages: [{ role: "user", content: "x" }] }),
+      callClaude({ task: "t", model: "haiku", output: "structured" as const, tenantId, messages: [{ role: "user", content: "x" }] }),
     ).rejects.toMatchObject({ retryable: false });
   });
 
   it("refuses to run at all without an API key", async () => {
     delete process.env.ANTHROPIC_API_KEY;
     await expect(
-      callClaude({ task: "t", model: "haiku", tenantId, messages: [{ role: "user", content: "x" }] }),
+      callClaude({ task: "t", model: "haiku", output: "structured" as const, tenantId, messages: [{ role: "user", content: "x" }] }),
     ).rejects.toBeInstanceOf(ClaudeError);
   });
 });
@@ -184,7 +185,7 @@ describe("runTask is the only doorway to the database", () => {
   it("returns validated data", async () => {
     mockFetch(() => claudeResponse('{"answer": 42}'));
     const { data } = await runTask(schema, {
-      task: "t", model: "haiku", tenantId, messages: [{ role: "user", content: "x" }],
+      task: "t", model: "haiku", output: "structured", tenantId, messages: [{ role: "user", content: "x" }],
     });
     expect(data.answer).toBe(42);
   });
@@ -194,7 +195,7 @@ describe("runTask is the only doorway to the database", () => {
     let generationId = "";
     try {
       await runTask(schema, {
-        task: "t", model: "haiku", tenantId, messages: [{ role: "user", content: "x" }],
+        task: "t", model: "haiku", output: "structured", tenantId, messages: [{ role: "user", content: "x" }],
       });
       expect.unreachable();
     } catch (e) {
@@ -454,6 +455,7 @@ describe("truncation is not retried (B4 review)", () => {
       callClaude({
         task: "truncation-check",
         model: "haiku",
+      output: "structured",
         tenantId,
         messages: [{ role: "user", content: "x" }],
         maxTokens: 1200,

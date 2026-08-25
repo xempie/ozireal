@@ -108,6 +108,7 @@ async function main() {
         interactionId: i.id,
         contactId: i.contactId,
         model: "haiku" as const,
+        output: "structured" as const,
         system: [{ text: prompt.text }],
         maxTokens: 1200,
         messages: [
@@ -146,7 +147,7 @@ async function main() {
     batchId = resumeId;
     console.log(`resuming batch ${batchId}`);
   } else {
-    ({ id: batchId } = await createBatch(requests));
+    ({ id: batchId } = await createBatch(tenantId, requests));
     mkdirSync(".batches", { recursive: true });
     writeFileSync(
       join(".batches", `${batchId}.json`),

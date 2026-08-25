@@ -12,6 +12,7 @@ import {
   suburbs,
 } from "@/db/schema";
 import { hasApiKey } from "./claude";
+import { getLlmConfig } from "./config";
 import { runTask } from "./run-task";
 import { loadPrompt } from "./prompts";
 import { taskProposal, preferenceChangeProposal } from "./proposals";
@@ -94,15 +95,17 @@ export async function summariseInteraction(tenantId: string, interactionId: stri
   if (!ctx) return { skipped: "gone-or-tombstoned" };
   if ("done" in ctx) return { skipped: "already-summarised" };
 
+  const config = await getLlmConfig(tenantId);
   const prompt = loadPrompt("extract-interaction.v1");
   const { data } = await runTask(extraction, {
     task: "summarise-interaction",
     model: "haiku",
+    output: "structured",
     tenantId,
     entity: { type: "interaction", id: interactionId },
     promptVersion: prompt.version,
     system: [{ text: prompt.text }],
-    maxTokens: 1200,
+    maxTokens: config.extractionMaxTokens,
     messages: [
       {
         role: "user",
@@ -301,10 +304,12 @@ export async function rebuildContactIntent(tenantId: string, contactId: string) 
   // No interactions -> no brief. An empty state is honest; invented prose is not.
   if (ctx.log.length === 0) return { skipped: "no-interactions" };
 
+  const config = await getLlmConfig(tenantId);
   const prompt = loadPrompt("rolling-brief.v1");
   const { data } = await runTask(briefOutput, {
     task: "rebuild-contact-intent",
     model: "sonnet",
+    output: "structured",
     tenantId,
     entity: { type: "contact", id: contactId },
     promptVersion: prompt.version,
@@ -314,7 +319,7 @@ export async function rebuildContactIntent(tenantId: string, contactId: string) 
      * mark is cheap insurance — under the minimum it silently does not cache.
      */
     system: [{ text: prompt.text, cache: true }],
-    maxTokens: 1000,
+    maxTokens: config.briefMaxTokens,
     messages: [
       {
         role: "user",

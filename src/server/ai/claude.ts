@@ -16,32 +16,19 @@ import { aiGenerations } from "@/db/schema";
  * exists. Swallowing errors here would just hide them from it.
  */
 
-/** Logical tiers, not model ids: call sites say what KIND of work it is (§9 — Haiku
- *  extracts and classifies, Sonnet writes) and the mapping lives in one place. */
-export const MODELS = {
-  haiku: process.env.AI_MODEL_HAIKU ?? "claude-haiku-4-5",
-  sonnet: process.env.AI_MODEL_SONNET ?? "claude-sonnet-5",
-} as const;
-export type ModelTier = keyof typeof MODELS;
+/**
+ * Logical tiers, not model ids: call sites say what KIND of work it is (§9 —
+ * the fast model extracts and classifies, the writing model writes) and the
+ * mapping now lives in Settings, per tenant, editable without a deploy.
+ */
+export type ModelTier = "haiku" | "sonnet";
 
 /**
- * USD per million tokens, checked against the published pricing page on 2026-08-24.
- *
- * Maintained by hand, which means it CAN drift — the mitigation is that the ledger
- * stores the cost computed at call time, so a later correction never rewrites
- * history, and a wrong constant shows up as costs that disagree with the invoice
- * rather than as silently wrong history. Re-check when a model tier changes.
+ * Cache multipliers are ratios of the input price, published as such, so they
+ * are derived rather than being four more numbers for someone to keep in sync.
  */
-const PRICING_USD_PER_MTOK: Record<
-  ModelTier,
-  { input: number; output: number; cacheWrite: number; cacheRead: number }
-> = {
-  haiku: { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
-  sonnet: { input: 2.0, output: 10.0, cacheWrite: 2.5, cacheRead: 0.2 },
-};
-
-/** Cost lands in AUD because the invoice will. Overridable as the rate drifts. */
-const AUD_PER_USD = Number(process.env.AUD_PER_USD ?? "1.55");
+const CACHE_WRITE_MULTIPLIER = 1.25;
+const CACHE_READ_MULTIPLIER = 0.1;
 
 export type SystemBlock = {
   text: string;
@@ -54,6 +41,14 @@ export type ClaudeCall = {
   /** Ledger label, e.g. 'summarise-interaction'. */
   task: string;
   model: ModelTier;
+  /**
+   * Does a machine parse this output, or does a person read it?
+   *
+   * It selects the temperature, and the two are not interchangeable: structured
+   * work is pinned at 0 (the database refuses anything else) because a creative
+   * temperature on a JSON schema produces a failed job, not a better answer.
+   */
+  output: "structured" | "prose";
   system?: SystemBlock[];
   messages: { role: "user" | "assistant"; content: string }[];
   maxTokens?: number;
@@ -100,6 +95,15 @@ export async function hasApiKey(tenantId: string): Promise<boolean> {
 
 export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
   const { getSecret } = await import("@/server/secrets");
+  const { getLlmConfig, assertWithinBudget } = await import("./config");
+
+  /**
+   * The spend cap is checked BEFORE the call, not after — a budget discovered at
+   * the end of the month is not a budget. Ported from RoniDoc, which refuses
+   * with a 429 before doing any AI work.
+   */
+  await assertWithinBudget(call.tenantId);
+
   const apiKey = await getSecret(call.tenantId, "ANTHROPIC_API_KEY");
   if (!apiKey) {
     throw new ClaudeError(
@@ -109,7 +113,10 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
     );
   }
 
-  const model = MODELS[call.model];
+  const config = await getLlmConfig(call.tenantId);
+  const model = call.model === "haiku" ? config.fastModel : config.writingModel;
+  const temperature =
+    call.output === "structured" ? config.structuredTemperature : config.proseTemperature;
   const system = call.system?.map((b) =>
     b.cache
       ? { type: "text" as const, text: b.text, cache_control: { type: "ephemeral" as const } }
@@ -119,6 +126,7 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
   const body = {
     model,
     max_tokens: call.maxTokens ?? 1500,
+    temperature,
     ...(system?.length ? { system } : {}),
     messages: call.messages,
   };
@@ -236,12 +244,15 @@ async function ledger(
     rawResponse?: string;
   },
 ): Promise<string> {
-  const p = PRICING_USD_PER_MTOK[call.model];
+  const { getLlmConfig } = await import("./config");
+  const config = await getLlmConfig(call.tenantId);
+  const p = call.model === "haiku" ? config.pricing.fast : config.pricing.writing;
+
   const usd =
     (r.usage.inputTokens * p.input +
       r.usage.outputTokens * p.output +
-      r.usage.cacheWriteTokens * p.cacheWrite +
-      r.usage.cacheReadTokens * p.cacheRead) /
+      r.usage.cacheWriteTokens * p.input * CACHE_WRITE_MULTIPLIER +
+      r.usage.cacheReadTokens * p.input * CACHE_READ_MULTIPLIER) /
     1_000_000;
 
   const [row] = await withTenant(call.tenantId, (tx) =>
@@ -257,7 +268,7 @@ async function ledger(
         inputTokens: r.usage.inputTokens,
         outputTokens: r.usage.outputTokens,
         cachedInputTokens: r.usage.cacheReadTokens,
-        costAud: (usd * AUD_PER_USD).toFixed(6),
+        costAud: (usd * config.audPerUsd).toFixed(6),
         latencyMs: r.latencyMs,
         entityType: call.entity?.type,
         entityId: call.entity?.id,
