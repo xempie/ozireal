@@ -64,7 +64,12 @@ describe("the console can read its own data", () => {
 
   it("reports consent as it stands NOW, not as recorded on the draft (rule 2)", async () => {
     const rows = await Q.getApprovals();
-    const blocked = rows.find((a) => a.status === "blocked");
+    // The SEEDED blocked draft specifically. Other suites (outbound.test.ts)
+    // legitimately create blocked rows in this same database, and picking whichever
+    // came first made this assertion depend on test execution order.
+    const blocked = rows.find(
+      (a) => a.status === "blocked" && a.consentAtDraft !== null,
+    );
     expect(blocked, "the seed carries a consent-blocked draft").toBeTruthy();
     // Drafted while consent was valid; revoked since. If these matched, the screen's
     // "changed since drafting" badge would be decorative.

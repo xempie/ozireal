@@ -264,7 +264,72 @@ and skips honestly until one is provided.
 
 ---
 
-## Phase B5 — Stock, matching, and the send gate
+## Phase B5 — Stock, matching, and the send gate ✅ done
+
+- [x] **B5.1 pgvector** — migration `0010` applies **with or without** the
+      extension: real `vector(1024)` columns and HNSW indexes where it exists,
+      text columns everywhere. Local installation was declined (no admin rights);
+      AWS Postgres gets the full path with no code change. `match_runs` records
+      the funnel and whether the vector stage actually ran.
+- [x] **B5.2 Voyage embeddings** — `embedDocuments` / `embedQuery` are separate
+      functions because `input_type` decides retrieval quality and a boolean
+      nobody reads is how that gets inverted silently. Embeddings ride the same
+      cost ledger as Claude. `pnpm ai:embed` backfills.
+- [x] **B5.3 The three-stage matcher**, bidirectional. Filters → cosine → Sonnet
+      writes one sentence per match, with a prompt that forbids restating the
+      filters and permits an empty answer.
+- [x] **B5.4 The approval queue** — approve, edit (keeping the AI's original on
+      first edit), reject with a required reason.
+- [x] **B5.5 The send gate** — `checkConsent()` at the instant of sending, writing
+      `block_reason`, audited as a `block` event with actor system.
+- [x] **B5.6 MessageMedia SMS** — send, delivery receipts, inbound replies through
+      the ordinary pipeline, and STOP writing a consent revocation in our database.
+
+Fourteen defects the B5 review found and this phase fixes. Four were serious:
+
+- **The matcher never worked.** Stage-1 SQL used untyped `$n IS NULL` parameters
+  and failed with 42P08 on every invocation — invisible because the API-key check
+  returned before the SQL ran, so no test had ever executed the filter. Stage 1
+  now runs first and reports its count without a key, and `tests/matching.test.ts`
+  exercises it. Fixing that immediately exposed a second one: Drizzle renders a JS
+  array in `= any(...)` as a tuple, which Postgres refuses with 42809.
+- **Marketing email had no unsubscribe.** The only caller passed an SMS keyword
+  for both channels, so the email footer carried sender identification and nothing
+  else — unlawful, and contradicted by the comment above it. The facility is now a
+  discriminated union, so a channel and its unsubscribe cannot disagree, and email
+  refuses to send at all until the unsubscribe route exists.
+- **STOP revoked one row out of several.** A number can sit on several records
+  while a merge review is open; revoking on one left the others contactable. And
+  the revocation ran BEFORE identity resolution, so an opt-out from an unknown
+  number was dropped — then the contact was created seconds later without it.
+- **Consent across merged identities was wrong in both directions.** Latest-wins
+  over the union let a survivor's grant override a duplicate's later unsubscribe;
+  the first fix (strictest-wins) broke re-subscription, barring anyone who ever
+  opted out. The rule is now latest-wins *per record*, strictest *across records*.
+
+Also fixed: the stage-2 cap only applied on one branch, so a run where the vector
+query returned nothing sent all 200 candidates into a paid prompt; partial
+embedding coverage silently discarded eligible candidates while recording a clean
+vector run; rentals were matched on sale price; the reverse direction ignored
+do-not-contact; `consentAtDraft` was fabricated at send time; the DLR handler
+tested for any historical revocation rather than the current state; the webhook
+reused the outbound API password and compared it non-timing-safely; the opt-out
+matcher both missed real unsubscribes and fired on "no thanks"; inbound replies
+discarded the provider id that the replay index exists for; and the pgvector check
+was cached for the life of the process.
+
+**Known gap, stated rather than hidden:** the provider HTTP call still runs inside
+the action's transaction. An atomic claim closes the common double-send, but a
+crash between the provider accepting a message and the transaction committing
+would roll the row back to pending with the SMS already gone. Splitting the action
+into two committed phases belongs with B6's transport work.
+
+Verified by `pnpm test` (228, real Postgres and Redis) and a live browser run of
+the gate refusing a lapsed-consent send.
+
+---
+
+## Phase B5 — original plan
 
 - [ ] **B5.1 pgvector.** Install the extension, then migration `00xx` adds the
       `embedding` columns and HNSW indexes deliberately left out of Phase 1.

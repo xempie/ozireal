@@ -18,6 +18,13 @@ export const manualEntry = z.object({
   subject: z.string().trim().max(200).nullable().default(null),
   body: z.string().trim().min(1).max(4000),
   occurredAt: z.coerce.date().optional(),
+  /**
+   * Usually absent — two typed-up phone calls are two interactions, not a replay.
+   * But an inbound SMS arriving through this adapter DOES carry a provider id,
+   * and dropping it meant a retrying webhook wrote the same reply again and again
+   * past the dedupe index built for exactly that. Optional, never invented.
+   */
+  messageId: z.string().max(200).nullable().optional(),
 });
 
 export const manualAdapter: ChannelAdapter = {
@@ -33,7 +40,7 @@ export const manualAdapter: ChannelAdapter = {
       subject: p.subject,
       body: p.body,
       identity: { kind: "resolved", contactId: p.contactId },
-      messageId: null,
+      messageId: p.messageId ?? null,
       threadRef: null,
       rawS3Key: null,
       listingRef: null,

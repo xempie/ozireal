@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { ShieldCheck, ShieldX, Pencil, Check, X, Clock } from "lucide-react";
+import { ShieldCheck, ShieldX, Clock } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   Badge,
-  Button,
   Callout,
   Empty,
   ProtoNote,
@@ -13,6 +12,7 @@ import {
 import { getApprovals } from "@/server/queries";
 import { approvalKindLabel } from "@/lib/labels";
 import { relative, moneyPrecise } from "@/lib/utils";
+import { ApprovalActions } from "@/components/forms/approval-actions";
 
 type ApprovalItem = Awaited<ReturnType<typeof getApprovals>>[number];
 
@@ -127,20 +127,11 @@ function DraftCard({ item }: { item: ApprovalItem }) {
       )}
 
       {item.status === "pending" && (
-        <div className="flex flex-wrap items-center gap-2 mt-3">
-          <Button variant="primary" size="sm">
-            <Check size={12} />
-            Approve and send
-          </Button>
-          <Button size="sm">
-            <Pencil size={12} />
-            Edit
-          </Button>
-          <Button variant="danger" size="sm">
-            <X size={12} />
-            Reject
-          </Button>
-        </div>
+        <ApprovalActions
+          id={item.id}
+          subject={item.subject ?? null}
+          body={item.body}
+        />
       )}
     </Card>
   );

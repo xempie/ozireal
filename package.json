@@ -23,7 +23,8 @@
     "redis": "bash scripts/dev-redis.sh",
     "verify:intake": "node scripts/verify-intake.mjs",
     "ai:backfill": "tsx --env-file=.env.local scripts/ai-backfill.ts",
-    "verify:ai": "tsx --env-file=.env.local scripts/verify-ai.ts"
+    "verify:ai": "tsx --env-file=.env.local scripts/verify-ai.ts",
+    "ai:embed": "tsx --env-file=.env.local scripts/ai-embed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1116.0",

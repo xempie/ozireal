@@ -142,6 +142,12 @@ export const listings = pgTable(
     publicHeadline: text("public_headline"),
     publicCopy: text("public_copy"),
 
+    /** B5.1: what was (or would be) embedded, and when. The vector column itself
+     *  lives only where pgvector exists — see migration 0010. */
+    embeddedText: text("embedded_text"),
+    embeddedAt: timestamp("embedded_at", { withTimezone: true }),
+    embeddingModel: text("embedding_model"),
+
     /** Stable and never reused, so an old link never lands on someone else's property. */
     slug: text("slug").notNull(),
 

@@ -10,6 +10,7 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { tenants, users } from "./tenancy";
 import { contacts, consentStatus } from "./contacts";
@@ -251,4 +252,32 @@ export const proposals = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("proposals_tenant_status_idx").on(t.tenantId, t.status)],
+);
+
+/**
+ * A record of each matching run (migration 0010).
+ *
+ * "Why did this contact not match?" gets asked constantly, and without the funnel
+ * counts it is unanswerable. `vectorStageRan` is the load-bearing one: it tells a
+ * later reader whether a thin result set was the data or a missing extension.
+ */
+export const matchRuns = pgTable(
+  "match_runs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    listingId: uuid("listing_id").references(() => listings.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
+
+    stage1Count: integer("stage1_count").notNull().default(0),
+    stage2Count: integer("stage2_count").notNull().default(0),
+    stage3Count: integer("stage3_count").notNull().default(0),
+    vectorStageRan: boolean("vector_stage_ran").notNull().default(false),
+    aiGenerationId: uuid("ai_generation_id"),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("match_runs_tenant_created_idx").on(t.tenantId, t.createdAt)],
 );

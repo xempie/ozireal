@@ -18,6 +18,9 @@ export type JobName =
   | "SummariseInteraction"
   | "RebuildContactIntent"
   | "MatchContacts"
+  | "MatchListings"
+  | "EmbedListing"
+  | "EmbedContactPreferences"
   | "DailyBrief";
 
 export type JobPayload = {

@@ -36,11 +36,25 @@ const handlers: Record<JobName, Handler> = {
     const { rebuildContactIntent } = await import("@/server/ai/handlers");
     return rebuildContactIntent(job.data.tenantId, job.data.entityId);
   },
+  /** B5: listing → ranked contacts, and the reverse. */
   async MatchContacts(job) {
-    return { pending: "B5", propertyId: job.data.entityId };
+    const { matchContactsForListing } = await import("@/server/matching/engine");
+    return matchContactsForListing(job.data.tenantId, job.data.entityId);
+  },
+  async MatchListings(job) {
+    const { matchListingsForContact } = await import("@/server/matching/engine");
+    return matchListingsForContact(job.data.tenantId, job.data.entityId);
+  },
+  async EmbedListing(job) {
+    const { embedListing } = await import("@/server/ai/embed");
+    return embedListing(job.data.tenantId, job.data.entityId);
+  },
+  async EmbedContactPreferences(job) {
+    const { embedContactPreferences } = await import("@/server/ai/embed");
+    return embedContactPreferences(job.data.tenantId, job.data.entityId);
   },
   async DailyBrief(job) {
-    return { pending: "B5", tenantId: job.data.tenantId };
+    return { pending: "B7", tenantId: job.data.tenantId };
   },
 };
 

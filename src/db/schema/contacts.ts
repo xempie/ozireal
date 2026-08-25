@@ -204,6 +204,12 @@ export const contactPreferences = pgTable(
      */
     softRequirements: text("soft_requirements"),
 
+    /** B5.1: what was (or would be) embedded, and when. The vector column itself
+     *  lives only where pgvector exists — see migration 0010. */
+    embeddedText: text("embedded_text"),
+    embeddedAt: timestamp("embedded_at", { withTimezone: true }),
+    embeddingModel: text("embedding_model"),
+
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("contact_preferences_tenant_idx").on(t.tenantId)],
@@ -428,3 +434,11 @@ export const confirmItems = pgTable(
     index("confirm_items_contact_idx").on(t.contactId),
   ],
 );
+
+/**
+ * B5.1 added embedding columns to contact_preferences and listings. They are
+ * declared in raw SQL (migration 0010) rather than here because the vector type
+ * only exists where pgvector is installed, and this schema file must typecheck on
+ * a machine without it. Reads and writes of those columns go through raw sql`` in
+ * src/server/ai/embed.ts, which checks for the extension first.
+ */
