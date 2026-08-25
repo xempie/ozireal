@@ -70,12 +70,12 @@ Rationale and per-item detail: [docs/phases.md](docs/phases.md).
 | Language | TypeScript, strict mode | No `any` without a comment justifying it |
 | UI | React 19, shadcn/ui, Tailwind | TanStack Table for data grids |
 | ORM | Drizzle | Chosen for first-class pgvector support |
-| DB | PostgreSQL 16 + pgvector | RDS — **but see [docs/aws-cost.md](docs/aws-cost.md); moving this on-instance is proposed and awaiting sign-off** |
+| DB | PostgreSQL 16 + pgvector | **RDS, single-AZ `db.t4g.micro` — decided.** Matches RoniDoc (`../aipa`); managed, and pgvector is one statement. ~$15-25/mo against ~$0 on-instance; the cost note in [docs/aws-cost.md](docs/aws-cost.md) is superseded on this row |
 | Queue | BullMQ on Redis | **On-instance** — ElastiCache is not worth ~$13/mo at this scale |
 | Auth | Auth.js (NextAuth v5) | Google + Microsoft Entra providers |
 | Storage | S3 + CloudFront | Media, voice notes, generated PDFs |
-| LLM | Anthropic Messages API | Direct `fetch`, no wrapper library |
-| Embeddings | Voyage AI (`voyage-law-2` for legal, `voyage-3` for general) | Anthropic has no embeddings endpoint |
+| LLM | Anthropic Messages API | Direct `fetch`, no wrapper library. **Kept over Bedrock deliberately** (Aug 2026): newest models land there first, and RAIaitomation lists RoniDoc's dual-provider abstraction as debt to fix rather than inherit — "a single LLM path, no vestigial abstraction" |
+| Embeddings | **Amazon Bedrock Titan Text Embeddings V2** (`amazon.titan-embed-text-v2:0`, 1024-dim, `normalize:true`) | Ported from RoniDoc. IAM-authenticated, so there is no key to store or rotate, and spend lands on the same AWS bill. **The embedding model is FIXED** — the chat provider may vary per tenant, the embedding model may not, because every vector in the index must be comparable. Changing it is a full re-index, never a config change |
 | STT | Deepgram | Handles Australian accents well |
 | SMS | MessageMedia | AU sender IDs, better local deliverability |
 | Proxy | Caddy | Auto TLS |
@@ -465,3 +465,34 @@ ISR with on-publish revalidation. `schema.org` `RealEstateListing` JSON-LD on ev
 listing page, `sitemap.xml` generated from live and sold listings, canonical URLs, OG
 images from the primary photo. Images through S3 + CloudFront with `next/image`.
 Slugs are stable and never reused: `/for-sale/12-smith-street-norwood-sa-5067-1234`.
+
+---
+
+## 17. Provenance - what is ported from RoniDoc, and what is not
+
+RoniDoc (`../aipa`) and RAIaitomation (`../RAIaitomation`) share one AWS pattern.
+OziRealty follows it where it fits and departs where it does not. Read
+`../aipa/RoniDoc-Features.md` before porting anything.
+
+**Ported:**
+
+- **RDS PostgreSQL + pgvector**, ap-southeast-2, cosine via `<=>` with
+  `1 - (embedding <=> query)` as similarity.
+- **Bedrock Titan Text Embeddings V2**, 1024-dim, `normalize:true`, input capped,
+  two retries on throttle/5xx. The embedding model is deliberately fixed.
+- **Usage metering per call** before the spend is committed - `ai_generations`
+  here plays the part `ai_usage_history` plays there.
+- **S3 + KMS** for evidence blobs, per-tenant prefixes.
+
+**Deliberately NOT ported:**
+
+- **Predicate-only tenant isolation.** RoniDoc's own notes call its RLS "inert"
+  because the app role has superuser membership, and RAIaitomation lists this as
+  debt to fix rather than inherit. OziRealty has had real RLS on a non-owner role
+  (`ozirealty_app`) since B1, proven by `pnpm db:guards`. Do not replace a working
+  policy with a `WHERE tenant_id = $1`.
+- **A dual LLM abstraction.** One path: direct Anthropic Messages API.
+- **Lambda + API Gateway.** OziRealty is Next.js with Server Actions on EC2 (§11).
+  Server Actions ARE the API; a serverless rewrite would mean building the parallel
+  API surface §2 forbids.
+- **Cognito.** Auth.js with Google/Entra is already in place (B2).

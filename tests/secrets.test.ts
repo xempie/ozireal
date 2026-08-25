@@ -98,27 +98,27 @@ describe("what the screen is allowed to see", () => {
   });
 
   it("falls back to the environment when nothing is stored", async () => {
-    process.env.VOYAGE_API_KEY = "pa-env-fallback-value";
+    process.env.DEEPGRAM_API_KEY = "dg-env-fallback-value";
     const statuses = await getSecretStatus(tenantId);
-    const row = statuses.find((s) => s.name === "VOYAGE_API_KEY")!;
+    const row = statuses.find((s) => s.name === "DEEPGRAM_API_KEY")!;
     expect(row).toMatchObject({ configured: true, source: "environment" });
-    delete process.env.VOYAGE_API_KEY;
+    delete process.env.DEEPGRAM_API_KEY;
   });
 
   it("a stored key wins over the environment — that is the point of the screen", async () => {
-    process.env.VOYAGE_API_KEY = "pa-env-value";
-    await putSecret(tenantId, "VOYAGE_API_KEY", "pa-stored-value-wins", (await realUserId())!);
-    expect(await getSecret(tenantId, "VOYAGE_API_KEY")).toBe("pa-stored-value-wins");
-    delete process.env.VOYAGE_API_KEY;
+    process.env.DEEPGRAM_API_KEY = "dg-env-value";
+    await putSecret(tenantId, "DEEPGRAM_API_KEY", "dg-stored-value-wins", (await realUserId())!);
+    expect(await getSecret(tenantId, "DEEPGRAM_API_KEY")).toBe("dg-stored-value-wins");
+    delete process.env.DEEPGRAM_API_KEY;
   });
 
   it("removal falls back rather than leaving a ghost", async () => {
     const uid = (await realUserId())!;
-    await putSecret(tenantId, "DEEPGRAM_API_KEY", "dg-some-value-here", uid);
-    await deleteSecret(tenantId, "DEEPGRAM_API_KEY");
-    expect(await getSecret(tenantId, "DEEPGRAM_API_KEY")).toBeNull();
+    await putSecret(tenantId, "MESSAGEMEDIA_KEY", "mm-some-value-here", uid);
+    await deleteSecret(tenantId, "MESSAGEMEDIA_KEY");
+    expect(await getSecret(tenantId, "MESSAGEMEDIA_KEY")).toBeNull();
     const statuses = await getSecretStatus(tenantId);
-    expect(statuses.find((s) => s.name === "DEEPGRAM_API_KEY")).toMatchObject({
+    expect(statuses.find((s) => s.name === "MESSAGEMEDIA_KEY")).toMatchObject({
       configured: false,
       source: null,
     });

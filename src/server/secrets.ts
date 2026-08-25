@@ -22,9 +22,13 @@ import { tenantSecrets } from "@/db/schema";
  * for a single-tenant agency.
  */
 
+/**
+ * Embeddings are deliberately absent: Bedrock authenticates by IAM role, so
+ * there is no credential to store, rotate or leak. That is most of the reason
+ * for choosing it.
+ */
 export const SECRET_NAMES = [
   "ANTHROPIC_API_KEY",
-  "VOYAGE_API_KEY",
   "DEEPGRAM_API_KEY",
   "MESSAGEMEDIA_KEY",
   "MESSAGEMEDIA_SECRET",

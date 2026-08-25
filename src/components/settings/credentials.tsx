@@ -29,11 +29,6 @@ const LABELS: Record<string, { label: string; hint: string; where: string }> = {
     hint: "Summaries, rolling briefs and match reasons.",
     where: "console.anthropic.com → API keys",
   },
-  VOYAGE_API_KEY: {
-    label: "Voyage",
-    hint: "Embeddings for similarity matching.",
-    where: "dash.voyageai.com → API keys",
-  },
   DEEPGRAM_API_KEY: {
     label: "Deepgram",
     hint: "Voice note transcription.",

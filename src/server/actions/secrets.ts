@@ -21,7 +21,6 @@ import {
 
 const KEY_SHAPES: Partial<Record<(typeof SECRET_NAMES)[number], { prefix?: string; label: string }>> = {
   ANTHROPIC_API_KEY: { prefix: "sk-ant-", label: "Anthropic API key" },
-  VOYAGE_API_KEY: { prefix: "pa-", label: "Voyage API key" },
 };
 
 export const saveSecret = defineAction({

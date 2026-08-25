@@ -27,6 +27,7 @@
     "ai:embed": "tsx --env-file=.env.local scripts/ai-embed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1117.0",
     "@aws-sdk/client-s3": "^3.1116.0",
     "bullmq": "^6.2.0",
     "class-variance-authority": "^0.7.1",

@@ -11,10 +11,10 @@ import {
 } from "@/db/schema";
 import {
   embedDocuments,
-  hasVoyageKey,
+  embeddingsAvailable,
   toVectorLiteral,
   EMBED_MODEL,
-} from "./voyage";
+} from "./embeddings";
 
 /**
  * Building the text that gets embedded (B5.2).
@@ -147,7 +147,7 @@ export function buildListingText(l: {
 /* ----------------------------------------------------------------- jobs */
 
 export async function embedContactPreferences(tenantId: string, contactId: string) {
-  if (!(await hasVoyageKey(tenantId))) return { skipped: "no-voyage-key" };
+  if (!embeddingsAvailable()) return { skipped: "no-aws-credentials" };
 
   const ctx = await withTenant(tenantId, async (tx) => {
     const [c] = await tx
@@ -211,7 +211,7 @@ export async function embedContactPreferences(tenantId: string, contactId: strin
 }
 
 export async function embedListing(tenantId: string, listingId: string) {
-  if (!(await hasVoyageKey(tenantId))) return { skipped: "no-voyage-key" };
+  if (!embeddingsAvailable()) return { skipped: "no-aws-credentials" };
 
   const ctx = await withTenant(tenantId, async (tx) => {
     const [row] = await tx

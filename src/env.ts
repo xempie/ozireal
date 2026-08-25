@@ -36,7 +36,8 @@ const schema = z.object({
   // Everything below arrives in later phases. Optional now so the app boots before the
   // integrations exist, but validated the moment a value is present.
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
-  VOYAGE_API_KEY: z.string().min(1).optional(),
+  /** Bedrock Titan Text Embeddings V2. IAM-authenticated, so no key here. */
+  EMBED_MODEL: z.string().default("amazon.titan-embed-text-v2:0"),
   DEEPGRAM_API_KEY: z.string().min(1).optional(),
   MESSAGEMEDIA_KEY: z.string().min(1).optional(),
   MESSAGEMEDIA_SECRET: z.string().min(1).optional(),
