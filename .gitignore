@@ -17,3 +17,12 @@ infra/.dist-domain
 .env.local
 .tools/
 .batches/
+
+# B6: generated credentials and resource ids. Never committed.
+infra/.db-password
+infra/.app-sg
+infra/.db-sg
+infra/.instance-id
+infra/.public-ip
+infra/*.pem
+infra/.prod-secrets

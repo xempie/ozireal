@@ -1,86 +1,61 @@
-# Deployed infrastructure — console prototype
+# Infrastructure
 
-What is actually running in AWS for the sample-data console. This is **not** the Phase 1
-architecture (CLAUDE.md §11) — that needs EC2, Postgres and Redis. The prototype is a
-static export, so it needs none of them.
-
-## Account
-
-| | |
-|---|---|
-| Account | `310792823958` |
-| Deploy user | `ozirealty-deploy` (IAM, not root) |
-| CLI profile | `ozirealty` |
-| Region | `ap-southeast-2` (Sydney) |
-
-Credentials live in `~/.aws/credentials` on the operator's machine and are never
-committed. Root is not used for anything.
-
-## Resources
+Account **606196119385**, region **ap-southeast-2**. Everything below was created
+by the commands in this directory, not by hand in the console.
 
 | Resource | Identifier |
 |---|---|
-| S3 bucket | `ozirealty-console-310792823958` (private, ap-southeast-2) |
-| CloudFront distribution | `E3KK59Q508X006` |
-| Public URL | **https://crm.ozirealty.com.au** |
-| CloudFront domain | `d1k9fpihoxh9d8.cloudfront.net` |
-| ACM certificate | `crm.ozirealty.com.au` (us-east-1, DNS-validated, auto-renewing) |
-| Origin access control | `E182T4AZOWPCP2` |
-| Viewer-request function | `ozirealty-console-auth` |
+| App instance | `i-0f9f0d36dcf57fbaa` — `t4g.small`, Ubuntu 24.04 arm64, 30GB encrypted |
+| Elastic IP | `13.210.78.88` — static, so DNS survives a stop/start |
+| Database | `ozirealty-db` — RDS PostgreSQL **18.6**, `db.t4g.micro`, 20GB gp3, encrypted, private |
+| pgvector | **0.8.2**, installed — the vector columns and HNSW indexes are real |
+| Backups | `s3://ozirealty-backups-606196119385/pg/` — private, encrypted, versioned, 30 days |
+| Instance role | `ozirealty-instance` — that S3 prefix and Titan embeddings, nothing else |
+| Budget | `ozirealty-monthly` — USD 100, alerts at 80% actual / 100% forecast |
 
-### How access is controlled
+## Security posture
 
-The bucket blocks public access and has **no** website hosting enabled. Its policy grants
-`s3:GetObject` to the CloudFront service principal *only*, conditioned on the exact
-distribution ARN — so even another distribution in the same account cannot read it.
-Verified: a direct request to the S3 URL returns 403.
+- The database is **not publicly accessible** and its security group allows 5432
+  from the app security group only — no CIDR, no internet.
+- TLS to the database is **required** (`sslmode=require`). RDS refuses an
+  unencrypted connection outright; `psql` negotiates it silently, the driver
+  does not, which is worth knowing because the failure looks like a bad password.
+- SSH is restricted to one address at the security group, and again at UFW.
+- Redis binds to loopback and holds job payloads containing contact data; it has
+  no authentication, so it must never be reachable off the box.
+- `/etc/ozirealty/env` is `root:ozirealty 640`. It holds the database URL and
+  `SECRETS_KEY`, which decrypts every credential stored in Settings.
 
-Everything is served through CloudFront over HTTPS, with HTTP redirected up.
+## Scripts
 
-### The viewer-request function
+| | |
+|---|---|
+| `provision.sh` | One-time host setup. §2 rules out Docker, so this script IS the reproducibility mechanism — it must stay idempotent and complete. |
+| `deploy.sh` | Package source, build **on the instance**, install the standalone bundle, restart. |
+| `backup.sh` | `pg_dump` to S3, run nightly by `ozirealty-backup.timer` at 01:00 Adelaide. |
 
-`infra/viewer-request.js` does two jobs on every request:
+## Restoring
 
-1. **HTTP basic auth.** The demo is an unfinished product carrying the agency's name, so
-   it should not be reachable by a passer-by or indexed by a crawler. Credentials are in
-   `infra/demo-credentials.txt` (gitignored).
-2. **Directory-index rewrite.** The export uses `trailingSlash`, so pages live at
-   `/dashboard/index.html`. CloudFront resolves a default root object at `/` only, never
-   for sub-paths — without this rewrite every route except the home page 404s.
-
-The auth is a shared password in edge JavaScript. It keeps the demo private; it is not
-authentication and it protects nothing sensitive, because there is nothing sensitive
-here — every person, message and price in the app is invented.
-
-## Cost
-
-Roughly **$1–2/month** at demo traffic: a few cents of S3 storage, and CloudFront well
-inside its always-free tier. There is no compute, no database and no NAT Gateway — see
-[docs/aws-cost.md](../docs/aws-cost.md) for why that last one matters.
-
-## Redeploying
+RDS automated snapshots (7 days, PITR) cover "the instance died". The S3 dumps
+cover what snapshots cannot: logical damage — a bad migration, a mistaken
+DELETE. Restore into a **scratch database**, never over production:
 
 ```bash
-./scripts/deploy.sh
+aws s3 cp s3://ozirealty-backups-606196119385/pg/<key>.dump /tmp/r.dump --region ap-southeast-2
+psql -h <host> -U ozirealty -d postgres -c 'create database restore_test;'
+pg_restore -h <host> -U ozirealty -d restore_test --no-owner --no-privileges /tmp/r.dump
 ```
 
-Rebuilds, syncs, invalidates the edge cache, and fails loudly if the export came out
-short or if the auth gate stops returning 401.
+This has been performed, not merely written down: the 2026-08-26 dump restored
+to 40 tables with the tenant, 24 suburbs, consent templates and both vector
+columns intact. An untested backup is not a backup.
 
-## Custom domain
+## Still required before anyone can use it
 
-`crm.ozirealty.com.au`, once the certificate is issued. Two DNS records are needed at
-whoever hosts the `ozirealty.com.au` zone:
-
-1. The ACM validation `CNAME` (issued when the certificate is requested).
-2. `crm` → `d1k9fpihoxh9d8.cloudfront.net`.
-
-**Neither touches the apex, `www`, or the MX records.** The live Wix site and the
-agency's email are unaffected — adding a subdomain is additive.
-
-## What this is not
-
-- Not the Phase 1 stack. No EC2, no RDS, no Redis, no SES.
-- Not multi-environment. One bucket, one distribution.
-- Not infrastructure-as-code. It was created with CLI calls, recorded here. If this
-  outlives the prototype it should become Terraform or CDK rather than a document.
+1. **DNS** — `crm.ozirealty.com.au` must become an **A record to 13.210.78.88**.
+   It currently CNAMEs to the old CloudFront distribution serving the static
+   prototype. Caddy obtains the certificate automatically once DNS resolves here.
+2. **Google OAuth** — `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` in
+   `/etc/ozirealty/env`. Without them the login page says "no sign-in method
+   configured" and refuses everyone, which is the correct fail-closed behaviour
+   and also means nobody can get in.
