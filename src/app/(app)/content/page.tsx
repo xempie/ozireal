@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Instagram, Facebook, Linkedin, Eye, ShieldCheck } from "lucide-react";
+import { Instagram, Facebook, Linkedin, Eye, ShieldCheck } from "lucide-react";
 import {
   PageHeader,
   Section,
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui";
 import { getBlogPosts, getSocialPosts, getContentTotals } from "@/server/queries";
 import { relative, shortDate } from "@/lib/utils";
+import { NewDraftButton } from "@/components/forms/content-forms";
+import { listingOptions } from "@/server/queries/pickers";
 
 const statusTone: Record<string, "neutral" | "queue" | "sent"> = {
   draft: "neutral",
@@ -46,10 +48,11 @@ const networkLabel = {
 } as const;
 
 export default async function ContentPage() {
-  const [blogPosts, socialPosts, totals] = await Promise.all([
+  const [blogPosts, socialPosts, totals, listingOpts] = await Promise.all([
     getBlogPosts(),
     getSocialPosts(),
     getContentTotals(),
+    listingOptions(),
   ]);
 
   return (
@@ -57,12 +60,7 @@ export default async function ContentPage() {
       <PageHeader
         title="Content & social"
         subtitle="Articles and social posts in the agency's voice. Every one of them is approved by a human before it publishes."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New draft
-          </Button>
-        }
+        actions={<NewDraftButton listings={listingOpts} />}
       />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, ShieldCheck, Send, Users, Ban } from "lucide-react";
+import { ShieldCheck, Send, Users, Ban } from "lucide-react";
 import {
   PageHeader,
   Section,
@@ -24,6 +24,8 @@ import {
   getMatchesForListing,
 } from "@/server/queries";
 import { relative } from "@/lib/utils";
+import { NewCampaignButton } from "@/components/forms/content-forms";
+import { listingOptions } from "@/server/queries/pickers";
 
 const statusTone: Record<string, "neutral" | "queue" | "brand" | "sent"> = {
   draft: "neutral",
@@ -42,10 +44,11 @@ const statusLabel: Record<string, string> = {
 };
 
 export default async function CampaignsPage() {
-  const [campaigns, performance, contactRows] = await Promise.all([
+  const [campaigns, performance, contactRows, listingOpts] = await Promise.all([
     getCampaigns(),
     getCampaignPerformance(),
     getContacts(),
+    listingOptions(),
   ]);
 
   /**
@@ -69,12 +72,7 @@ export default async function CampaignsPage() {
       <PageHeader
         title="Campaigns"
         subtitle="A new listing, its matched contacts, and a personalised draft for each. Every draft goes to the approval queue — there is no path from here to a send."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New campaign
-          </Button>
-        }
+        actions={<NewCampaignButton listings={listingOpts} />}
       />
 
       <div className="mb-6">

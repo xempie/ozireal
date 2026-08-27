@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import type { Tx } from "@/db";
 import { defineAction, ActionError, toE164, normaliseEmail } from "./action";
+import { optionalInt } from "./fields";
 import { manualAdapter } from "@/server/intake/adapters/manual";
 import {
   taskProposal,
@@ -334,7 +335,7 @@ export const recordFollowupOutcome = defineAction({
     contactId: z.string().uuid(),
     outcome: z.string().trim().min(3, "Say what happened").max(500),
     channel: z.enum(["phone", "email", "sms", "manual", "social", "web_form"]),
-    nextDueInDays: z.coerce.number().int().min(0).max(365).optional(),
+    nextDueInDays: optionalInt(0, 365),
   }),
   async handler(input, ctx) {
     const now = new Date();

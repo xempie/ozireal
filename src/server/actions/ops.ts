@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { eq } from "drizzle-orm";
 import { defineAction, ActionError } from "./action";
+import { optionalInt } from "./fields";
 import { tasks, calendarEvents, contacts, listings } from "@/db/schema";
 
 /**
@@ -24,7 +25,7 @@ export const createTask = defineAction({
     title: z.string().trim().min(3, "Say what needs doing").max(200),
     contactId: OPTIONAL_UUID,
     listingId: OPTIONAL_UUID,
-    dueInDays: z.coerce.number().int().min(0).max(365).optional(),
+    dueInDays: optionalInt(0, 365),
   }),
   async handler(input, ctx) {
     const contactId = input.contactId || null;

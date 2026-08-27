@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Plus, Download, ShieldCheck } from "lucide-react";
+import { FileText, Download, ShieldCheck } from "lucide-react";
 import {
   PageHeader,
   Section,
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui";
 import { getProposals, getProperty, getContact } from "@/server/queries";
 import { money, relative, shortDate } from "@/lib/utils";
+import { NewProposalButton } from "@/components/forms/content-forms";
+import { contactOptions, propertyOptions } from "@/server/queries/pickers";
 
 const statusTone = {
   draft: "neutral",
@@ -40,7 +42,11 @@ const estimateRange = (low: number | null, high: number | null) =>
   low != null && high != null ? `${money(low)} – ${money(high)}` : "No estimate yet";
 
 export default async function ProposalsPage() {
-  const proposals = await getProposals();
+  const [proposals, contactOpts, propertyOpts] = await Promise.all([
+    getProposals(),
+    contactOptions(),
+    propertyOptions(),
+  ]);
 
   // The preview panel is explicitly the one in approval; fall back to the newest.
   const featured =
@@ -56,12 +62,7 @@ export default async function ProposalsPage() {
       <PageHeader
         title="Proposals"
         subtitle="Listing presentations assembled from the property, comparable sales and the agency's own material."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New proposal
-          </Button>
-        }
+        actions={<NewProposalButton contacts={contactOpts} properties={propertyOpts} />}
       />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">

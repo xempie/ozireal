@@ -116,6 +116,26 @@ describe("new property", () => {
     if (!r.ok) expect(r.error).toMatch(/land has no bedrooms/i);
   });
 
+  it("records a blank bedroom count as unknown, not as zero bedrooms", async () => {
+    // What a browser actually submits for an untouched number input.
+    const st = street();
+    const r = await createProperty({
+      streetNumber: "15",
+      street: st,
+      suburbId,
+      propertyType: "house",
+      status: "prospect",
+      beds: "" as unknown as number,
+      baths: "" as unknown as number,
+    });
+    expect(r.ok).toBe(true);
+    const [row] = await sql<{ beds: number | null; baths: number | null }[]>`
+      select beds, baths from properties where street = ${st}`;
+    // "0 beds" is a claim about the house; null is an absence of one.
+    expect(row.beds).toBeNull();
+    expect(row.baths).toBeNull();
+  });
+
   it("gives a field error for a fractional bedroom count, not a database error", async () => {
     const r = await createProperty({
       streetNumber: "11", street: street(), suburbId, propertyType: "house", status: "prospect", beds: 3.5,

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { and, eq, sql } from "drizzle-orm";
 import { defineAction, ActionError } from "./action";
+import { optionalInt } from "./fields";
 import { properties, listings, suburbs, contacts } from "@/db/schema";
 import { enqueue } from "@/server/jobs/queues";
 
@@ -36,10 +37,10 @@ export const createProperty = defineAction({
     status: z.enum(["prospect", "appraised", "off_market"]).default("prospect"),
     ownerContactId: z.union([z.string().uuid(), z.literal("")]).optional(),
     // .int() so "3.5" comes back as a field error rather than a Postgres type error.
-    beds: z.coerce.number().int("Whole numbers only").min(0).max(30).optional(),
-    baths: z.coerce.number().int("Whole numbers only").min(0).max(30).optional(),
-    parking: z.coerce.number().int("Whole numbers only").min(0).max(30).optional(),
-    landAreaSqm: z.coerce.number().int("Whole numbers only").min(0).max(10_000_000).optional(),
+    beds: optionalInt(0, 30),
+    baths: optionalInt(0, 30),
+    parking: optionalInt(0, 30),
+    landAreaSqm: optionalInt(0, 10_000_000),
     /** Internal only — rule 8. Never returned by a public route. */
     internalNotes: z.string().trim().max(2000).optional(),
     internalPriceExpectation: z.string().trim().max(200).optional(),
@@ -188,9 +189,9 @@ export const createListing = defineAction({
      * as typed — never composed from a number.
      */
     priceDisplay: z.string().trim().max(200).optional(),
-    searchPriceMin: z.coerce.number().int().min(0).max(50_000_000).optional(),
-    searchPriceMax: z.coerce.number().int().min(0).max(50_000_000).optional(),
-    rentPw: z.coerce.number().int().min(0).max(100_000).optional(),
+    searchPriceMin: optionalInt(0, 50_000_000),
+    searchPriceMax: optionalInt(0, 50_000_000),
+    rentPw: optionalInt(0, 100_000),
     publicHeadline: z.string().trim().max(200).optional(),
     publicCopy: z.string().trim().max(6000).optional(),
   }),
