@@ -53,24 +53,35 @@ $SSH bash -s <<'REMOTE'
 set -euo pipefail
 APP_DIR=/srv/ozirealty
 sudo systemctl stop ozirealty-web ozirealty-worker 2>/dev/null || true
-sudo rm -rf "$APP_DIR"/*
+# `rm -rf "$APP_DIR"/*` does NOT match .next — a glob skips dotfiles — so every
+# previous deploy survived underneath the new one. Stale chunks accumulated and
+# the nested static/static from an earlier bug kept coming back after it was
+# supposedly fixed. Delete the contents including hidden entries.
+sudo find "$APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 # The standalone bundle plus the two directories Next does not copy into it.
 sudo cp -r /tmp/build/.next/standalone/. "$APP_DIR"/
-sudo mkdir -p "$APP_DIR"/.next
-sudo cp -r /tmp/build/.next/static "$APP_DIR"/.next/static
+# Trailing "/." again, and for the same reason src needed it: the standalone
+# bundle already contains .next/static, so `cp -r a b` nests as b/a. That put
+# every chunk at .next/static/static/chunks/, which 404s — the pages still
+# server-render, so the site LOOKS fine until a client component tries to
+# hydrate and the browser reports a MIME-type refusal instead of a missing file.
+sudo mkdir -p "$APP_DIR"/.next/static
+sudo cp -r /tmp/build/.next/static/. "$APP_DIR"/.next/static/
 # systemd ProtectSystem=strict + ReadWritePaths refuses to start the unit if the
 # path does not exist, so this must be created BEFORE the service is enabled.
 sudo mkdir -p "$APP_DIR"/.next/cache
-sudo cp -r /tmp/build/public "$APP_DIR"/public 2>/dev/null || true
+sudo mkdir -p "$APP_DIR"/public
+sudo cp -r /tmp/build/public/. "$APP_DIR"/public/ 2>/dev/null || true
 # The worker and the CLI scripts run from SOURCE through tsx, so the tree has to
 # be there. Note the trailing "/." on src: the standalone bundle already creates
 # its own src/, and `cp -r a b` where b exists nests it as b/a — which quietly
 # produced src/src and a worker resolving half its imports from the wrong copy.
 sudo mkdir -p "$APP_DIR"/src
 sudo cp -r /tmp/build/src/. "$APP_DIR"/src/
-sudo cp -r /tmp/build/prompts "$APP_DIR"/prompts
-sudo cp -r /tmp/build/drizzle "$APP_DIR"/drizzle
-sudo cp -r /tmp/build/scripts "$APP_DIR"/scripts
+sudo mkdir -p "$APP_DIR"/prompts "$APP_DIR"/drizzle "$APP_DIR"/scripts
+sudo cp -r /tmp/build/prompts/. "$APP_DIR"/prompts/
+sudo cp -r /tmp/build/drizzle/. "$APP_DIR"/drizzle/
+sudo cp -r /tmp/build/scripts/. "$APP_DIR"/scripts/
 sudo cp /tmp/build/package.json /tmp/build/tsconfig.json "$APP_DIR"/ 2>/dev/null || true
 # tsx is installed globally by provision.sh. Fail loudly if it is missing rather
 # than leaving the worker to crash-loop on a module that was never there.
