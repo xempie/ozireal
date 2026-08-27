@@ -11,6 +11,8 @@ import {
 import { getListings } from "@/server/queries";
 import { statusLabel } from "@/lib/labels";
 import { relative } from "@/lib/utils";
+import { NewListingButton } from "@/components/forms/stock-forms";
+import { propertyOptions } from "@/server/queries/pickers";
 
 const columns: {
   status: string;
@@ -24,6 +26,7 @@ const columns: {
 ];
 
 export default async function ListingsPage() {
+  const propertyOpts = await propertyOptions();
   const listings = await getListings();
 
   return (
@@ -31,12 +34,7 @@ export default async function ListingsPage() {
       <PageHeader
         title="Listings"
         subtitle="A campaign over a property. A property can have many across its life; at most one is live."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New listing
-          </Button>
-        }
+        actions={<NewListingButton properties={propertyOpts} />}
       />
 
       <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">

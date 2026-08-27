@@ -9,13 +9,19 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import { getTasks } from "@/server/queries";
+import { NewTaskButton, CompleteTaskButton } from "@/components/forms/ops-forms";
+import { contactOptions, listingOptions } from "@/server/queries/pickers";
 import { shortDate, relative } from "@/lib/utils";
 
 /** Tasks without a due date sort last rather than pretending to be due now. */
 const dueValue = (d: Date | null) => (d ? d.getTime() : Number.MAX_SAFE_INTEGER);
 
 export default async function TasksPage() {
-  const tasks = await getTasks();
+  const [tasks, contactOpts, listingOpts] = await Promise.all([
+    getTasks(),
+    contactOptions(),
+    listingOptions(),
+  ]);
   const now = Date.now();
 
   const open = tasks
@@ -27,7 +33,11 @@ export default async function TasksPage() {
     <>
       <PageHeader
         title="Tasks"
-        subtitle="Every task here was committed by a human from the confirm queue — none were written automatically."
+        /* The old wording said every task came from the confirm queue. That
+           stopped being true the moment this page grew an "add" button, and a
+           subtitle that quietly lies is worse than no subtitle. */
+        subtitle="Added by hand, or committed by a human from the confirm queue. Nothing here was written automatically."
+        actions={<NewTaskButton contacts={contactOpts} listings={listingOpts} />}
       />
 
       <Section title="Open" hint={`${open.length} tasks`}>
@@ -43,7 +53,9 @@ export default async function TasksPage() {
               return (
                 <Card key={t.id} className="p-3">
                   <div className="flex items-start gap-3">
-                    <span className="h-4 w-4 rounded border mt-0.5 shrink-0" />
+                    <div className="shrink-0 mt-0.5">
+                      <CompleteTaskButton id={t.id} />
+                    </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-[13px] font-medium">{t.title}</div>
                       <div className="text-3 text-[12px] mt-0.5 flex flex-wrap items-center gap-x-2">

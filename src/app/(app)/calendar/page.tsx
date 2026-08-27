@@ -12,6 +12,8 @@ import {
 } from "@/components/ui";
 import { getCalendarEvents } from "@/server/queries";
 import { timeOfDay } from "@/lib/utils";
+import { NewEventButton } from "@/components/forms/ops-forms";
+import { contactOptions, listingOptions } from "@/server/queries/pickers";
 
 const kindTone = {
   inspection: "stock",
@@ -24,6 +26,7 @@ const kindTone = {
 const DAY_MS = 86400000;
 
 export default async function CalendarPage() {
+  const [contactOpts, listingOpts] = await Promise.all([contactOptions(), listingOptions()]);
   const calendarEvents = await getCalendarEvents();
 
   // Seven day columns starting today.
@@ -52,12 +55,7 @@ export default async function CalendarPage() {
       <PageHeader
         title="Calendar"
         subtitle="Two-way sync with Google and Outlook. The external calendar stays the source of truth for anything it owns."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New event
-          </Button>
-        }
+        actions={<NewEventButton contacts={contactOpts} listings={listingOpts} />}
       />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">

@@ -13,8 +13,11 @@ import {
 } from "@/components/ui";
 import { getProperties } from "@/server/queries";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
+import { NewPropertyButton } from "@/components/forms/stock-forms";
+import { suburbOptions, contactOptions } from "@/server/queries/pickers";
 
 export default async function PropertiesPage() {
+  const [suburbOpts, contactOpts] = await Promise.all([suburbOptions(), contactOptions()]);
   const properties = await getProperties();
 
   return (
@@ -22,12 +25,7 @@ export default async function PropertiesPage() {
       <PageHeader
         title="Properties"
         subtitle="The stock, whether or not it is currently advertised. A property outlives its listings."
-        actions={
-          <Button variant="primary">
-            <Plus size={13} />
-            New property
-          </Button>
-        }
+        actions={<NewPropertyButton suburbs={suburbOpts} contacts={contactOpts} />}
       />
 
       <Table minWidth={860}>
