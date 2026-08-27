@@ -1,4 +1,12 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
+
+/**
+ * Middleware builds its own Auth.js instance from the EDGE-SAFE config. Importing
+ * `auth` from "@/auth" pulls in the password provider and therefore node:crypto,
+ * which the Edge runtime cannot load — the build fails rather than the request.
+ */
+const { auth } = NextAuth(authConfig);
 import { NextResponse } from "next/server";
 
 /**

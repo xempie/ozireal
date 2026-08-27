@@ -62,10 +62,15 @@ sudo cp -r /tmp/build/.next/static "$APP_DIR"/.next/static
 # path does not exist, so this must be created BEFORE the service is enabled.
 sudo mkdir -p "$APP_DIR"/.next/cache
 sudo cp -r /tmp/build/public "$APP_DIR"/public 2>/dev/null || true
-# The worker runs from source through tsx, so it needs these too.
-sudo cp -r /tmp/build/src "$APP_DIR"/src
+# The worker and the CLI scripts run from SOURCE through tsx, so the tree has to
+# be there. Note the trailing "/." on src: the standalone bundle already creates
+# its own src/, and `cp -r a b` where b exists nests it as b/a — which quietly
+# produced src/src and a worker resolving half its imports from the wrong copy.
+sudo mkdir -p "$APP_DIR"/src
+sudo cp -r /tmp/build/src/. "$APP_DIR"/src/
 sudo cp -r /tmp/build/prompts "$APP_DIR"/prompts
 sudo cp -r /tmp/build/drizzle "$APP_DIR"/drizzle
+sudo cp -r /tmp/build/scripts "$APP_DIR"/scripts
 sudo cp /tmp/build/package.json /tmp/build/tsconfig.json "$APP_DIR"/ 2>/dev/null || true
 # tsx is installed globally by provision.sh. Fail loudly if it is missing rather
 # than leaving the worker to crash-loop on a module that was never there.

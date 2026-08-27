@@ -58,6 +58,14 @@ export const users = pgTable(
     role: userRole("role").notNull().default("agent"),
     provider: authProvider("provider").notNull().default("google"),
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+
+    /** Password sign-in (migration 0012). scrypt, never a bare digest. */
+    passwordHash: text("password_hash"),
+    passwordSetAt: timestamp("password_set_at", { withTimezone: true }),
+    /** Throttling lives in the database so a restart is not a free reset for
+     *  whoever is guessing. */
+    failedLogins: integer("failed_logins").notNull().default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("users_tenant_idx").on(t.tenantId)],

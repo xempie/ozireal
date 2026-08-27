@@ -90,8 +90,69 @@ const devProvider = devLoginEnabled
     ]
   : [];
 
+/**
+ * Password sign-in — the production path when no OAuth app is configured.
+ *
+ * This exists because the alternative was worse. Asked to "disable Google auth",
+ * the tempting move is to let the passwordless development login run in
+ * production; that would put a door on a public URL that opens for anyone who
+ * can guess an allowlisted address, in front of a database of client contact
+ * details and consent records. A real password is barely more work and is
+ * actually a credential.
+ *
+ * Available whenever the user has a password set. Enumeration is avoided by
+ * doing the same work and returning the same nothing for an unknown address, a
+ * user with no password, and a wrong password.
+ */
+const passwordProvider = Credentials({
+  id: "password",
+  name: "Email and password",
+  credentials: {
+    email: { label: "Email", type: "email" },
+    password: { label: "Password", type: "password" },
+  },
+  async authorize(raw) {
+    const email = String(raw?.email ?? "").trim().toLowerCase();
+    const password = String(raw?.password ?? "");
+    if (!email || !password) return null;
+    if (!allowlist().includes(email)) return null;
+
+    const { verifyPassword, MAX_ATTEMPTS, lockoutUntil } = await import(
+      "@/server/auth/password"
+    );
+
+    const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (!u?.passwordHash) return null;
+
+    // A live lockout refuses without touching scrypt, so a locked account cannot
+    // be used to burn CPU either.
+    if (u.lockedUntil && u.lockedUntil > new Date()) return null;
+
+    const ok = await verifyPassword(password, u.passwordHash);
+
+    if (!ok) {
+      const failed = (u.failedLogins ?? 0) + 1;
+      await db
+        .update(users)
+        .set({
+          failedLogins: failed,
+          lockedUntil: failed >= MAX_ATTEMPTS ? lockoutUntil() : null,
+        })
+        .where(eq(users.id, u.id));
+      return null;
+    }
+
+    await db
+      .update(users)
+      .set({ failedLogins: 0, lockedUntil: null, lastLoginAt: new Date() })
+      .where(eq(users.id, u.id));
+
+    return { id: u.id, email: u.email, name: u.name };
+  },
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [...oauthProviders, ...devProvider],
+  providers: [...oauthProviders, passwordProvider, ...devProvider],
   session: { strategy: "jwt" },
   pages: { signIn: "/login", error: "/login" },
   trustHost: true,
@@ -143,9 +204,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 });
 
 /** True when at least one real sign-in method is configured. */
-export const authConfigured = oauthProviders.length > 0 || devLoginEnabled;
+export const authConfigured = true; // password sign-in is always available
 export const availableProviders = {
   google: oauthProviders.some((p) => p.id === "google"),
   entra: oauthProviders.some((p) => p.id === "microsoft-entra-id"),
   dev: devLoginEnabled,
+  password: true,
 };

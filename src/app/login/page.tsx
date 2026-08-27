@@ -2,7 +2,13 @@ import { redirect } from "next/navigation";
 import { Lock, AlertCircle, Info } from "lucide-react";
 import { auth, availableProviders } from "@/auth";
 import { getAgency } from "@/server/queries";
-import { signInWithGoogle, signInWithEntra, signInForDevelopment } from "./actions";
+import { anyUserHasPassword } from "@/server/queries/llm";
+import {
+  signInWithGoogle,
+  signInWithEntra,
+  signInForDevelopment,
+  signInWithPassword,
+} from "./actions";
 
 /**
  * Sign in.
@@ -24,8 +30,13 @@ export default async function LoginPage({
 
   const { error } = await searchParams;
   const agency = await getAgency().catch(() => null);
-  const nothingConfigured =
-    !availableProviders.google && !availableProviders.entra && !availableProviders.dev;
+  /**
+   * Password sign-in is always available, so there is no longer a state where
+   * nobody can get in. What CAN be missing is a password on the account, which
+   * is a different problem with a different fix — hence the note below rather
+   * than the old "no sign-in method configured" alarm.
+   */
+  const noPasswordSet = !(await anyUserHasPassword());
 
   return (
     <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
@@ -86,6 +97,59 @@ export default async function LoginPage({
           )}
 
           <div className="mt-7 space-y-2.5">
+            {/*
+              Email and password first, because it is the sign-in this console
+              actually uses. OAuth appears only where an app has been registered;
+              an empty "Continue with Google" button that errors is worse than
+              no button at all.
+            */}
+            <form action={signInWithPassword} className="space-y-2.5">
+              <div>
+                <label htmlFor="email" className="block text-[12px] font-medium text-2 mb-1.5">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  autoComplete="username"
+                  defaultValue={availableProviders.dev ? "sam@ozirealty.com.au" : ""}
+                  className="w-full surface-2 border rounded-md px-2.5 py-2 text-[16px] sm:text-[13.5px] outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-[12px] font-medium text-2 mb-1.5">
+                  Password
+                </label>
+                <div className="flex items-center gap-2 surface-2 border rounded-md px-2.5 focus-within:ring-2 focus-within:ring-[var(--accent)]/30">
+                  <Lock size={14} className="text-3 shrink-0" />
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    className="bg-transparent outline-none text-[16px] sm:text-[13.5px] w-full py-2"
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                className="w-full rounded-md bg-[var(--accent)] text-white text-[13.5px] font-medium py-2.5 hover:opacity-90 transition-opacity"
+              >
+                Sign in
+              </button>
+            </form>
+
+            {(availableProviders.google || availableProviders.entra) && (
+              <div className="flex items-center gap-3 py-1">
+                <span className="h-px flex-1 bg-[var(--line)]" />
+                <span className="text-3 text-[11px]">or</span>
+                <span className="h-px flex-1 bg-[var(--line)]" />
+              </div>
+            )}
+
             {availableProviders.google && (
               <form action={signInWithGoogle}>
                 <button
@@ -109,44 +173,28 @@ export default async function LoginPage({
             )}
 
             {availableProviders.dev && (
-              <form action={signInForDevelopment} className="space-y-2.5">
-                {(availableProviders.google || availableProviders.entra) && (
-                  <div className="flex items-center gap-3 py-1">
-                    <span className="h-px flex-1 bg-[var(--line)]" />
-                    <span className="text-3 text-[11px]">or</span>
-                    <span className="h-px flex-1 bg-[var(--line)]" />
-                  </div>
-                )}
-                <div className="flex items-center gap-2 surface-2 border rounded-md px-2.5 focus-within:ring-2 focus-within:ring-[var(--accent)]/30">
-                  <Lock size={14} className="text-3 shrink-0" />
-                  <input
-                    name="email"
-                    type="email"
-                    required
-                    defaultValue="sam@ozirealty.com.au"
-                    className="bg-transparent outline-none text-[16px] sm:text-[13.5px] w-full py-2"
-                  />
-                </div>
+              <form action={signInForDevelopment}>
                 <button
                   type="submit"
-                  className="w-full rounded-md bg-[var(--accent)] text-white text-[13.5px] font-medium py-2.5 hover:opacity-90 transition-opacity"
+                  className="w-full text-[12px] text-3 py-1.5 hover:underline"
                 >
-                  Sign in
+                  Development sign-in (no password)
                 </button>
               </form>
             )}
           </div>
 
-          {nothingConfigured && (
-            <div className="mt-6 rounded-md border border-[#d03b3b]/45 bg-[#d03b3b]/8 p-3 text-[12px]">
-              <div className="font-semibold mb-1">No sign-in method configured</div>
+          {noPasswordSet && (
+            <div className="mt-6 rounded-md border border-[#eda100]/50 bg-[#eda100]/10 p-3 text-[12px]">
+              <div className="font-semibold mb-1">No password set yet</div>
               <p className="text-2 leading-relaxed">
-                Set <code className="font-mono">AUTH_GOOGLE_ID</code> and{" "}
-                <code className="font-mono">AUTH_GOOGLE_SECRET</code> (or the Entra
-                equivalents) for real sign-in, or{" "}
-                <code className="font-mono">AUTH_DEV_LOGIN=1</code> for local work. An
-                allowlist in <code className="font-mono">AUTH_ALLOWED_EMAILS</code> is
-                required either way — with none set, sign-in fails closed.
+                Set one on the server:{" "}
+                <code className="font-mono">
+                  tsx scripts/set-password.ts &lt;email&gt; &lt;password&gt;
+                </code>
+                . The address must also appear in{" "}
+                <code className="font-mono">AUTH_ALLOWED_EMAILS</code> — with none set,
+                sign-in fails closed.
               </p>
             </div>
           )}

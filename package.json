@@ -24,7 +24,8 @@
     "verify:intake": "node scripts/verify-intake.mjs",
     "ai:backfill": "tsx --env-file=.env.local scripts/ai-backfill.ts",
     "verify:ai": "tsx --env-file=.env.local scripts/verify-ai.ts",
-    "ai:embed": "tsx --env-file=.env.local scripts/ai-embed.ts"
+    "ai:embed": "tsx --env-file=.env.local scripts/ai-embed.ts",
+    "set-password": "tsx --env-file=.env.local scripts/set-password.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1117.0",

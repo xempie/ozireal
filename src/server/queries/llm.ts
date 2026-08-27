@@ -15,3 +15,21 @@ export async function readLlmSettings(tenantId: string) {
   );
   return row ?? null;
 }
+
+/**
+ * Does ANY user have a password? Drives the login page's setup hint.
+ *
+ * Deliberately not per-address: asking "does this email have a password" from an
+ * unauthenticated page is an enumeration oracle.
+ */
+export async function anyUserHasPassword(): Promise<boolean> {
+  const { db } = await import("@/db");
+  const { users } = await import("@/db/schema");
+  const { isNotNull } = await import("drizzle-orm");
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(isNotNull(users.passwordHash))
+    .limit(1);
+  return rows.length > 0;
+}
