@@ -52,7 +52,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ozi Realty — Adelaide real estate, sales, rentals and management",
+    default: "Ozi Realty · Adelaide real estate, sales, rentals and management",
     template: "%s · Ozi Realty",
   },
   description:

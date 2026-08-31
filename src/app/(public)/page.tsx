@@ -193,7 +193,7 @@ export default function HomePage() {
                   <p>
                     2.99% capped, with routine inspections every quarter and photographs
                     attached to every report. One manager looks after your property from
-                    the first advert to the final bond release — you will always know
+                    the first advert to the final bond release, so you will always know
                     their name.
                   </p>
                   <div className="svc-meta">
@@ -217,7 +217,7 @@ export default function HomePage() {
                   <p>
                     For buyers who keep missing out. We shortlist against your brief,
                     inspect before you spend a Saturday on it, pull the sales history, and
-                    bid on your behalf — including on the properties that never reach the
+                    bid on your behalf, including on the properties that never reach the
                     portals.
                   </p>
                   <div className="svc-meta">
@@ -262,7 +262,7 @@ export default function HomePage() {
                 style={{ objectFit: "cover" }}
               />
               <figcaption>
-                62 Sydenham Road, Norwood — sold 14 August, four days on market
+                62 Sydenham Road, Norwood &middot; Sold 14 August, four days on market
               </figcaption>
             </figure>
           </div>
@@ -355,7 +355,7 @@ export default function HomePage() {
                 <em>03</em> Rental yield, if you would rather hold than sell
               </li>
               <li>
-                <em>04</em> The three jobs worth doing before you list — and what they
+                <em>04</em> The three jobs worth doing before you list, and what they
                 return
               </li>
             </ul>

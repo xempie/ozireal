@@ -200,7 +200,7 @@ export const SALES_FIGURES = [
   {
     value: "2.99",
     unit: "%",
-    caption: "Management fee, capped — no letting or admin add-ons",
+    caption: "Management fee, capped, with no letting or admin add-ons",
   },
 ];
 
@@ -240,7 +240,7 @@ export const TESTIMONIAL = {
   emphasis: "out",
   after: " of listing in March, and we sold in June for ninety grand more.",
   name: "Molly & Dan Rasheed",
-  detail: "Sold — 41 Alpha Road, Prospect",
+  detail: "Sold · 41 Alpha Road, Prospect",
   rating: "4.9 average · 218 Google reviews",
 };
 
@@ -272,10 +272,10 @@ export const JOURNAL_POSTS = [
 
 /** Saturday openings in the footer, from the template. */
 export const OPEN_HOMES = [
-  "14 Highbury St, Prospect — 10:00",
-  "62 Sydenham Rd, Norwood — 11:00",
-  "3 Esplanade, Semaphore — 12:30",
-  "27 Wattle Ave, Unley Park — 13:00",
+  "14 Highbury St, Prospect · 10:00",
+  "62 Sydenham Rd, Norwood · 11:00",
+  "3 Esplanade, Semaphore · 12:30",
+  "27 Wattle Ave, Unley Park · 13:00",
 ];
 
 /** Unsplash is allow-listed in next.config.ts; this keeps the query string in one place. */

@@ -19,7 +19,7 @@ export default function NotFound() {
         <h1>We could not find that one</h1>
         <p className="sub">
           Properties come off the market and pages get renamed. If you were looking at a
-          particular home it may have sold — the archive keeps every one we have sold.
+          particular home it may have sold. The archive keeps every one we have sold.
         </p>
 
         <div className="paths" style={{ marginTop: "2rem" }}>
@@ -36,7 +36,7 @@ export default function NotFound() {
           <a href={AGENCY.phoneHref} className="path">
             <span className="t">Just ask us</span>
             <span className="d">
-              {AGENCY.phone} — we usually know what is coming before it is advertised.
+              {AGENCY.phone}. We usually know what is coming before it is advertised.
             </span>
             <span className="go">Call the office &rarr;</span>
           </a>

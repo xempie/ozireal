@@ -23,7 +23,7 @@ export function DemoAppraisalForm() {
   if (sent) {
     return (
       <p className="form-done">
-        Thanks — an agent will call you within one business day to arrange a walkthrough.
+        Thanks. An agent will call you within one business day to arrange a walkthrough.
       </p>
     );
   }
@@ -52,8 +52,8 @@ export function DemoAppraisalForm() {
         </button>
       </form>
       <p className="form-note">
-        Preview only — this form is not connected yet and nothing you type is recorded or
-        sent.
+        Preview only. This form is not connected yet, and nothing you type is recorded
+        or sent.
       </p>
       <p className="form-note">
         No obligation · No listing pitch · We will call within one business day
