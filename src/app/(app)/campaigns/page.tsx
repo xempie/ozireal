@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { ShieldCheck, Send, Users, Ban } from "lucide-react";
+import { ShieldCheck, Ban, Users } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   CardTitle,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -24,7 +23,11 @@ import {
   getMatchesForListing,
 } from "@/server/queries";
 import { relative } from "@/lib/utils";
-import { NewCampaignButton } from "@/components/forms/content-forms";
+import {
+  NewCampaignButton,
+  EditCampaignButton,
+  CampaignActions,
+} from "@/components/forms/content-forms";
 import { listingOptions } from "@/server/queries/pickers";
 
 const statusTone: Record<string, "neutral" | "queue" | "brand" | "sent"> = {
@@ -72,7 +75,20 @@ export default async function CampaignsPage() {
       <PageHeader
         title="Campaigns"
         subtitle="A new listing, its matched contacts, and a personalised draft for each. Every draft goes to the approval queue — there is no path from here to a send."
-        actions={<NewCampaignButton listings={listingOpts} />}
+        actions={
+          <>
+            {/* The segment builder is the way in now; "New campaign" stays for the
+                case where the audience is already known. */}
+            <Link
+              href="/campaigns/new"
+              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9 hover:opacity-90"
+            >
+              <Users size={13} />
+              Build an audience
+            </Link>
+            <NewCampaignButton listings={listingOpts} />
+          </>
+        }
       />
 
       <div className="mb-6">
@@ -96,6 +112,7 @@ export default async function CampaignsPage() {
               <TH className="text-right">Blocked</TH>
               <TH className="text-right">Replied</TH>
               <TH>Created</TH>
+              <TH className="text-right">Actions</TH>
             </TR>
           </THead>
           <tbody>
@@ -135,6 +152,31 @@ export default async function CampaignsPage() {
                 </TD>
                 <TD className="text-right tabular text-2">{c.replied || "—"}</TD>
                 <TD className="text-2 whitespace-nowrap">{relative(c.createdAt)}</TD>
+                <TD>
+                  <div className="flex flex-wrap items-start justify-end gap-1.5">
+                    {c.status === "draft" && (
+                      <EditCampaignButton
+                        campaign={{
+                          id: c.id,
+                          name: c.name,
+                          channel: c.channel,
+                          status: c.status,
+                          listingId: c.listingId,
+                        }}
+                        listings={listingOpts}
+                      />
+                    )}
+                    <CampaignActions
+                      campaign={{
+                        id: c.id,
+                        name: c.name,
+                        channel: c.channel,
+                        status: c.status,
+                        listingId: c.listingId,
+                      }}
+                    />
+                  </div>
+                </TD>
               </TR>
             ))}
           </tbody>
@@ -220,19 +262,38 @@ export default async function CampaignsPage() {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
-              <Button variant="primary" size="sm">
-                <Users size={12} />
-                Generate {builderMatches.length} drafts
-              </Button>
-              <Button size="sm">
-                <Send size={12} />
-                Send to approval queue
-              </Button>
+            <div className="mt-3 pt-3 border-t">
+              {/* The two buttons that used to sit here did nothing. Drafting a
+                  message per recipient is the DraftCampaign job in §8 and it is not
+                  built, so the honest control is the one that IS: create the
+                  campaign with these contacts already on it, from the listing
+                  screen, and write the copy in the approval queue. */}
+              <div className="text-[12.5px] text-2 leading-relaxed">
+                Per-recipient drafting is not built yet. What works today is{" "}
+                <strong>Draft a campaign to these contacts</strong> on the{" "}
+                {builder?.listingId ? (
+                  <Link
+                    href={`/listings/${builder.listingId}`}
+                    className="underline underline-offset-2"
+                  >
+                    listing screen
+                  </Link>
+                ) : (
+                  "listing screen"
+                )}
+                , which creates the campaign with this recipient list attached.
+                Everything outbound still goes through{" "}
+                <Link href="/approvals" className="underline underline-offset-2">
+                  the approval queue
+                </Link>
+                .
+              </div>
             </div>
             <ProtoNote>
               Contacts without consent are pre-unticked rather than hidden, so it is
-              obvious why they are not receiving anything.
+              obvious why they are not receiving anything. They stay on the list on
+              purpose: consent is checked again at the instant of sending, and a
+              contact who is not on the list cannot be blocked and logged.
             </ProtoNote>
           </Card>
         </Section>

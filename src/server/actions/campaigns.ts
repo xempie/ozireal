@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { and, eq, isNull, desc } from "drizzle-orm";
+import { and, eq, isNull, isNotNull, or, desc } from "drizzle-orm";
 import { defineAction, ActionError } from "./action";
 import {
   campaigns,
@@ -121,5 +121,159 @@ export const createCampaign = defineAction({
     revalidatePath("/campaigns");
     revalidatePath("/dashboard");
     return { id: created.id, seeded };
+  },
+});
+
+/* -------------------------------------------------- editing and removing */
+
+/**
+ * Renaming or re-pointing a campaign — drafts only.
+ *
+ * Once anything has been sent, the campaign is the label on a set of messages that
+ * real people received. Changing its channel afterwards would make the recipient
+ * rows describe an SMS run that went out by email.
+ */
+export const updateCampaign = defineAction({
+  input: z.object({
+    id: z.string().uuid(),
+    name: z.string().trim().min(3, "Give the campaign a name").max(120),
+    channel: z.enum(["email", "sms"]),
+    listingId: z.union([z.string().uuid(), z.literal("")]).optional(),
+  }),
+  async handler(input, ctx) {
+    const [c] = await ctx.tx
+      .select({ status: campaigns.status, name: campaigns.name })
+      .from(campaigns)
+      .where(eq(campaigns.id, input.id))
+      .limit(1);
+    if (!c) throw new ActionError("That campaign no longer exists.");
+    if (c.status !== "draft") {
+      throw new ActionError(
+        "Only a draft can be edited. Once a campaign is in approval or has sent, its name and channel describe messages that already exist.",
+      );
+    }
+
+    const listingId = input.listingId || null;
+    if (listingId) {
+      const [l] = await ctx.tx
+        .select({ id: listings.id })
+        .from(listings)
+        .where(eq(listings.id, listingId))
+        .limit(1);
+      if (!l) throw new ActionError("That listing no longer exists.");
+    }
+
+    await ctx.tx
+      .update(campaigns)
+      .set({ name: input.name, channel: input.channel, listingId })
+      .where(eq(campaigns.id, input.id));
+
+    await ctx.audit({
+      kind: "edit",
+      action: "Updated a campaign draft",
+      target: input.name,
+      entityType: "campaign",
+      entityId: input.id,
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath("/dashboard");
+    return { id: input.id };
+  },
+});
+
+/**
+ * Deleting a campaign.
+ *
+ * Refused as soon as one recipient row carries a `sent_at` or a `blocked_reason`.
+ * Both are evidence: the first is proof a message went to a named person, the
+ * second is proof the send gate stopped one because consent had lapsed (§7, rule 2)
+ * — and the block is the more valuable of the two, because it is the record you
+ * would have to produce if a send were ever challenged.
+ */
+export const deleteCampaign = defineAction({
+  input: z.object({ id: z.string().uuid() }),
+  async handler(input, ctx) {
+    const [c] = await ctx.tx
+      .select({ name: campaigns.name, status: campaigns.status })
+      .from(campaigns)
+      .where(eq(campaigns.id, input.id))
+      .limit(1);
+    if (!c) throw new ActionError("That campaign no longer exists.");
+
+    const [evidence] = await ctx.tx
+      .select({ id: campaignRecipients.id })
+      .from(campaignRecipients)
+      .where(
+        and(
+          eq(campaignRecipients.campaignId, input.id),
+          or(
+            isNotNull(campaignRecipients.sentAt),
+            isNotNull(campaignRecipients.blockedReason),
+          ),
+        ),
+      )
+      .limit(1);
+    if (evidence) {
+      throw new ActionError(
+        "This campaign has reached people, or was blocked from reaching them. Either way that is evidence and cannot be deleted — cancel it instead.",
+      );
+    }
+
+    await ctx.audit({
+      kind: "edit",
+      action: "Deleted a campaign draft",
+      target: c.name,
+      entityType: "campaign",
+      entityId: input.id,
+    });
+
+    // The recipient rows cascade; none of them carry a send or a block, or the
+    // guard above would have refused.
+    await ctx.tx.delete(campaigns).where(eq(campaigns.id, input.id));
+
+    revalidatePath("/campaigns");
+    revalidatePath("/dashboard");
+    return { deleted: true };
+  },
+});
+
+/**
+ * Stopping a campaign that has already reached somebody.
+ *
+ * The counterpart to delete: nothing is removed, the status says it was stopped,
+ * and every recipient row stays exactly as it is.
+ */
+export const cancelCampaign = defineAction({
+  input: z.object({ id: z.string().uuid() }),
+  async handler(input, ctx) {
+    const [c] = await ctx.tx
+      .select({ name: campaigns.name, status: campaigns.status })
+      .from(campaigns)
+      .where(eq(campaigns.id, input.id))
+      .limit(1);
+    if (!c) throw new ActionError("That campaign no longer exists.");
+    if (c.status === "cancelled") throw new ActionError("That campaign is already cancelled.");
+    if (c.status === "sent") {
+      throw new ActionError("That campaign has finished sending. There is nothing left to stop.");
+    }
+
+    await ctx.tx
+      .update(campaigns)
+      .set({ status: "cancelled" })
+      .where(eq(campaigns.id, input.id));
+
+    await ctx.audit({
+      kind: "reject",
+      action: "Cancelled a campaign",
+      target: c.name,
+      entityType: "campaign",
+      entityId: input.id,
+      metadata: { from: c.status },
+    });
+
+    revalidatePath("/campaigns");
+    revalidatePath("/dashboard");
+    return { cancelled: true };
   },
 });

@@ -14,7 +14,6 @@ import {
   Section,
   Card,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -57,10 +56,15 @@ export default async function AuditPage() {
         title="Audit log"
         subtitle="Who approved, edited, merged, committed or published — and when. Append-only, like the interaction log."
         actions={
-          <Button>
+          /* A real download. It exports the WHOLE log, not the twenty rows this
+             screen shows - an audit trail truncated to a screenful is a screenshot. */
+          <a
+            href="/api/export/audit"
+            className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[13px] font-medium px-3 min-h-9 hover:surface-3"
+          >
             <Download size={13} />
-            Export
-          </Button>
+            Export CSV
+          </a>
         }
       />
 

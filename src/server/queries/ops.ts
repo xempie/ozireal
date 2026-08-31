@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, sql, inArray } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, ne, sql, inArray } from "drizzle-orm";
 import { query } from "@/db";
 import {
   tenants,
@@ -206,6 +206,7 @@ export async function getTasks() {
         id: tasks.id,
         contactId: tasks.contactId,
         contactName: sql<string | null>`${contacts.firstName} || ' ' || ${contacts.lastName}`,
+        listingId: tasks.listingId,
         title: tasks.title,
         dueAt: tasks.dueAt,
         done: sql<boolean>`${tasks.status} = 'done'`,
@@ -238,6 +239,13 @@ export async function getCalendarEvents() {
       .leftJoin(listings, eq(listings.id, calendarEvents.listingId))
       .leftJoin(properties, eq(properties.id, listings.propertyId))
       .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
+      /**
+       * A cancelled event is not on the calendar. The row survives so the two-way
+       * sync (D5) has something to push when it lands - a locally deleted row is
+       * indistinguishable from one that never synced, and the remote copy would
+       * then live forever.
+       */
+      .where(isNull(calendarEvents.cancelledAt))
       .orderBy(calendarEvents.startsAt),
   );
 }
@@ -309,6 +317,7 @@ export async function getBlogPosts() {
         title: blogPosts.title,
         slug: blogPosts.slug,
         status: blogPosts.status,
+        body: blogPosts.body,
         words: blogPosts.wordCount,
         createdAt: blogPosts.createdAt,
         publishedAt: blogPosts.publishedAt,
@@ -351,9 +360,16 @@ export async function getSeoIssues() {
         detail: seoIssues.detail,
         proposal: seoIssues.proposal,
         affected: seoIssues.affectedCount,
+        status: seoIssues.status,
       })
       .from(seoIssues)
-      .where(eq(seoIssues.status, "open"))
+      /**
+       * Everything except what has been actioned and applied. Accepted and
+       * dismissed findings stay visible so a decision can be taken back - a
+       * dismissal that vanishes on click is indistinguishable from one that
+       * failed.
+       */
+      .where(ne(seoIssues.status, "resolved"))
       .orderBy(seoIssues.severity),
   );
 }
@@ -362,9 +378,11 @@ export async function getRedirects() {
   return query((tx) =>
     tx
       .select({
+        id: redirects.id,
         from: redirects.fromPath,
         to: redirects.toPath,
         status: redirects.status,
+        note: redirects.note,
       })
       .from(redirects)
       .orderBy(redirects.fromPath),
@@ -470,7 +488,11 @@ export async function getAdapters() {
 export async function getSavedViews() {
   return query((tx) =>
     tx
-      .select({ name: savedViews.name, detail: savedViews.description })
+      .select({
+        id: savedViews.id,
+        name: savedViews.name,
+        detail: savedViews.description,
+      })
       .from(savedViews)
       .orderBy(savedViews.name),
   );

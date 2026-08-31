@@ -29,6 +29,13 @@ export async function getProperties() {
       .select({
         id: properties.id,
         address: sql<string>`trim(coalesce(${properties.streetNumber} || ' ', '') || coalesce(${properties.street}, ''))`,
+        // The parts, not just the joined string: the edit dialog has to put the
+        // unit and number back into their own inputs, and re-splitting a formatted
+        // address is how "1/12A" becomes two wrong fields.
+        unit: properties.unit,
+        streetNumber: properties.streetNumber,
+        street: properties.street,
+        suburbId: properties.suburbId,
         suburb: suburbs.name,
         state: properties.state,
         postcode: properties.postcode,
@@ -129,6 +136,7 @@ export async function getInspections(opts?: { upcomingOnly?: boolean }) {
       .select({
         id: inspections.id,
         listingId: inspections.listingId,
+        capacity: inspections.capacity,
         address: addressSql,
         startsAt: inspections.startsAt,
         minutes: inspections.minutes,

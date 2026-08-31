@@ -349,6 +349,152 @@ the gate refusing a lapsed-consent send.
 
 ---
 
+## Phase B7 — Edit and delete ✅ done
+
+Everything up to B6 could create and read. This closes the other two letters, and it
+began as an audit rather than a feature — the full findings, including what is still
+missing, are in [crud-gaps.md](crud-gaps.md).
+
+The audit found three separate problems, not one:
+
+- **`updateContact` and `tombstoneContact` were built in B2, tested, and wired to no
+  button.** The most-used record in the product could be created and read and nothing
+  else, for five phases, without a failing test anywhere.
+- **Nine tables were create-only** — properties, listings, inspections, tasks, calendar
+  events, campaigns, proposals, articles, social posts. No way to correct a typo or
+  remove a mistake.
+- **Sixteen buttons were inert**, left over from the static prototype. A control that
+  does nothing is worse than a missing one: it tells the person the write landed.
+
+- [x] **B7.1 The refusals are the feature.** Most of these actions are meant to say no,
+      and each says why in a sentence: a property that has been listed cannot be deleted
+      because its campaigns are the sold archive; a campaign whose recipient row carries
+      a `blocked_reason` cannot be deleted because that block is the record you produce
+      if a send is challenged; a published article is archived rather than deleted so a
+      live address keeps resolving; a proposal past draft is what a vendor was told.
+- [x] **B7.2 The lifecycle actions move both rows.** `setListingStatus` was the Publish
+      and Withdraw buttons, which did nothing. It checks price wording and
+      one-live-per-property before the database does, and moves the PROPERTY's status
+      with the campaign — the thing nobody remembers by hand, and the reason a
+      "listed" property could outlive its withdrawn campaign.
+- [x] **B7.3 No new publish path.** Articles and social posts gained a full lifecycle
+      except the one transition that matters: there is no action anywhere that sets
+      `published`. Rule 1 has no config flag, and the furthest these screens reach is
+      *into* the approval queue.
+- [x] **B7.4 Inert buttons removed or made real.** Accept/Dismiss on `/seo` were a
+      status enum that already existed. The redirect map became editable, which is the
+      one job the migration console exists for. Export became a real Route Handler with
+      CSV-injection escaping, because the free text in it was typed by strangers.
+      Where the feature genuinely is not built — the voice recorder, the crawler,
+      per-recipient drafting — the button is gone and a sentence says which.
+- [x] **B7.5 Two live bugs found on the way.** The `leased` column was missing from the
+      listings board, so every settled rental vanished from the screen while sitting in
+      the database. And the development sign-in button had posted an empty email since
+      password sign-in landed above it — the provider refused it and the page reloaded
+      looking untouched, which is also why `pnpm verify:writes` had been failing at step
+      two, unnoticed, since B2.
+
+Verified by `pnpm test` (317, up from 280 — `tests/edit-delete.test.ts` adds 37 that
+mostly assert a refusal AND that the row survived it), `pnpm db:guards` (22), and
+`pnpm verify:crud` (15 checks driving the real browser: dialogs prefill from stored
+values, saves land, deletes remove the row, and a refusal appears in words next to the
+button rather than nowhere).
+
+---
+
+## Phase B8 — Personalised SMS campaigns
+
+Item **2.10** in [phases.md](phases.md) — `NewProperty -> MatchContacts -> DraftCampaign
+-> ApprovalQueue`, "per-contact personalised drafts, batch approve, staggered send".
+Everything either side of `DraftCampaign` shipped in B5; the middle never did. Four
+stages, planned together and built one at a time.
+
+Exploration before writing anything found the hole is wider than one missing job:
+
+- **`insert(approvalItems)` appears nowhere in `src/` outside the seed.** Approval
+  items are read, updated and claimed. Nothing has ever created one.
+- **`campaign_recipients` is never written after a send.** `approveAndSend` reads
+  `item.campaignId` and does nothing with it, so every campaign metric on `/campaigns`
+  and in `getCampaignPerformance()` is structurally correct and permanently zero.
+- **`campaigns.status` values `in_approval` / `sending` / `sent` are set by no code.**
+- **Delivery receipts record only carrier suppression.** Every DLR code other than 302
+  is parsed and dropped, so "delivered" and "failed" are not facts the system holds.
+
+### B8.1 Segments ✅ done
+
+- [x] **Migration 0013.** `campaigns.segment` and `campaigns.saved_view_id` (SET NULL,
+      so deleting a view can never destroy the record of who a campaign reached),
+      `llm_settings.draft_max_tokens`, and two indexes the preview leans on — the
+      consent tie-break `(contact_id, channel, occurred_at DESC, created_at DESC)` and
+      the previously unindexed reverse merge lookup.
+- [x] **A filter DSL with a first real reader.** `saved_views.filter` has been a jsonb
+      column since B0 with no schema and no consumer: the seed wrote a placeholder
+      `{note: "..."}` and the console rendered the rows as dashed, unclickable spans
+      captioned "Filtering is not built yet". `src/server/segments/schema.ts` gives
+      both it and `campaigns.segment` a Zod shape, so a saved view is now something
+      that can be applied rather than a label.
+- [x] **A missing value is unknown, not yes.** The one semantic that deliberately
+      disagrees with the matcher. `engine.ts` asks *would this person tolerate this
+      house*, so a null budget must not exclude. A segment asks *whose budget reaches
+      800k*, where a null budget is not a yes — answering otherwise is how a campaign
+      aimed at pre-approved buyers reaches every browser who ever filled in a form.
+      `includeUnknowns` restores them deliberately and the preview reports both counts.
+- [x] **Nobody unsendable can be in a segment.** Do-not-contact, tombstoned, merged
+      away, no mobile and lapsed SMS consent are applied unconditionally and no filter
+      can switch them off. The consent predicate replicates the gate's latest-per-record
+      / strictest-across-identity rule in set-based SQL, and a test asserts the two
+      agree contact by contact — including the case that motivates the rule, where a
+      duplicate's later unsubscribe must block the survivor.
+- [x] **The exclusion breakdown, which is the point of the screen.** "38 match" is not
+      enough to press send on; "38 match, and 6 more would have except four never gave
+      SMS consent and two have no mobile" is what makes someone fix two records instead
+      of quietly reaching 38 people when they meant 44. The causes overlap, so they are
+      counted independently and never presented as summing.
+- [x] **`contact_roles.active_to` is finally consulted.** It has existed since B0 so a
+      role could lapse without losing the history, and nothing had ever read it. A
+      lapsed vendor is excluded by default.
+
+Two defects this stage found and fixed:
+
+- **A refused filter left a confident number on screen.** A value past the schema's
+  ceiling made the preview action return a validation failure, and the panel kept
+  rendering the previous count — so an absurd criterion appeared to match everybody.
+  The count now dims and says it was not evaluated, and the controls carry the
+  schema's own ceilings so the state is hard to reach at all.
+- **`pnpm verify:writes` had a check that degraded with use.** It commits the first
+  pending confirm-queue proposal, and B4.5 correctly refuses one carrying no
+  applicable data. After a few runs the only proposals left are exactly those, so a
+  passing system started reporting a failure. It now recognises the documented refusal.
+
+Verified by `pnpm test` (334, up from 317 — `tests/segments.test.ts` adds 17),
+`pnpm db:guards` (22), and `pnpm verify:segments` (12 checks in a real browser,
+including the audience going 4 -> 0 on an out-of-reach budget and 0 -> 2 when unstated
+budgets are included, which is the null-is-unknown rule visible on screen).
+
+### B8.2 Personalised drafting — not started
+
+One `approval_items` row per recipient, drafted by Sonnet with the stable prefix
+cached, and a character budget that leaves room for the compliance footer
+`withComplianceFooter` appends after the model has finished.
+
+### B8.3 Review and send — not started
+
+Carries the restructure of `approveAndSend`. The provider HTTP call currently runs
+**inside** the action's transaction — B5 recorded this as a known gap and deferred it
+to "B6's transport work", and B6 shipped without it. Looping it for 200 recipients
+would hold one transaction open across 200 round trips, so the send core has to be
+split into claim / send / record as separately committed phases. Closing the B5 gap is
+a prerequisite here rather than a nicety.
+
+### B8.4 Reports — not started
+
+Per-contact SMS history, campaign performance, volume/cost/opt-outs over time, and a
+delivery-failure worklist. Needs the DLR handler to record every terminal state rather
+than only 302, and `campaign_recipients.replied_at` to be written by the inbound route
+that has never touched it.
+
+---
+
 ## Phase B6 — Deploy the backend
 
 - [ ] **B6.1 `provision.sh`.** Node, Postgres 16 + pgvector, Redis, `pgBackRest` with

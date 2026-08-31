@@ -36,7 +36,8 @@ for (const [name, width, height] of viewports) {
 
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.fill('input[name="email"]', "sam@ozirealty.com.au");
-  await page.click('button[type="submit"]');
+  // Not `button[type="submit"]` — B2's password form put a second one above this.
+  await page.getByRole("button", { name: /development sign-in/i }).click();
   await page.waitForURL("**/dashboard");
 
   console.log(`\n${name} (${width}x${height})`);

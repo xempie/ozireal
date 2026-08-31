@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ConsoleShell, type ShellData } from "@/components/shell/nav";
 import { SignOutButton } from "@/components/shell/sign-out";
 import { getAgency, getCounts, getContacts, getListings } from "@/server/queries";
@@ -10,6 +11,17 @@ import { getAgency, getCounts, getContacts, getListings } from "@/server/queries
  * show yesterday's queue counts until the next deploy. A CRM is dynamic by definition.
  */
 export const dynamic = "force-dynamic";
+
+/**
+ * Console metadata lives here rather than at the root, which the public website also
+ * uses. At the root it told every public page it was an internal prototype.
+ */
+export const metadata: Metadata = {
+  title: { default: "Ozi Realty — Console", template: "%s · Ozi Realty Console" },
+  description: "Internal CRM and operations console.",
+  // Nothing in here is for a search engine, and several routes carry contact details.
+  robots: { index: false, follow: false },
+};
 
 /**
  * The shell's data is read once here, in a server component, and handed to the client

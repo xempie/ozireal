@@ -3,7 +3,6 @@ import { Plus, MapPinOff } from "lucide-react";
 import {
   PageHeader,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -13,7 +12,10 @@ import {
 } from "@/components/ui";
 import { getProperties } from "@/server/queries";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
-import { NewPropertyButton } from "@/components/forms/stock-forms";
+import {
+  NewPropertyButton,
+  EditPropertyButton,
+} from "@/components/forms/stock-forms";
 import { suburbOptions, contactOptions } from "@/server/queries/pickers";
 
 export default async function PropertiesPage() {
@@ -38,6 +40,7 @@ export default async function PropertiesPage() {
             <TH>Owner</TH>
             <TH>Listings</TH>
             <TH>Geocode</TH>
+            <TH className="text-right">Actions</TH>
           </TR>
         </THead>
         <tbody>
@@ -103,6 +106,32 @@ export default async function PropertiesPage() {
                   ) : (
                     <Badge tone="sent">set</Badge>
                   )}
+                </TD>
+                <TD className="text-right">
+                  {/* Editing from the list rather than only from the detail page:
+                      most corrections are a bedroom count or an owner link, and
+                      making that a two-navigation job is why they do not get made. */}
+                  <EditPropertyButton
+                    property={{
+                      id: p.id,
+                      unit: p.unit,
+                      streetNumber: p.streetNumber,
+                      street: p.street,
+                      suburbId: p.suburbId,
+                      postcode: p.postcode,
+                      type: p.type,
+                      status: p.status,
+                      beds: p.beds,
+                      baths: p.baths,
+                      parking: p.parking,
+                      landSqm: p.landSqm,
+                      ownerContactId: p.ownerContactId,
+                      internalNotes: p.internalNotes,
+                      internalPriceExpectation: p.internalPriceExpectation,
+                    }}
+                    suburbs={suburbOpts}
+                    contacts={contactOpts}
+                  />
                 </TD>
               </TR>
             );

@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { Filter, Ban } from "lucide-react";
+import { Download, Ban } from "lucide-react";
 import {
   PageHeader,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -52,10 +51,17 @@ export default async function ContactsPage() {
         subtitle={`${contacts.length} people. One record per person, accumulating roles over time — never one record per deal.`}
         actions={
           <>
-            <Button>
-              <Filter size={13} />
-              Saved views
-            </Button>
+            {/* The "Saved views" button here opened nothing and duplicated the card
+                below. Replaced with the export, which is real — and which carries the
+                consent state alongside every name, so a list pulled into a spreadsheet
+                cannot be worked from without it. */}
+            <a
+              href="/api/export/contacts"
+              className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[13px] font-medium px-3 min-h-9 hover:surface-3"
+            >
+              <Download size={13} />
+              Export CSV
+            </a>
             <NewContactButton />
           </>
         }
@@ -66,39 +72,42 @@ export default async function ContactsPage() {
           <Card className="p-3">
             <CardTitle>Saved views</CardTitle>
             <div className="flex flex-wrap gap-2">
+              {/* These now carry a real filter, so they lead somewhere: the audience
+                  builder, which is the screen that can actually apply one. Filtering
+                  this table in place is still to come. */}
               {savedViews.map((v) => (
-                <button
-                  key={v.name}
-                  type="button"
+                <Link
+                  key={v.id}
+                  href={`/campaigns/new?segment=${v.id}`}
                   title={v.detail ?? undefined}
-                  className="text-[12px] border rounded-md px-2.5 py-1.5 surface-3 text-left cursor-default hover:border-[var(--line-strong)] transition-colors"
+                  className="text-[12px] border rounded-md px-2.5 py-1.5 surface-3 text-2 hover:border-[var(--line-strong)] transition-colors"
                 >
                   <span className="font-medium">{v.name}</span>
-                </button>
+                </Link>
               ))}
               {savedViews.length === 0 && (
                 <span className="text-3 text-[12px]">No saved views yet.</span>
               )}
             </div>
             <ProtoNote>
-              A saved view is a stored filter, not a copy of the data. Hover one to see
-              what it actually asks for.
+              A saved view is a stored filter, not a copy of the data — it finds whoever
+              matches on the day it is used. Opening one shows who that is now, with the
+              people it cannot reach counted separately.
             </ProtoNote>
           </Card>
 
           <Card className="p-2.5">
         <div className="flex flex-wrap items-center gap-2">
           {filters.map((f) => (
-            <button
+            <span
               key={f}
-              type="button"
-              className="text-[12px] border rounded-md px-2 py-1 surface-3 text-2 cursor-default"
+              className="text-[12px] border border-dashed rounded-md px-2 py-1 surface-3 text-3"
             >
               {f}
-            </button>
+            </span>
           ))}
           <span className="text-3 text-[11.5px] ml-auto">
-            Filters are inert in the prototype
+            Filtering is not built yet — these name the filters that will exist
           </span>
             </div>
           </Card>

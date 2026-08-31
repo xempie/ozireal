@@ -82,6 +82,19 @@ export const campaigns = pgTable(
     name: text("name").notNull(),
     channel: campaignChannel("channel").notNull(),
     status: campaignStatus("status").notNull().default("draft"),
+
+    /**
+     * The filter that produced this campaign's recipients (migration 0013).
+     *
+     * A document rather than columns: written once, read whole, never queried
+     * across campaigns. It exists so "why did Marco get this and Priya not?" is
+     * answerable a week later, which is exactly when it gets asked.
+     */
+    segment: jsonb("segment"),
+    /** Provenance only. The campaign keeps its own copy of the filter above, so
+     *  deleting a saved view can never destroy the record of who was targeted. */
+    savedViewId: uuid("saved_view_id"),
+
     createdByUserId: uuid("created_by_user_id").references(() => users.id, {
       onDelete: "set null",
     }),

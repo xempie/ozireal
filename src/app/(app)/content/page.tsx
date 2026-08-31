@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { Instagram, Facebook, Linkedin, Eye, ShieldCheck } from "lucide-react";
+import { Instagram, Facebook, Linkedin } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   CardTitle,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -18,7 +17,13 @@ import {
 } from "@/components/ui";
 import { getBlogPosts, getSocialPosts, getContentTotals } from "@/server/queries";
 import { relative, shortDate } from "@/lib/utils";
-import { NewDraftButton } from "@/components/forms/content-forms";
+import {
+  NewDraftButton,
+  EditDraftButton,
+  BlogStatusButtons,
+  EditSocialButton,
+  SocialStatusButtons,
+} from "@/components/forms/content-forms";
 import { listingOptions } from "@/server/queries/pickers";
 
 const statusTone: Record<string, "neutral" | "queue" | "sent"> = {
@@ -134,18 +139,29 @@ export default async function ContentPage() {
                 <TD className="text-2 whitespace-nowrap">
                   {p.publishedAt ? shortDate(p.publishedAt) : relative(p.createdAt)}
                 </TD>
-                <TD className="text-right">
-                  {p.status === "in_approval" ? (
-                    <Button size="sm" variant="primary">
-                      <ShieldCheck size={11} />
-                      Review
-                    </Button>
-                  ) : (
-                    <Button size="sm">
-                      <Eye size={11} />
-                      Open
-                    </Button>
-                  )}
+                <TD>
+                  <div className="flex flex-wrap items-start justify-end gap-1.5">
+                    {p.status !== "in_approval" && (
+                      <EditDraftButton
+                        post={{
+                          id: p.id,
+                          title: p.title,
+                          body: p.body,
+                          status: p.status,
+                          slug: p.slug,
+                        }}
+                      />
+                    )}
+                    <BlogStatusButtons
+                      post={{
+                        id: p.id,
+                        title: p.title,
+                        body: p.body,
+                        status: p.status,
+                        slug: p.slug,
+                      }}
+                    />
+                  </div>
                 </TD>
               </TR>
             ))}
@@ -181,17 +197,35 @@ export default async function ContentPage() {
                     {s.address}
                   </Link>
                 )}
-                <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t">
+                <div className="mt-3 pt-3 border-t">
                   <span className="text-3 text-[11.5px]">
                     {s.status === "published"
                       ? `${s.engagement} interactions`
                       : relative(s.createdAt)}
                   </span>
-                  {s.status === "in_approval" && (
-                    <Button size="sm" variant="primary" className="ml-auto">
-                      Review
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap items-start gap-1.5 mt-2">
+                    {s.status === "draft" && (
+                      <EditSocialButton
+                        post={{
+                          id: s.id,
+                          network: s.network,
+                          body: s.body,
+                          status: s.status,
+                          listingId: s.listingId,
+                        }}
+                        listings={listingOpts}
+                      />
+                    )}
+                    <SocialStatusButtons
+                      post={{
+                        id: s.id,
+                        network: s.network,
+                        body: s.body,
+                        status: s.status,
+                        listingId: s.listingId,
+                      }}
+                    />
+                  </div>
                 </div>
               </Card>
             );

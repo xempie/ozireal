@@ -1,0 +1,1025 @@
+/* ============================================================
+   OZI REALTY — public website
+
+   Design system taken from the supplied template: bluestone ink,
+   limestone paper, Ozi orange. Adopted wholesale rather than adapted —
+   the palette, the mono-label voice, the serif at 600, the section
+   rhythm.
+
+   Two departures, both deliberate:
+
+   1. Scoped to `.site` rather than `:root`. The console has a dark
+      theme and stamps `data-theme` on <html> before paint; scoping
+      means that stamp has nothing to act on here, so the public site
+      keeps one look without fighting it.
+
+   2. The template's earlier heading weight was 400, which is what
+      "the heading font isn't readable" was about. Newsreader is a
+      text face with an optical-size axis — at display sizes and light
+      weights it thins out badly. Everything structural is 600 now.
+   ============================================================ */
+
+.site {
+  --ink:        #0F1E22;
+  --ink-2:      #172E33;
+  --ink-3:      #21454B;
+  --paper:      #EAE7DE;
+  --paper-2:    #F4F2EC;
+  --white:      #FFFFFF;
+  --accent:     #D84315;   /* Ozi Realty brand colour, primary */
+  --accent-dp:  #AE3410;   /* darker cut: small text and hover on light paper */
+  --accent-lt:  #F5824F;   /* lighter cut: anything on the dark bluestone */
+  --muted:      #6C7B7E;
+  --muted-2:    #93A0A2;
+  --line:       rgba(15, 30, 34, 0.14);
+  --line-dk:    rgba(234, 231, 222, 0.16);
+
+  --serif: var(--font-display), Georgia, serif;
+  --sans:  var(--font-body), -apple-system, "Segoe UI", sans-serif;
+  --mono:  var(--font-mono), ui-monospace, monospace;
+
+  --gutter: clamp(20px, 5vw, 72px);
+  --maxw: 1440px;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.site *,
+.site *::before,
+.site *::after { box-sizing: border-box; }
+
+.site img { display: block; max-width: 100%; }
+.site a { color: inherit; text-decoration: none; }
+.site button,
+.site input,
+.site select { font: inherit; color: inherit; }
+.site :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--gutter); }
+
+/* ---------------------------------------------------- shared type ---- */
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent-dp);
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.eyebrow::after {
+  content: "";
+  height: 1px;
+  width: 56px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+.dark .eyebrow { color: var(--accent-lt); }
+.dark .eyebrow::after { background: var(--accent-lt); }
+
+.display {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.15rem, 4.3vw, 3.7rem);
+  line-height: 1.04;
+  letter-spacing: -0.008em;
+  margin: 0;
+}
+.display em { font-style: italic; font-weight: 500; }
+
+.lede {
+  max-width: 52ch;
+  color: var(--muted);
+  font-size: clamp(15px, 1.15vw, 17.5px);
+  line-height: 1.65;
+  margin: 22px 0 0;
+}
+.dark .lede { color: rgba(234, 231, 222, 0.66); }
+
+/* -------------------------------------------------------- buttons ---- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 15px 26px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--paper-2);
+  transition: background 0.25s, color 0.25s, transform 0.25s;
+}
+.btn:hover { background: var(--accent-dp); }
+.btn:active { transform: translateY(1px); }
+.btn--ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+.btn--ghost:hover { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.btn--onink { background: transparent; border-color: var(--line-dk); color: var(--paper); }
+.btn--onink:hover { background: var(--paper); color: var(--ink); }
+
+.txtlink {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line);
+  transition: border-color 0.3s, gap 0.3s;
+}
+.txtlink:hover { border-color: var(--accent); gap: 15px; }
+.dark .txtlink { border-color: var(--line-dk); }
+.dark .txtlink:hover { border-color: var(--accent); }
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 14px 20px;
+  z-index: 100;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.skip-link:focus { left: 0; }
+
+/* --------------------------------------------- utility bar and nav ---- */
+.utility { background: var(--ink); color: var(--muted-2); }
+.utility .wrap {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 38px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  flex-wrap: wrap;
+  padding-block: 8px;
+}
+.utility a:hover { color: var(--accent-lt); }
+.utility .dot { color: var(--accent); margin-inline: 10px; }
+.utility .u-right { display: flex; gap: 22px; align-items: center; }
+
+/*
+  No border at rest. The nav is sticky, so a permanent border-bottom detaches with it
+  and leaves a hairline sitting under the header the moment you scroll — which is
+  exactly the line that had to go. The separator arrives with `.stuck` instead, which
+  is what the original template did before this became a server component.
+*/
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--paper);
+  border-bottom: 1px solid transparent;
+  transition: box-shadow 0.3s, background 0.3s, border-color 0.3s;
+}
+.nav.stuck {
+  border-bottom-color: var(--line);
+  box-shadow: 0 1px 24px rgba(15, 30, 34, 0.09);
+  background: rgba(234, 231, 222, 0.94);
+  backdrop-filter: blur(10px);
+}
+.nav .wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  min-height: 82px;
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; line-height: 1; flex-shrink: 0; }
+/*
+  The supplied logo is a PNG with a white box behind the wordmark. Blend modes
+  drop it out without touching the source file: multiply maps white to the paper
+  on the light nav, and on the dark footer invert flips the box to black which
+  screen then discards.
+*/
+.brand img { height: 30px; width: auto; display: block; mix-blend-mode: multiply; }
+.brand--light img {
+  height: 34px;
+  mix-blend-mode: screen;
+  filter: invert(1) brightness(1.7) contrast(1.05);
+}
+
+.menu { display: flex; align-items: center; gap: 32px; margin-left: auto; flex-wrap: wrap; }
+.menu a {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  position: relative;
+  padding: 6px 0;
+}
+.menu a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 1px;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+.menu a:hover::after,
+.menu a[aria-current="page"]::after { width: 100%; }
+.menu a[aria-current="page"] { color: var(--accent); }
+
+.nav-cta { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.nav-cta .btn { padding: 13px 20px; }
+
+/* The drawer's own copy of the CTA. Desktop shows the bar button instead. */
+.menu-cta { display: none; }
+
+.burger {
+  display: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 12px;
+  margin-right: -12px;
+  /* 44px minimum tap target once padding is counted. */
+}
+.burger i {
+  display: block;
+  width: 22px;
+  height: 1.5px;
+  background: var(--ink);
+  margin: 5px 0;
+  transition: transform 0.3s, opacity 0.3s;
+}
+.nav.open .burger i:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+.nav.open .burger i:nth-child(2) { opacity: 0; }
+.nav.open .burger i:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+/* ------------------------------------------------------------ hero ---- */
+.hero { position: relative; background: var(--ink); overflow: hidden; }
+.hero-media { position: absolute; inset: 0; }
+.hero-media img { width: 100%; height: 100%; object-fit: cover; opacity: 0.62; }
+.hero-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(103deg, rgba(15,30,34,.94) 0%, rgba(15,30,34,.74) 42%, rgba(15,30,34,.18) 78%),
+    linear-gradient(to top, rgba(15,30,34,.92) 0%, transparent 46%);
+}
+.hero-inner { position: relative; z-index: 2; padding: clamp(72px, 10vw, 132px) 0 clamp(48px, 6vw, 78px); }
+.hero-copy { max-width: 820px; color: var(--paper); }
+.hero h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  margin: 0;
+  font-size: clamp(2.9rem, 8.2vw, 6.4rem);
+  line-height: 0.96;
+  letter-spacing: -0.018em;
+}
+.hero h1 em { font-style: italic; font-weight: 500; color: var(--accent-lt); }
+.hero .lede { color: rgba(234, 231, 222, 0.74); max-width: 50ch; margin-top: 28px; }
+.hero .eyebrow { color: var(--accent-lt); }
+.hero .eyebrow::after { background: var(--accent-lt); }
+
+/* --------------------------------------------------- search panel ---- */
+.search {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(44px, 6vw, 74px);
+  background: var(--paper-2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.search-tabs { display: flex; border-bottom: 1px solid var(--line); }
+.search-tabs a {
+  padding: 17px 30px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: relative;
+  transition: color 0.25s;
+}
+.search-tabs a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+.search-tabs a[aria-current="page"] { color: var(--ink); }
+.search-tabs a[aria-current="page"]::after { transform: scaleX(1); }
+.search-tabs a:hover { color: var(--ink); }
+
+.search-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: stretch; }
+.field { padding: 18px 24px; border-right: 1px solid var(--line); min-width: 0; }
+.field label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+.field input,
+.field select {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-size: 15.5px;
+  padding: 2px 0;
+  appearance: none;
+  cursor: pointer;
+}
+.field input { cursor: text; }
+.field input::placeholder { color: #A9B2B2; }
+.search-row .btn { border: 0; padding-inline: 34px; justify-content: center; }
+
+/* -------------------------------------------------------- sections ---- */
+.sec { padding: clamp(72px, 9vw, 124px) 0; }
+.sec--tight { padding-block: clamp(56px, 6vw, 84px); }
+.sec-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 36px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(34px, 4vw, 52px);
+}
+.sec-head .display { max-width: 16ch; }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 34px; }
+.chip {
+  background: none;
+  padding: 10px 18px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: 0.25s;
+}
+.chip:hover { border-color: var(--ink); color: var(--ink); text-decoration: none; }
+.chip[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 2.4vw, 34px); }
+
+/* --------------------------------------------------- listing cards ---- */
+.card { background: var(--paper-2); display: flex; flex-direction: column; height: 100%; }
+.card-media { position: relative; overflow: hidden; aspect-ratio: 4/3; background: var(--ink-2); }
+.card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s cubic-bezier(.2,.7,.2,1); }
+.card:hover .card-media img { transform: scale(1.06); }
+/*
+  No stock photograph stands in for a specific house. Until the media pipeline
+  lands, a listing without photographs says so.
+*/
+.card-media .noshot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(150deg, var(--ink-3) 0%, var(--ink-2) 55%, var(--ink) 100%);
+  color: rgba(234, 231, 222, 0.42);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.tag {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  z-index: 2;
+  background: var(--paper-2);
+  color: var(--ink);
+  padding: 8px 16px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.tag--accent { background: var(--accent); color: var(--paper-2); }
+.tag--ink { background: var(--ink); color: var(--paper); }
+.card-body { padding: 26px 26px 28px; display: flex; flex-direction: column; flex: 1; }
+.card-price {
+  font-family: var(--mono);
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: var(--accent-dp);
+  margin-bottom: 12px;
+}
+.card-addr {
+  font-family: var(--serif);
+  font-size: 24px;
+  line-height: 1.26;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  margin: 0;
+}
+.card-sub {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 9px 0 0;
+}
+.specs {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+}
+.specs .s { display: flex; align-items: center; gap: 7px; }
+.specs svg { width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 1.4; }
+.specs .land { margin-left: auto; color: var(--muted); font-size: 11px; letter-spacing: 0.06em; }
+.card-foot {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.card-foot .go { color: var(--ink); transition: color 0.25s; }
+.card:hover .card-foot .go { color: var(--accent-dp); }
+
+.empty-state {
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 4vw, 48px);
+  text-align: center;
+}
+.empty-state p { margin: 0 auto; max-width: 46ch; color: var(--muted); }
+.empty-state .display { font-size: clamp(1.5rem, 3vw, 2.1rem); margin-bottom: 14px; }
+
+/* --------------------------------------------------------- numbers ---- */
+.numbers { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.numbers .wrap { display: grid; grid-template-columns: repeat(4, 1fr); }
+.num { padding: clamp(34px, 4vw, 52px) clamp(26px, 2.8vw, 44px); border-right: 1px solid var(--line); }
+.num:first-child { padding-left: 0; }
+.num:last-child { padding-right: 0; border-right: 0; }
+.num b {
+  display: block;
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 4vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.015em;
+}
+.num b i { font-style: normal; color: var(--accent); }
+.num span {
+  display: block;
+  margin-top: 14px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  max-width: 22ch;
+}
+
+/* -------------------------------------------------- services (dark) ---- */
+.dark { background: var(--ink); color: var(--paper); }
+
+.svc-layout { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: clamp(36px, 5vw, 80px); align-items: start; }
+.svc-list { border-top: 1px solid var(--line-dk); }
+.svc { border-bottom: 1px solid var(--line-dk); }
+.svc-top {
+  width: 100%;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 26px 0;
+  color: inherit;
+}
+.svc-key {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--accent-lt);
+  flex-shrink: 0;
+  width: 74px;
+}
+.svc-name {
+  font-family: var(--serif);
+  font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.15;
+  flex: 1;
+}
+.svc-plus { position: relative; width: 15px; height: 15px; flex-shrink: 0; }
+.svc-plus::before,
+.svc-plus::after { content: ""; position: absolute; background: var(--accent-lt); transition: transform 0.35s ease; }
+.svc-plus::before { left: 0; right: 0; top: 7px; height: 1px; }
+.svc-plus::after { top: 0; bottom: 0; left: 7px; width: 1px; }
+.svc[open] .svc-plus::after { transform: scaleY(0); }
+.svc-panel-in { padding: 0 0 30px 96px; }
+.svc-panel-in p { margin: 0 0 20px; color: rgba(234, 231, 222, 0.68); max-width: 46ch; font-size: 15.5px; }
+.svc-meta {
+  display: flex;
+  gap: 26px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent-lt);
+}
+.svc-figure { position: relative; align-self: stretch; min-height: 440px; overflow: hidden; margin: 0; }
+.svc-figure img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.svc-figure figcaption {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  padding: 26px;
+  background: linear-gradient(to top, rgba(15, 30, 34, 0.9), transparent);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(234, 231, 222, 0.8);
+}
+
+/* --------------------------------------------------------- suburbs ---- */
+.suburbs { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 2.4vw, 34px); }
+.sub {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 3/3.6;
+  display: flex;
+  align-items: flex-end;
+  background: var(--ink-2);
+}
+.sub img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 1s cubic-bezier(.2,.7,.2,1); }
+.sub::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(15, 30, 34, 0.92) 8%, rgba(15, 30, 34, 0.1) 62%);
+}
+.sub:hover img { transform: scale(1.07); }
+.sub-body { position: relative; z-index: 2; padding: 30px; color: var(--paper); width: 100%; }
+.sub-body h3 { font-family: var(--serif); font-size: 1.8rem; font-weight: 600; margin: 0 0 4px; }
+.sub-body .m {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(234, 231, 222, 0.6);
+  margin: 0;
+}
+.sub-stats {
+  display: flex;
+  gap: 22px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-dk);
+  font-family: var(--mono);
+  font-size: 11.5px;
+}
+.sub-stats span {
+  color: rgba(234, 231, 222, 0.6);
+  display: block;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 5px;
+}
+.sub-stats b { font-weight: 500; color: var(--paper); }
+
+/* ------------------------------------------------------- appraisal ---- */
+.appraise { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: clamp(30px, 4vw, 68px); align-items: center; }
+.appraise-fig { position: relative; aspect-ratio: 4/4.4; overflow: hidden; background: var(--ink-2); margin: 0; }
+.appraise-fig img { width: 100%; height: 100%; object-fit: cover; }
+.appraise-badge {
+  position: absolute;
+  right: 0;
+  top: 34px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 16px 20px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.appraise-badge b { display: block; color: var(--accent-lt); font-size: 19px; letter-spacing: 0.02em; margin-top: 6px; font-weight: 500; }
+.report { margin: 30px 0 34px; border-top: 1px solid var(--line); padding: 0; }
+.report li {
+  list-style: none;
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15.5px;
+}
+.report li em {
+  font-family: var(--mono);
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--accent-dp);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------- footer ---- */
+.foot { background: var(--ink); color: rgba(234, 231, 222, 0.62); padding-top: clamp(60px, 7vw, 96px); margin-top: auto; }
+.foot-cta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 40px;
+  flex-wrap: wrap;
+  padding-bottom: clamp(48px, 6vw, 76px);
+  border-bottom: 1px solid var(--line-dk);
+}
+.foot-cta h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2rem, 4.6vw, 3.6rem);
+  line-height: 1.06;
+  margin: 0;
+  color: var(--paper);
+  max-width: 16ch;
+  letter-spacing: -0.012em;
+}
+.foot-cta h2 em { font-style: italic; font-weight: 500; color: var(--accent-lt); }
+.foot-cols { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.2fr; gap: 40px; padding: clamp(46px, 5vw, 70px) 0; }
+.foot-cols h4 {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-lt);
+  margin: 0 0 22px;
+  font-weight: 400;
+}
+.foot-cols ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; font-size: 14.5px; }
+.foot-cols a:hover { color: var(--accent-lt); }
+.foot-blurb { margin: 24px 0 0; font-size: 14.5px; max-width: 34ch; line-height: 1.7; }
+.foot-bar {
+  border-top: 1px solid var(--line-dk);
+  padding: 24px 0 34px;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* ------------------------------------------------------ responsive ---- */
+@media (max-width: 1080px) {
+  .grid, .suburbs { grid-template-columns: repeat(2, 1fr); }
+  .svc-layout { grid-template-columns: 1fr; }
+  .svc-figure { min-height: 300px; order: -1; }
+  .appraise { grid-template-columns: 1fr; }
+  .appraise-fig { aspect-ratio: 16/10; }
+  .foot-cols { grid-template-columns: 1fr 1fr; }
+  .numbers .wrap { grid-template-columns: 1fr 1fr; }
+  .num { padding-inline: clamp(22px, 3vw, 36px); }
+  .num:nth-child(odd) { padding-left: 0; }
+  .num:nth-child(even) { padding-right: 0; border-right: 0; }
+  .num:nth-child(1), .num:nth-child(2) { border-bottom: 1px solid var(--line); }
+}
+@media (max-width: 900px) {
+  .search-row { grid-template-columns: 1fr; }
+  .field { border-right: 0; border-bottom: 1px solid var(--line); }
+  .search-tabs a { flex: 1; padding-inline: 12px; text-align: center; }
+
+  .burger { display: block; }
+  .nav-cta .btn { display: none; }
+  .menu-cta {
+    display: block;
+    color: var(--accent-dp);
+  }
+
+  /*
+    Anchored to the nav with `top: 100%` rather than the template's fixed `inset: 120px`,
+    which assumed the utility bar and nav were exactly that tall and broke the moment
+    either wrapped.
+
+    The border lives on the ITEMS, never on this container. The template put a
+    border-bottom here alongside `max-height: 0`, and a border is not clipped by
+    overflow — so a closed menu painted a 1px line across the viewport.
+  */
+  .menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--paper);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0 var(--gutter);
+    margin: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+    box-shadow: 0 18px 30px -22px rgba(15, 30, 34, 0.45);
+  }
+  .nav.open .menu { max-height: 70vh; overflow-y: auto; }
+  .menu a {
+    width: 100%;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .menu a:last-child { border-bottom: 0; }
+  .menu a::after { display: none; }
+}
+@media (max-width: 640px) {
+  .grid, .suburbs { grid-template-columns: 1fr; }
+  .numbers .wrap { grid-template-columns: 1fr; }
+  .num { padding-inline: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .num:last-child { border-bottom: 0; }
+  .foot-cols { grid-template-columns: 1fr; }
+  .svc-panel-in { padding-left: 0; }
+  .utility .u-right span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .site *, .site *::before, .site *::after {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   TEMPLATE DEMO BANDS
+   ------------------------------------------------------------
+   Styles for the sections restored from the supplied template: the medians ticker,
+   the journal grid, the client quote, and the appraisal form. They pair with
+   src/components/public/demo-data.ts and come out with it when the real content is
+   approved — except .form*, which the wired-up appraisal form keeps.
+   ============================================================ */
+
+/* ---------------------------------------------------- hero drift ------ */
+/*
+  The template's slow zoom on the hero photograph. transform only, so it composites on
+  the GPU and never triggers layout; the reduced-motion block earlier in this file
+  already switches it off.
+*/
+.hero-media img { animation: hero-drift 26s ease-in-out infinite alternate; }
+@keyframes hero-drift {
+  from { transform: scale(1.04) translate3d(0, 0, 0); }
+  to   { transform: scale(1.13) translate3d(-1.5%, -1.5%, 0); }
+}
+
+/* The ticker sits flush against the bottom of the hero, so the padding comes off. */
+.hero-inner--ticker { padding-bottom: 0; }
+
+/* -------------------------------------------------------- ticker ------ */
+.ticker {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(44px, 6vw, 72px);
+  border-top: 1px solid var(--line-dk);
+  border-bottom: 1px solid var(--line-dk);
+  overflow: hidden;
+  background: rgba(15, 30, 34, 0.42);
+}
+.ticker-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  padding: 0 22px 0 var(--gutter);
+  background: var(--ink);
+  color: var(--accent-lt);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border-right: 1px solid var(--line-dk);
+  white-space: nowrap;
+}
+.ticker-track { display: flex; width: max-content; animation: ticker-slide 52s linear infinite; }
+.ticker:hover .ticker-track { animation-play-state: paused; }
+@keyframes ticker-slide {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-set { display: flex; }
+.tick {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  padding: 16px 30px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: rgba(234, 231, 222, 0.72);
+  white-space: nowrap;
+  border-right: 1px solid var(--line-dk);
+}
+.tick b { color: var(--paper); font-weight: 500; letter-spacing: 0.02em; }
+.tick .up { color: #8FBF8A; }
+.tick .dn { color: #C98A7E; }
+
+/* --------------------------------------- search tabs as buttons ------- */
+/*
+  The tabs were links to /for-sale, /for-rent and /sold while the page read the
+  database. The demo relabels the panel in place instead, so they are buttons — same
+  styling, aria-selected rather than aria-current.
+*/
+.search-tabs button {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  padding: 17px 30px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  position: relative;
+  transition: color 0.25s;
+}
+.search-tabs button::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+.search-tabs button[aria-selected="true"] { color: var(--ink); }
+.search-tabs button[aria-selected="true"]::after { transform: scaleX(1); }
+.search-tabs button:hover { color: var(--ink); }
+.search-row .btn:disabled { cursor: not-allowed; opacity: 0.72; }
+.search-row .btn:disabled:hover { background: var(--accent); }
+
+/* ------------------------------------------ chips as buttons ---------- */
+.chip { cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+
+/*
+  Section headers whose "all 128 listings" link has nowhere to go yet. Same type, no
+  hover affordance, so it does not read as a link that is broken.
+*/
+.txtlink--flat { color: var(--muted); cursor: default; }
+.txtlink--flat:hover { border-color: var(--line); gap: 9px; }
+
+/* ---------------------------------------------------- appraisal form -- */
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 600px; }
+.form input {
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  font-size: 15px;
+}
+.form input:focus { border-color: var(--ink); outline: none; }
+.form .full { grid-column: 1 / -1; }
+.form .btn { grid-column: 1 / -1; justify-content: center; }
+.form-note {
+  margin: 16px 0 0;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.form-done {
+  border: 1px solid var(--accent);
+  padding: 20px;
+  max-width: 600px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* --------------------------------------------------------- quote ------ */
+.quote { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.quote-layout {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: clamp(30px, 5vw, 70px);
+  align-items: end;
+}
+.quote blockquote {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 3.3vw, 2.7rem);
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  max-width: 22ch;
+}
+.quote blockquote em { font-style: italic; color: var(--accent); }
+.quote-by {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 2;
+}
+.quote-by b { display: block; color: var(--ink); font-weight: 500; }
+.stars { color: var(--accent); letter-spacing: 0.28em; font-size: 13px; margin-bottom: 12px; }
+
+/* ------------------------------------------------------- journal ------ */
+.posts { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 2.4vw, 34px); }
+.post-media { aspect-ratio: 16/10; overflow: hidden; background: var(--ink-2); }
+.post-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s cubic-bezier(.2,.7,.2,1); }
+.post:hover .post-media img { transform: scale(1.05); }
+.post h3 {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.28;
+  margin: 20px 0 10px;
+  max-width: 22ch;
+}
+.post p { margin: 0; color: var(--muted); font-size: 15px; max-width: 40ch; }
+.post .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-dp);
+  margin-top: 18px;
+  display: block;
+}
+
+/* --------------------------------------------------------- a11y ------- */
+/*
+  Announced by a screen reader, invisible on screen. The numeral beside the bed icon
+  is meaningless read aloud on its own.
+*/
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------------------------------------------------- responsive ------ */
+@media (max-width: 1080px) {
+  .posts { grid-template-columns: repeat(2, 1fr); }
+  .quote-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .search-tabs button { flex: 1; padding-inline: 12px; text-align: center; }
+  .ticker-label { display: none; }
+}
+@media (max-width: 640px) {
+  .posts { grid-template-columns: 1fr; }
+  .form { grid-template-columns: 1fr; }
+}

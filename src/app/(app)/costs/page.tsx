@@ -5,7 +5,6 @@ import {
   Card,
   Stat,
   Badge,
-  Button,
   CardTitle,
   Table,
   THead,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui";
 import { Bars } from "@/components/charts";
 import { getAdapters, getAiCostSummary, getJobQueue } from "@/server/queries";
+import { QueueHealthCard } from "@/components/jobs/queue-health";
 import { moneyPrecise, relative } from "@/lib/utils";
 
 /** An honest hole where a chart would go, holding the height so the grid does not reflow. */
@@ -211,11 +211,14 @@ export default async function CostsPage() {
                       )}
                     </TD>
                     <TD className="text-right">
+                      {/* These rows are counts per job NAME, so there is nothing here
+                          to retry - a retry needs a job id. The dead-letter card
+                          below lists the actual failed jobs with a button each. */}
                       {j.failed + j.dead > 0 && (
-                        <Button size="sm">
+                        <span className="text-3 text-[11.5px] inline-flex items-center gap-1">
                           <RefreshCw size={11} />
-                          Retry
-                        </Button>
+                          retry below
+                        </span>
                       )}
                     </TD>
                   </TR>
@@ -229,6 +232,13 @@ export default async function CostsPage() {
             Jobs are small, idempotent and retried with backoff. A failed AI call never
             fails a user request — it lands here instead.
           </ProtoNote>
+
+          {/* The dead-letter set, with a real retry per job. It was only on
+              /settings, which is not where anyone looks after seeing a failure
+              count on this page. */}
+          <div className="mt-4">
+            <QueueHealthCard />
+          </div>
         </Section>
 
         <Section title="Channel adapters">

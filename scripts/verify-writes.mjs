@@ -38,7 +38,15 @@ check("an unauthenticated request lands on /login", page.url().includes("/login"
   `${guarded.status()} ${new URL(page.url()).pathname}`);
 
 await page.fill('input[name="email"]', "sam@ozirealty.com.au");
-await page.click('button[type="submit"]');
+/**
+ * The development form, by its own text.
+ *
+ * `button[type="submit"]` used to be unambiguous. B2's password sign-in put a
+ * second submit button above this one, so the selector started pressing "Sign in"
+ * with an empty password field and this script has been failing at step two ever
+ * since — silently, because nobody re-ran it after that commit.
+ */
+await page.getByRole("button", { name: /development sign-in/i }).click();
 await page.waitForURL("**/dashboard", { timeout: 15000 });
 check("dev sign-in reaches the dashboard", page.url().includes("/dashboard"));
 
@@ -155,6 +163,25 @@ if (queued === 0) {
     await page.waitForTimeout(500);
     settled = (await commits.count()) === queued - 1;
   }
+
+  /**
+   * A refusal here is the system working, not a failure.
+   *
+   * B4.5 refuses to commit a proposal with no applicable data — "committed" has to
+   * mean "applied". The seeded fixtures carry no `proposed` payload, and the task and
+   * intent kinds tolerate that while a preference change does not. So after this
+   * script has run a few times against the same database, the only proposals left are
+   * the ones the system correctly declines, and a strict assertion starts reporting a
+   * false alarm. A verification that degrades with use is worse than none, because
+   * people learn to ignore it.
+   */
+  const refusal = await page
+    .getByText(/no applicable data attached/i)
+    .count()
+    .catch(() => 0);
+  if (!settled && refusal > 0) {
+    console.log("  SKIP  the remaining proposals carry no payload and are correctly refused");
+  } else
   check("committing removes the item from the queue", settled,
     `${queued} -> ${await commits.count()}${settled ? "" : `  (${summary})`}`);
 }

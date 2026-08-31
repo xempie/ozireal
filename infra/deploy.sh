@@ -21,12 +21,19 @@ SSH="ssh -i $KEY -o StrictHostKeyChecking=no ubuntu@$IP"
 log() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 
 log "Packaging source"
+# .env* is excluded deliberately. It used to ship, so the developer's .env.local
+# -- a DATABASE_URL pointing at 127.0.0.1:5433, plus AUTH_SECRET and SECRETS_KEY --
+# was unpacked on the production instance. Nothing copied it into the app directory
+# so the running server was unaffected, but the BUILD read it, which is why the first
+# statically generated public page failed to prerender: it tried to reach a Postgres
+# on a laptop. Production credentials come from /etc/ozirealty/env and nowhere else.
+#
 # Ship SOURCE, not a build: node_modules, .next and .git are excluded, and the
 # instance installs and builds. Keeps the transfer small and the build honest.
 cd "$ROOT"
 tar --exclude=node_modules --exclude=.next --exclude=.git --exclude=.tools \
     --exclude=.batches --exclude='infra/*.pem' --exclude='infra/.*' \
-    --exclude=docs/screenshots \
+    --exclude=docs/screenshots --exclude='.env' --exclude='.env.*' --exclude=.pgdata --exclude='.pgdata.log' --exclude=out \
     -czf /tmp/ozirealty-src.tgz .
 ls -lh /tmp/ozirealty-src.tgz | awk '{print "  " $5}'
 
@@ -44,8 +51,19 @@ cd /tmp/build
 export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 corepack enable >/dev/null 2>&1 || true
 pnpm install --frozen-lockfile --silent
+# The public website is statically generated, so the BUILD now reads the database:
+# it is prerendering real listings into HTML, which is the point of ISR. The console
+# never needed this because every console route is force-dynamic.
+#
+# Next loads .env.production during a production build, so the runtime env is handed
+# over under that name rather than exported into the shell, where it would leak into
+# every subprocess. It is shredded immediately afterwards.
+sudo cat /etc/ozirealty/env > /tmp/build/.env.production
+chmod 600 /tmp/build/.env.production
+
 # STANDALONE=1 is what next.config.ts gates the standalone output behind.
 STANDALONE=1 pnpm build
+shred -u /tmp/build/.env.production 2>/dev/null || rm -f /tmp/build/.env.production
 REMOTE
 
 log "Installing the build"

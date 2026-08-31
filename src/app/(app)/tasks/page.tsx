@@ -9,7 +9,13 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import { getTasks } from "@/server/queries";
-import { NewTaskButton, CompleteTaskButton } from "@/components/forms/ops-forms";
+import {
+  NewTaskButton,
+  CompleteTaskButton,
+  EditTaskButton,
+  ReopenTaskButton,
+  DeleteTaskButton,
+} from "@/components/forms/ops-forms";
 import { contactOptions, listingOptions } from "@/server/queries/pickers";
 import { shortDate, relative } from "@/lib/utils";
 
@@ -71,7 +77,7 @@ export default async function TasksPage() {
                         {t.source && <span>from {t.source}</span>}
                       </div>
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex flex-col items-end gap-1.5">
                       {!t.dueAt ? (
                         <span className="text-3 text-[12px]">No due date</span>
                       ) : overdue ? (
@@ -86,6 +92,20 @@ export default async function TasksPage() {
                           {shortDate(t.dueAt)}
                         </span>
                       )}
+                      <div className="flex items-start gap-1.5">
+                        <EditTaskButton
+                          task={{
+                            id: t.id,
+                            title: t.title,
+                            contactId: t.contactId,
+                            listingId: t.listingId,
+                            dueAt: t.dueAt,
+                          }}
+                          contacts={contactOpts}
+                          listings={listingOpts}
+                        />
+                        <DeleteTaskButton id={t.id} />
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -95,24 +115,35 @@ export default async function TasksPage() {
         )}
       </Section>
 
-      <Section title="Recently completed">
-        <div className="space-y-2">
-          {done.map((t) => (
-            <Card key={t.id} className="p-3 opacity-60">
-              <div className="flex items-start gap-3">
-                <span className="h-4 w-4 rounded border mt-0.5 shrink-0 grid place-items-center">
-                  <Check size={11} />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-[13px] line-through">{t.title}</div>
-                  <div className="text-3 text-[12px] mt-0.5">
-                    {t.contactName ?? "No contact"}
+      <Section title="Recently completed" hint={`${done.length} tasks`}>
+        {done.length === 0 ? (
+          <Empty>Nothing completed yet.</Empty>
+        ) : (
+          <div className="space-y-2">
+            {done.map((t) => (
+              <Card key={t.id} className="p-3">
+                <div className="flex items-start gap-3">
+                  <span className="h-4 w-4 rounded border mt-0.5 shrink-0 grid place-items-center opacity-60">
+                    <Check size={11} />
+                  </span>
+                  <div className="min-w-0 flex-1 opacity-60">
+                    <div className="text-[13px] line-through">{t.title}</div>
+                    <div className="text-3 text-[12px] mt-0.5">
+                      {t.contactName ?? "No contact"}
+                    </div>
+                  </div>
+                  {/* Reopen, not edit: a completed task is a record of what was
+                      reported finished, so it goes back on the list before it can
+                      be reworded. */}
+                  <div className="shrink-0 flex items-start gap-1.5">
+                    <ReopenTaskButton id={t.id} />
+                    <DeleteTaskButton id={t.id} />
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </Section>
 
       <ProtoNote>

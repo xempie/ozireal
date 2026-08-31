@@ -1,24 +1,16 @@
-import {
-  AlertOctagon,
-  AlertTriangle,
-  Info,
-  Play,
-  Ban,
-  Check,
-  X,
-} from "lucide-react";
+import { AlertOctagon, AlertTriangle, Info, Ban } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   CardTitle,
   Badge,
-  Button,
   Callout,
   Empty,
   ProtoNote,
 } from "@/components/ui";
 import { getSeoIssues } from "@/server/queries";
+import { SeoIssueButtons } from "@/components/forms/ops-forms";
 
 const sev = {
   critical: {
@@ -48,11 +40,14 @@ export default async function SeoPage() {
       <PageHeader
         title="SEO agent"
         subtitle="Crawls the site fortnightly and produces a change set you can read. It has no ability to publish — not even a disabled one."
+        /* No "Run a crawl" button. The crawler is Phase 5 and does not exist, and a
+           button that starts nothing is worse than none — it makes an empty findings
+           list look like a clean site rather than a tool that never ran. */
         actions={
-          <Button variant="primary">
-            <Play size={13} />
-            Run a crawl
-          </Button>
+          <span className="text-3 text-[12px] inline-flex items-center gap-1.5">
+            <Ban size={12} />
+            Crawling is not built yet — these findings were loaded by hand
+          </span>
         }
       />
 
@@ -128,16 +123,9 @@ export default async function SeoPage() {
                       <p className="text-[12.5px] leading-relaxed">{issue.proposal}</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      <Button size="sm">
-                        <Check size={12} />
-                        Accept into change set
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <X size={12} />
-                        Dismiss
-                      </Button>
-                      <span className="text-3 text-[11.5px] sm:ml-auto inline-flex items-center gap-1">
+                    <div className="flex flex-wrap items-start gap-2 mt-3">
+                      <SeoIssueButtons id={issue.id} status={issue.status} />
+                      <span className="text-3 text-[11.5px] sm:ml-auto inline-flex items-center gap-1 mt-1">
                         <Ban size={11} />
                         cannot be applied automatically
                       </span>

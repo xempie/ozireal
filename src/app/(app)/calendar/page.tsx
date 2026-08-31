@@ -6,13 +6,16 @@ import {
   Card,
   CardTitle,
   Badge,
-  Button,
   Callout,
   ProtoNote,
 } from "@/components/ui";
 import { getCalendarEvents } from "@/server/queries";
 import { timeOfDay } from "@/lib/utils";
-import { NewEventButton } from "@/components/forms/ops-forms";
+import {
+  NewEventButton,
+  EditEventButton,
+  CancelEventButton,
+} from "@/components/forms/ops-forms";
 import { contactOptions, listingOptions } from "@/server/queries/pickers";
 
 const kindTone = {
@@ -156,6 +159,31 @@ export default async function CalendarPage() {
                               {e.contactName ?? "Unnamed contact"}
                             </Link>
                           )}
+                        </div>
+                      )}
+                      {/* Only on events we created. The external calendar stays the
+                          source of truth for anything it owns, so a synced event gets
+                          the padlock above and no controls - the server refuses it
+                          too, but offering a button that always says no is worse
+                          than not offering one. */}
+                      {e.ourWrite && (
+                        <div className="flex items-start gap-1.5 mt-2 pt-2 border-t">
+                          <EditEventButton
+                            event={{
+                              id: e.id,
+                              title: e.title,
+                              kind: e.kind,
+                              startsAt: e.startsAt,
+                              endsAt: e.endsAt,
+                              ourWrite: e.ourWrite,
+                              provider: e.provider,
+                              contactId: e.contactId,
+                              listingId: e.listingId,
+                            }}
+                            contacts={contactOpts}
+                            listings={listingOpts}
+                          />
+                          <CancelEventButton id={e.id} ourWrite={e.ourWrite} />
                         </div>
                       )}
                     </div>

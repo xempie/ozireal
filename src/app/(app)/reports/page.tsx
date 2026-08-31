@@ -4,7 +4,6 @@ import {
   Section,
   Card,
   CardTitle,
-  Button,
   Table,
   THead,
   TH,
@@ -99,10 +98,24 @@ export default async function ReportsPage() {
         title="Reports"
         subtitle="Activity across the agency, counted from the rows the console holds."
         actions={
-          <Button>
-            <Download size={13} />
-            Export CSV
-          </Button>
+          /* One button became three, because "export" on a page showing four
+             different things had no single answer. Each is a real download. */
+          <div className="flex flex-wrap gap-2">
+            {[
+              { kind: "contacts", label: "Contacts" },
+              { kind: "listings", label: "Listings" },
+              { kind: "properties", label: "Properties" },
+            ].map((x) => (
+              <a
+                key={x.kind}
+                href={`/api/export/${x.kind}`}
+                className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[13px] font-medium px-3 min-h-9 hover:surface-3"
+              >
+                <Download size={13} />
+                {x.label}
+              </a>
+            ))}
+          </div>
         }
       />
 

@@ -211,3 +211,15 @@ export const availableProviders = {
   dev: devLoginEnabled,
   password: true,
 };
+
+/**
+ * The address the development sign-in uses, read from the allowlist.
+ *
+ * It exists because the dev provider takes an email and the button that triggers it
+ * has nowhere to get one from — the sign-in page's password form owns the only email
+ * input, and a second <form> cannot read it. Reading the allowlist rather than
+ * hardcoding an address also means this cannot drift out of step with the one
+ * account that is actually permitted: with an empty allowlist it is null, the
+ * button does not render, and sign-in fails closed exactly as it should.
+ */
+export const devLoginEmail = devLoginEnabled ? (allowlist()[0] ?? null) : null;

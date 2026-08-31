@@ -6,7 +6,6 @@ import {
   Camera,
   Eye,
   MessageSquare,
-  Users,
   Lock,
 } from "lucide-react";
 import {
@@ -15,7 +14,6 @@ import {
   Card,
   CardTitle,
   Badge,
-  Button,
   KeyValue,
   Callout,
   ScoreBar,
@@ -30,6 +28,13 @@ import {
   getContact,
 } from "@/server/queries";
 import { statusLabel } from "@/lib/labels";
+import { DraftCampaignForListingButton } from "@/components/forms/content-forms";
+import {
+  EditListingButton,
+  ListingStatusButtons,
+  NewInspectionButton,
+  CancelInspectionButton,
+} from "@/components/forms/stock-forms";
 import { money, shortDate, timeOfDay, relative } from "@/lib/utils";
 
 export default async function ListingDetail({
@@ -82,11 +87,24 @@ export default async function ListingDetail({
             <Badge tone={l.status === "live" ? "stock" : "queue"}>
               {statusLabel[l.status] ?? l.status}
             </Badge>
-            {l.status === "draft" ? (
-              <Button variant="primary">Publish</Button>
-            ) : (
-              <Button>Withdraw</Button>
-            )}
+            <EditListingButton
+              listing={{
+                id: l.id,
+                type: l.type,
+                status: l.status,
+                method: l.method,
+                priceDisplay: l.priceDisplay,
+                searchMin: l.searchMin,
+                searchMax: l.searchMax,
+                rentPw: l.rentPw,
+                headline: l.headline,
+                copy: l.copy,
+                resultDisplay: l.resultDisplay,
+              }}
+            />
+            <ListingStatusButtons
+              listing={{ id: l.id, status: l.status, type: l.type }}
+            />
           </>
         }
       />
@@ -194,12 +212,14 @@ export default async function ListingDetail({
               </div>
             )}
             <div className="mt-3">
-              <Button variant="primary">
-                <Users size={13} />
-                Draft a campaign to these contacts
-              </Button>
+              <DraftCampaignForListingButton
+                listingId={l.id}
+                address={l.address}
+                matchCount={listingMatches.length}
+              />
               <ProtoNote>
-                Drafts land in the approval queue. There is no path from here to a send.
+                This writes a draft with those contacts already on the recipient list.
+                Drafts land in the approval queue; there is no path from here to a send.
               </ProtoNote>
             </div>
           </Section>
@@ -251,28 +271,44 @@ export default async function ListingDetail({
             </ProtoNote>
           </Card>
 
-          {insp.length > 0 && (
-            <Card>
+          <Card>
+            <div className="flex items-center gap-2 mb-2">
               <CardTitle>Inspections</CardTitle>
-              <ul className="space-y-2">
+              <span className="ml-auto">
+                <NewInspectionButton listingId={l.id} />
+              </span>
+            </div>
+            {insp.length === 0 ? (
+              <Empty>None scheduled.</Empty>
+            ) : (
+              <ul className="space-y-2.5">
                 {insp.map((i) => (
                   <li key={i.id} className="text-[12.5px]">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span>
                         {shortDate(i.startsAt)} · {timeOfDay(i.startsAt)}
                       </span>
                       <Badge tone={i.kind === "open" ? "stock" : "neutral"}>
                         {i.kind}
                       </Badge>
+                      <span className="ml-auto">
+                        <CancelInspectionButton id={i.id} />
+                      </span>
                     </div>
                     <div className="text-3 text-[11.5px]">
                       {i.registrations} registered
+                      {i.capacity ? ` of ${i.capacity}` : ""}
                     </div>
                   </li>
                 ))}
               </ul>
-            </Card>
-          )}
+            )}
+            <ProtoNote>
+              Cancelled rather than deleted, because people register for these — a
+              registration pointing at nothing loses both the lead and the reason we
+              hold their details.
+            </ProtoNote>
+          </Card>
 
           {p && (
             <Card className="border-[#d03b3b]/25 bg-[#d03b3b]/[0.03]">

@@ -12,7 +12,6 @@ import {
   Card,
   CardTitle,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -23,6 +22,11 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import { getRedirects, getSuburbPages, getListings } from "@/server/queries";
+import {
+  NewRedirectButton,
+  EditRedirectButton,
+  DeleteRedirectButton,
+} from "@/components/forms/ops-forms";
 import { relative } from "@/lib/utils";
 
 const redirectTone = {
@@ -46,10 +50,15 @@ export default async function WebsitePage() {
         title="Public site"
         subtitle="www.ozirealty.com.au — currently served by Wix. This is the migration console for taking it over."
         actions={
-          <Button>
+          <a
+            href="https://www.ozirealty.com.au"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[13px] font-medium px-3 min-h-9 hover:surface-3"
+          >
             <ExternalLink size={13} />
             View live site
-          </Button>
+          </a>
         }
       />
 
@@ -132,38 +141,57 @@ export default async function WebsitePage() {
         </Section>
       </div>
 
-      <Section title="Redirect map" hint="every old URL needs a destination before cutover">
-        <Table>
-          <THead>
-            <TR>
-              <TH>Current URL on Wix</TH>
-              <TH></TH>
-              <TH>New destination</TH>
-              <TH>Status</TH>
-            </TR>
-          </THead>
-          <tbody>
-            {redirects.map((r) => (
-              <TR key={r.from}>
-                <TD className="font-mono text-[11.5px]">{r.from}</TD>
-                <TD className="w-6 text-3">
-                  <ArrowRight size={12} />
-                </TD>
-                <TD className="font-mono text-[11.5px]">
-                  {r.to || (
-                    <span className="text-3 italic font-sans">not decided</span>
-                  )}
-                </TD>
-                <TD>
-                  <Badge tone={redirectTone[r.status]}>
-                    {r.status === "blocked" && <AlertTriangle size={10} />}
-                    {r.status}
-                  </Badge>
-                </TD>
+      <Section
+        title="Redirect map"
+        hint="every old URL needs a destination before cutover"
+        /* This map was read-only, which made the migration console unable to do the
+           one job it exists for: deciding where 22 pages and 51 posts go. */
+        actions={<NewRedirectButton />}
+      >
+        {redirects.length === 0 ? (
+          <Empty>Nothing in the map yet.</Empty>
+        ) : (
+          <Table minWidth={820}>
+            <THead>
+              <TR>
+                <TH>Current URL on Wix</TH>
+                <TH></TH>
+                <TH>New destination</TH>
+                <TH>Status</TH>
+                <TH>Note</TH>
+                <TH className="text-right">Actions</TH>
               </TR>
-            ))}
-          </tbody>
-        </Table>
+            </THead>
+            <tbody>
+              {redirects.map((r) => (
+                <TR key={r.id}>
+                  <TD className="font-mono text-[11.5px]">{r.from}</TD>
+                  <TD className="w-6 text-3">
+                    <ArrowRight size={12} />
+                  </TD>
+                  <TD className="font-mono text-[11.5px]">
+                    {r.to || (
+                      <span className="text-3 italic font-sans">not decided</span>
+                    )}
+                  </TD>
+                  <TD>
+                    <Badge tone={redirectTone[r.status]}>
+                      {r.status === "blocked" && <AlertTriangle size={10} />}
+                      {r.status}
+                    </Badge>
+                  </TD>
+                  <TD className="text-2 text-[12px] max-w-[240px]">{r.note ?? "—"}</TD>
+                  <TD>
+                    <div className="flex flex-wrap items-start justify-end gap-1.5">
+                      <EditRedirectButton redirect={r} />
+                      <DeleteRedirectButton id={r.id} />
+                    </div>
+                  </TD>
+                </TR>
+              ))}
+            </tbody>
+          </Table>
+        )}
         <ProtoNote>
           A page with no equivalent goes to the nearest parent — never to the home page
           and never to a 404. The two misspelled URLs

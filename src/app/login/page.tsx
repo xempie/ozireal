@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { Lock, AlertCircle, Info } from "lucide-react";
-import { auth, availableProviders } from "@/auth";
+import { auth, availableProviders, devLoginEmail } from "@/auth";
 import { getAgency } from "@/server/queries";
 import { anyUserHasPassword } from "@/server/queries/llm";
 import {
@@ -114,7 +114,7 @@ export default async function LoginPage({
                   type="email"
                   required
                   autoComplete="username"
-                  defaultValue={availableProviders.dev ? "sam@ozirealty.com.au" : ""}
+                  defaultValue={devLoginEmail ?? ""}
                   className="w-full surface-2 border rounded-md px-2.5 py-2 text-[16px] sm:text-[13.5px] outline-none focus:ring-2 focus:ring-[var(--accent)]/30 focus:border-[var(--accent)]"
                 />
               </div>
@@ -172,13 +172,23 @@ export default async function LoginPage({
               </form>
             )}
 
-            {availableProviders.dev && (
+            {/*
+              The hidden field is the whole reason this button works.
+
+              The dev provider authorises an EMAIL, and this form used to contain
+              only a submit button — so it posted an empty address, the provider
+              refused it, and the page reloaded looking untouched. A control that
+              silently does nothing is worse than an absent one, and this one had
+              been broken since password sign-in landed above it.
+            */}
+            {availableProviders.dev && devLoginEmail && (
               <form action={signInForDevelopment}>
+                <input type="hidden" name="email" value={devLoginEmail} />
                 <button
                   type="submit"
                   className="w-full text-[12px] text-3 py-1.5 hover:underline"
                 >
-                  Development sign-in (no password)
+                  Development sign-in as {devLoginEmail} (no password)
                 </button>
               </form>
             )}

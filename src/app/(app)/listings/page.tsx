@@ -1,17 +1,20 @@
 import Link from "next/link";
-import { Plus, Eye, MessageSquare, Camera } from "lucide-react";
+import { Eye, MessageSquare, Camera } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   Badge,
-  Button,
   ProtoNote,
 } from "@/components/ui";
 import { getListings } from "@/server/queries";
 import { statusLabel } from "@/lib/labels";
 import { relative } from "@/lib/utils";
-import { NewListingButton } from "@/components/forms/stock-forms";
+import {
+  NewListingButton,
+  EditListingButton,
+  ListingStatusButtons,
+} from "@/components/forms/stock-forms";
 import { propertyOptions } from "@/server/queries/pickers";
 
 const columns: {
@@ -22,6 +25,9 @@ const columns: {
   { status: "live", tone: "stock" },
   { status: "under_offer", tone: "brand" },
   { status: "sold", tone: "sent" },
+  /* Leased was missing, so every settled RENTAL fell off the board entirely - the
+     row was still in the database and nothing on this screen showed it. */
+  { status: "leased", tone: "sent" },
   { status: "withdrawn", tone: "neutral" },
 ];
 
@@ -37,7 +43,7 @@ export default async function ListingsPage() {
         actions={<NewListingButton properties={propertyOpts} />}
       />
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-5 gap-4 items-start">
+      <div className="grid md:grid-cols-2 xl:grid-cols-6 gap-4 items-start">
         {columns.map((col) => {
           const items = listings.filter((l) => l.status === col.status);
           return (
@@ -86,6 +92,29 @@ export default async function ListingsPage() {
                         {l.type === "rent" ? "Rental" : "Sale"}
                       </Badge>
                       {l.resultDisplay && <Badge tone="sent">{l.resultDisplay}</Badge>}
+                    </div>
+                    {/* The campaign controls live on the card as well as the detail
+                        screen: publishing and withdrawing is what this board is for,
+                        and making it a navigation is what stops it happening here. */}
+                    <div className="flex flex-wrap items-start gap-1.5 mt-2.5 pt-2.5 border-t">
+                      <EditListingButton
+                        listing={{
+                          id: l.id,
+                          type: l.type,
+                          status: l.status,
+                          method: l.method,
+                          priceDisplay: l.priceDisplay,
+                          searchMin: l.searchMin,
+                          searchMax: l.searchMax,
+                          rentPw: l.rentPw,
+                          headline: l.headline,
+                          copy: l.copy,
+                          resultDisplay: l.resultDisplay,
+                        }}
+                      />
+                      <ListingStatusButtons
+                        listing={{ id: l.id, status: l.status, type: l.type }}
+                      />
                     </div>
                   </Card>
                 ))}

@@ -16,6 +16,11 @@ import {
   ProtoNote,
 } from "@/components/ui";
 import { getProperty, getListingsForProperty, getContact } from "@/server/queries";
+import { suburbOptions, contactOptions } from "@/server/queries/pickers";
+import {
+  EditPropertyButton,
+  DeletePropertyButton,
+} from "@/components/forms/stock-forms";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 import { shortDate } from "@/lib/utils";
 
@@ -27,8 +32,12 @@ export default async function PropertyDetail({
   const { id } = await params;
   const p = await getProperty(id);
   if (!p) notFound();
-  const history = await getListingsForProperty(p.id);
-  const owner = p.ownerContactId ? await getContact(p.ownerContactId) : null;
+  const [history, owner, suburbOpts, contactOpts] = await Promise.all([
+    getListingsForProperty(p.id),
+    p.ownerContactId ? getContact(p.ownerContactId) : Promise.resolve(null),
+    suburbOptions(),
+    contactOptions(),
+  ]);
 
   const locality = [p.suburb, p.state, p.postcode].filter(Boolean).join(" ");
   const subtitle = [
@@ -42,7 +51,38 @@ export default async function PropertyDetail({
 
   return (
     <>
-      <PageHeader title={p.address} subtitle={subtitle} />
+      <PageHeader
+        title={p.address}
+        subtitle={subtitle}
+        actions={
+          <>
+            <EditPropertyButton
+              property={{
+                id: p.id,
+                unit: p.unit,
+                streetNumber: p.streetNumber,
+                street: p.street,
+                suburbId: p.suburbId,
+                postcode: p.postcode,
+                type: p.type,
+                status: p.status,
+                beds: p.beds,
+                baths: p.baths,
+                parking: p.parking,
+                landSqm: p.landSqm,
+                ownerContactId: p.ownerContactId,
+                internalNotes: p.internalNotes,
+                internalPriceExpectation: p.internalPriceExpectation,
+              }}
+              suburbs={suburbOpts}
+              contacts={contactOpts}
+            />
+            {/* Refused server-side the moment a listing exists, because the
+                campaigns hanging off this row are the sold archive. */}
+            <DeletePropertyButton id={p.id} />
+          </>
+        }
+      />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6 min-w-0">

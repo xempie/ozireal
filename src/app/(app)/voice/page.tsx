@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { Mic, Sparkles, Check, Loader2, FileAudio } from "lucide-react";
+import { Mic, Sparkles, Check, CheckCheck, Loader2, FileAudio } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   CardTitle,
   Badge,
-  Button,
   Callout,
   ProtoNote,
 } from "@/components/ui";
@@ -30,11 +29,14 @@ export default async function VoicePage() {
       <PageHeader
         title="Voice notes"
         subtitle="Record after an inspection or in the car. Transcribed, tasks extracted, and every one of them proposed rather than written."
+        /* The recorder is Phase 3 and does not exist. A primary button that opens
+           nothing reads as a broken feature rather than an unbuilt one, so this
+           says which it is. */
         actions={
-          <Button variant="primary">
+          <span className="text-3 text-[12px] inline-flex items-center gap-1.5">
             <Mic size={13} />
-            Record
-          </Button>
+            Recording arrives with the PWA in Phase 3
+          </span>
         }
       />
 
@@ -156,10 +158,17 @@ export default async function VoicePage() {
                       </ul>
                       {v.status === "transcribed" && (
                         <div className="flex flex-wrap gap-2 mt-2.5">
-                          <Button variant="primary" size="sm">
-                            Commit both
-                          </Button>
-                          <Button size="sm">Open in confirm queue</Button>
+                          {/* Committing happens in the confirm queue and nowhere
+                              else. A "commit both" shortcut here would be a second
+                              path that writes to a contact record without the
+                              proposal in front of the person pressing it (rule 5). */}
+                          <Link
+                            href="/confirm"
+                            className="inline-flex items-center gap-1.5 text-[12px] px-2.5 min-h-8 rounded-md bg-[var(--accent)] text-white hover:opacity-90"
+                          >
+                            <CheckCheck size={12} />
+                            Review in the confirm queue
+                          </Link>
                         </div>
                       )}
                     </div>

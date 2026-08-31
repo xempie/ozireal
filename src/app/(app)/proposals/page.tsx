@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { FileText, Download, ShieldCheck } from "lucide-react";
+import { FileText } from "lucide-react";
 import {
   PageHeader,
   Section,
   Card,
   CardTitle,
   Badge,
-  Button,
   Table,
   THead,
   TH,
@@ -19,7 +18,11 @@ import {
 } from "@/components/ui";
 import { getProposals, getProperty, getContact } from "@/server/queries";
 import { money, relative, shortDate } from "@/lib/utils";
-import { NewProposalButton } from "@/components/forms/content-forms";
+import {
+  NewProposalButton,
+  EditProposalButton,
+  ProposalActions,
+} from "@/components/forms/content-forms";
 import { contactOptions, propertyOptions } from "@/server/queries/pickers";
 
 const statusTone = {
@@ -140,11 +143,21 @@ export default async function ProposalsPage() {
                     <Badge tone={statusTone[p.status]}>{statusLabel[p.status]}</Badge>
                   </TD>
                   <TD className="text-2 whitespace-nowrap">{relative(p.createdAt)}</TD>
-                  <TD className="text-right">
-                    <Button size="sm">
-                      <Download size={11} />
-                      PDF
-                    </Button>
+                  <TD>
+                    <div className="flex flex-wrap items-start justify-end gap-1.5">
+                      {p.status === "draft" && (
+                        <EditProposalButton
+                          proposal={{
+                            id: p.id,
+                            status: p.status,
+                            propertyId: p.propertyId,
+                            estimateLow: p.estimateLow,
+                            estimateHigh: p.estimateHigh,
+                          }}
+                          properties={propertyOpts}
+                        />
+                      )}
+                    </div>
                   </TD>
                 </TR>
               ))}
@@ -198,15 +211,21 @@ export default async function ProposalsPage() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap gap-2 mt-4">
-                <Button variant="primary" size="sm">
-                  <ShieldCheck size={12} />
-                  Approve and send
-                </Button>
-                <Button size="sm">Edit</Button>
-                <Button variant="danger" size="sm">
-                  Reject
-                </Button>
+              {/* "Approve and send" used to live here and did nothing. It also
+                  should not: approving is the approval queue's job, and a second
+                  approve button outside it would be a second send path. What this
+                  offers is the transitions this screen actually owns. */}
+              <div className="mt-4 pt-3 border-t">
+                <ProposalActions
+                  proposal={{
+                    id: featured.id,
+                    status: featured.status,
+                    propertyId: featured.propertyId,
+                    estimateLow: featured.estimateLow,
+                    estimateHigh: featured.estimateHigh,
+                  }}
+                  properties={propertyOpts}
+                />
               </div>
             </Card>
 

@@ -124,6 +124,10 @@ export const llmSettings = pgTable("llm_settings", {
   extractionMaxTokens: integer("extraction_max_tokens").notNull().default(1200),
   briefMaxTokens: integer("brief_max_tokens").notNull().default(1000),
   rankingMaxTokens: integer("ranking_max_tokens").notNull().default(2000),
+  /** Drafting an SMS (migration 0013). Small on purpose: a max_tokens stop is a
+   *  non-retryable failure that has already been billed, so the ceiling should fit
+   *  the task rather than be borrowed from a bigger one. */
+  draftMaxTokens: integer("draft_max_tokens").notNull().default(400),
 
   monthlyBudgetAud: numeric("monthly_budget_aud", { precision: 10, scale: 2 }),
   budgetAction: text("budget_action").notNull().default("block"),

@@ -33,6 +33,8 @@ import { relative, dateTime, money, shortDate } from "@/lib/utils";
 import {
   LogInteractionButton,
   RecordOutcomeButton,
+  EditContactButton,
+  RemoveContactButton,
 } from "@/components/forms/contact-forms";
 
 export default async function ContactDetail({
@@ -68,6 +70,22 @@ export default async function ContactDetail({
             <>
               <LogInteractionButton contactId={c.id} />
               <RecordOutcomeButton contactId={c.id} />
+              <EditContactButton
+                contact={{
+                  id: c.id,
+                  firstName: c.firstName,
+                  lastName: c.lastName,
+                  email: c.email,
+                  phone: c.phone,
+                  suburb: c.suburb,
+                  roles: c.roles,
+                  doNotContact: c.doNotContact,
+                }}
+              />
+              <RemoveContactButton
+                contactId={c.id}
+                name={`${c.firstName} ${c.lastName}`}
+              />
             </>
           )
         }

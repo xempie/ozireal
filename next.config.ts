@@ -18,7 +18,26 @@ const nextConfig: NextConfig = {
    * with the code. B6 sets STANDALONE=1 on the Linux build host.
    */
   ...(process.env.STANDALONE === "1" ? { output: "standalone" as const } : {}),
-  images: { unoptimized: true },
+  /**
+   * The public site is photography-led, so the optimizer is on and the hosts it may
+   * fetch from are named. `unoptimized: true` was right while nothing rendered an
+   * image; leaving it on for a listings site means shipping full-size originals with
+   * no srcset, which is the easiest Core Web Vitals failure to ship.
+   *
+   * Two hosts, both temporary:
+   *   - static.wixstatic.com serves the agency's logo until the vector lands in
+   *     assets/brand (the README there has been asking for it since B0).
+   *   - images.unsplash.com carries section furniture until real photography exists.
+   *     Listing cards deliberately do NOT use it — a stock photo standing in for a
+   *     specific house is a misrepresentation, so those show a placeholder until the
+   *     media pipeline in Stage 4 can hold the real ones.
+   */
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "static.wixstatic.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+    ],
+  },
   /**
    * Kept out of the webpack bundle and loaded from node_modules at runtime: postgres
    * for the same reason as ever, bullmq/ioredis because bullmq probes for optional

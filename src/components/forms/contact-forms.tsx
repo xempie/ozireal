@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Plus, PhoneCall, MessageSquarePlus } from "lucide-react";
+import { Plus, PhoneCall, MessageSquarePlus, Pencil, Trash2 } from "lucide-react";
 import {
   useAction,
   Modal,
@@ -9,6 +9,7 @@ import {
   Textarea,
   Select,
   SubmitButton,
+  CancelButton,
   FormError,
 } from "./action-form";
 import {
@@ -18,6 +19,8 @@ import {
   commitConfirmItem,
   discardConfirmItem,
   resolveMergeReview,
+  updateContact,
+  tombstoneContact,
 } from "@/server/actions/contacts";
 
 const ROLES = [
@@ -381,5 +384,232 @@ export function MergeReviewButtons({ id }: { id: string }) {
       </div>
       <FormError message={a.error} />
     </div>
+  );
+}
+
+/* ------------------------------------------------------- editing a contact */
+
+export type EditableContact = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  suburb: string | null;
+  roles: string[];
+  doNotContact: boolean;
+};
+
+/**
+ * Correcting a contact.
+ *
+ * The same fields as creation and deliberately the same shape, because a record
+ * created by hand and one corrected later should end up indistinguishable. What is
+ * NOT here is any way to edit the rolling brief or the intent — §4 says those are
+ * derived, and the way to fix a wrong brief is to correct the interaction
+ * underneath it and let the job rebuild.
+ */
+export function EditContactButton({ contact }: { contact: EditableContact }) {
+  const [open, setOpen] = React.useState(false);
+  const a = useAction(updateContact, { onSuccess: () => setOpen(false) });
+
+  function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const f = new FormData(e.currentTarget);
+    a.run({
+      id: contact.id,
+      firstName: f.get("firstName"),
+      lastName: f.get("lastName"),
+      email: f.get("email") ?? "",
+      phone: f.get("phone") ?? "",
+      suburb: f.get("suburb") ?? "",
+      roles: f.getAll("roles"),
+      doNotContact: f.get("doNotContact") === "on",
+    });
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          a.reset();
+          setOpen(true);
+        }}
+        className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[13px] font-medium px-3 min-h-9 hover:surface-3"
+      >
+        <Pencil size={13} />
+        Edit
+      </button>
+
+      <Modal open={open} onClose={() => setOpen(false)} title="Edit contact">
+        <form onSubmit={submit} className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input
+              label="First name"
+              name="firstName"
+              required
+              defaultValue={contact.firstName}
+              errors={a.fieldErrors.firstName}
+            />
+            <Input
+              label="Last name"
+              name="lastName"
+              required
+              defaultValue={contact.lastName}
+              errors={a.fieldErrors.lastName}
+            />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              defaultValue={contact.email ?? ""}
+              errors={a.fieldErrors.email}
+            />
+            <Input
+              label="Phone"
+              name="phone"
+              placeholder="0412 345 678"
+              defaultValue={contact.phone ?? ""}
+              errors={a.fieldErrors.phone}
+            />
+          </div>
+          <p className="text-3 text-[11px] -mt-2">
+            Changing either of these re-normalises the dedupe keys. It does not merge
+            anything — if the new address already belongs to somebody, that is still a
+            decision for the merge queue.
+          </p>
+          <Input
+            label="Suburb"
+            name="suburb"
+            defaultValue={contact.suburb ?? ""}
+            errors={a.fieldErrors.suburb}
+          />
+
+          <div>
+            <span className="block text-[12px] font-medium text-2 mb-1.5">Roles</span>
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => (
+                <label
+                  key={r}
+                  className="inline-flex items-center gap-1.5 text-[12.5px] border rounded-md px-2 py-1.5 surface-3 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    name="roles"
+                    value={r}
+                    defaultChecked={contact.roles.includes(r)}
+                  />
+                  {r}
+                </label>
+              ))}
+            </div>
+            {a.fieldErrors.roles?.[0] && (
+              <p className="text-[11.5px] text-[#b02f2f] dark:text-[#f08a8a] mt-1">
+                {a.fieldErrors.roles[0]}
+              </p>
+            )}
+          </div>
+
+          <label className="flex items-center gap-2 text-[12.5px]">
+            <input
+              type="checkbox"
+              name="doNotContact"
+              defaultChecked={contact.doNotContact}
+            />
+            Do not contact
+          </label>
+          <p className="text-3 text-[11px] -mt-2">
+            A flag on the record, separate from the per-channel consent trail below it.
+            Ticking it stops everything; unticking it does not grant a consent that was
+            never given.
+          </p>
+
+          <FormError message={a.error} />
+          <div className="flex gap-2 pt-1">
+            <SubmitButton pending={a.pending}>Save changes</SubmitButton>
+            <CancelButton onClick={() => setOpen(false)} />
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
+/**
+ * A privacy request (§10, APP 12/13).
+ *
+ * Not a delete, and the dialog says so rather than letting the button imply it. The
+ * interaction log is the evidence behind every message this agency has sent, so the
+ * record is tombstoned: it stops taking activity, disappears from the working list
+ * and from matching, and the history stays where it is. A reason is required
+ * because a deletion request is a thing that has to be demonstrable afterwards.
+ */
+export function RemoveContactButton({
+  contactId,
+  name,
+}: {
+  contactId: string;
+  name: string;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const a = useAction(tombstoneContact, { onSuccess: () => setOpen(false) });
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          a.reset();
+          setOpen(true);
+        }}
+        className="inline-flex items-center gap-1.5 rounded-md surface-2 border border-[#d03b3b]/40 text-[#b02f2f] dark:text-[#f08a8a] text-[13px] font-medium px-3 min-h-9 hover:bg-[#d03b3b]/8"
+      >
+        <Trash2 size={13} />
+        Remove
+      </button>
+
+      <Modal open={open} onClose={() => setOpen(false)} title={`Remove ${name}`}>
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = new FormData(e.currentTarget);
+            a.run({ contactId, reason: f.get("reason") });
+          }}
+        >
+          <div className="text-[12.5px] rounded-md border border-[#eda100]/50 bg-[#eda100]/10 p-2.5 leading-relaxed">
+            This tombstones the record rather than deleting it. {name} stops appearing
+            in the contact list, in matching and in every send path, and is marked do
+            not contact. The interactions and consents stay, because they are the
+            evidence behind messages that were lawful when they were sent — destroying
+            them would remove this agency&apos;s ability to defend them.
+            <br />
+            <br />
+            It cannot be undone: the database refuses to un-tombstone a record.
+          </div>
+
+          <Input
+            label="Why"
+            name="reason"
+            required
+            placeholder="Deletion request received by email, 28 Aug"
+            errors={a.fieldErrors.reason}
+          />
+          <p className="text-3 text-[11px] -mt-2">
+            Recorded on the audit row. A privacy request you cannot evidence is one you
+            cannot show you honoured.
+          </p>
+
+          <FormError message={a.error} />
+          <div className="flex gap-2 pt-1">
+            <SubmitButton pending={a.pending} variant="danger">
+              Remove this contact
+            </SubmitButton>
+            <CancelButton onClick={() => setOpen(false)} />
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 }
