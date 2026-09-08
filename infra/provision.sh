@@ -48,6 +48,30 @@ node -v && pnpm -v
 npm install -g tsx@4 >/dev/null 2>&1
 tsx --version
 
+log "Swap"
+# The instance has ~1.8GB of RAM and, until 8 Sep 2026, no swap at all. deploy.sh runs
+# `next build` on the box (Windows cannot create the symlinks standalone output needs),
+# and that build is the memory-hungry part of the whole system. With nowhere to spill,
+# the kernel OOM-killed its way through the build and left the instance wedged: running,
+# system status ok, instance reachability failed. No SSH, no HTTP, and the only way back
+# was a forced stop/start from the AWS API.
+#
+# 2GB of swap is not a substitute for a bigger box, and it is not meant to be. It is the
+# difference between a slow build and an unreachable instance, which is the difference
+# that matters at 1.8GB.
+#
+# swappiness 10 so the kernel still prefers RAM for the running services and reaches for
+# swap mainly under the build's pressure.
+if ! swapon --show | grep -q swapfile; then
+  fallocate -l 2G /swapfile
+  chmod 600 /swapfile
+  mkswap /swapfile >/dev/null
+  swapon /swapfile
+  grep -q "^/swapfile" /etc/fstab || echo "/swapfile none swap sw 0 0" >> /etc/fstab
+  echo "vm.swappiness=10" > /etc/sysctl.d/99-swap.conf
+  sysctl -q -w vm.swappiness=10
+fi
+
 log "Redis"
 # BullMQ's stated requirement: evicting a queue key under memory pressure loses
 # jobs silently, and an error is always better than a silent loss.
