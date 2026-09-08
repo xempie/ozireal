@@ -196,6 +196,107 @@ export const SERVICE_PAGES: ServicePage[] = [
   },
 
   {
+    slug: "property-strategy-services",
+    eyebrow: "Strategy",
+    title: "Strategy before",
+    titleEm: "transaction",
+    lede: "Most people come to an agent with a decision already made. The useful conversation happens earlier, when buying, selling, holding and subdividing are all still on the table.",
+    metaTitle: "Property strategy services in Adelaide",
+    metaDescription:
+      "Independent property strategy for Adelaide owners and investors: hold or sell, subdivide or not, and what the numbers actually look like across a full year.",
+    image: "photo-1600596542815-ffad4c1539a9",
+    imageAlt: "White rendered home under a blue sky",
+    facts: ["Paid for advice", "Written, not verbal", "No listing attached"],
+    points: [
+      "Hold or sell, run both ways with the costs and the tax position noted",
+      "Whether a deep block is worth subdividing, and what council will actually allow",
+      "Where a portfolio is concentrated, and what that exposes you to",
+      "A written recommendation you can take to your accountant",
+    ],
+    sections: [
+      {
+        heading: "The advice is the product",
+        body: [
+          "A strategy session that ends in a listing agreement every time is not strategy, it is a pitch with a longer preamble. We are paid for the work, so the recommendation can be that you do nothing for two years.",
+          "If selling is the right answer we will say so and you are free to take it to any agent you like.",
+        ],
+      },
+      {
+        heading: "What it is not",
+        body: [
+          "This is property advice, not financial, legal or tax advice. We will tell you where a question needs your accountant or a solicitor, and there are more of those than most agents admit.",
+        ],
+      },
+    ],
+    cta: { label: "Start a conversation", href: "/contact" },
+  },
+
+  {
+    slug: "about-adelaide-land-agent",
+    eyebrow: "About",
+    title: "One office,",
+    titleEm: "one street at a time",
+    lede: "We are a small Adelaide agency working between Prospect and the sea. Small is the point: every agent here carries a maximum of six live campaigns.",
+    metaTitle: "About Ozi Realty",
+    metaDescription:
+      "An independent Adelaide real estate agency in Prospect. Sales, property management, buyer advocacy and property strategy, capped at six live campaigns per agent.",
+    image: "photo-1568605114967-8130f3a36994",
+    imageAlt: "Character home in Prospect",
+    facts: ["RLA 350 628", "Member REISA", "Prospect and Glenelg"],
+    points: [
+      "A maximum of six live campaigns per agent, so the phone gets answered",
+      "The person who appraises your property is the person who sells it",
+      "Written reporting every week, including the feedback you would rather not hear",
+      "Results stay published, whether they were good or not",
+    ],
+    sections: [
+      {
+        heading: "Why we cap the campaigns",
+        body: [
+          "An agent running twenty listings is not returning calls on nineteen of them. The cap is the whole reason our reporting is weekly and our vendors can reach us, and it is why we occasionally turn work away in a busy month.",
+          "It also means we are choosier about what we take on. A campaign we do not believe in is a campaign we will run badly.",
+        ],
+      },
+      {
+        heading: "We publish what settled",
+        body: [
+          "The sold and leased archive stays up. An agency that quietly removes its results is showing you a filtered version of its record, and the filtering is the information.",
+        ],
+      },
+    ],
+    cta: { label: "Book a free appraisal", href: "/free-property-appraisal-sa" },
+  },
+
+  {
+    slug: "realestate-gift-adelaide",
+    eyebrow: "Gift party",
+    title: "The housewarming,",
+    titleEm: "on us",
+    lede: "Every client who buys or sells through us gets their housewarming covered. It is a small thing, and it is the part people actually remember.",
+    metaTitle: "Housewarming gift party",
+    metaDescription:
+      "Buy or sell through Ozi Realty and your housewarming is on us. What is included, how to book it, and how long you have to use it.",
+    image: "photo-1615873968403-89e068629265",
+    imageAlt: "Living room with a tan leather sofa against a dark green wall",
+    facts: ["Every client", "Twelve months to use it", "No catch"],
+    points: [
+      "Catering for a housewarming at the property, for up to thirty people",
+      "Booked on a date that suits you, any time in the twelve months after settlement",
+      "Available whether you bought through us or sold through us",
+      "No obligation to list with us again, and no photographer turning up",
+    ],
+    sections: [
+      {
+        heading: "Why we do it",
+        body: [
+          "Moving is exhausting and the first weeks in a house are the worst time to organise anything. Taking one thing off the list is genuinely useful, which is more than can be said for most closing gifts.",
+          "To be clear about what this is not: there is no marketing attached. We are not turning up with a photographer or a stack of business cards for your guests.",
+        ],
+      },
+    ],
+    cta: { label: "Talk to the office", href: "/contact" },
+  },
+  {
     slug: "buyer-agent-adelaide",
     eyebrow: "Buyer advocacy",
     title: "For buyers who keep",

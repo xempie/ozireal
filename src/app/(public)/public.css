@@ -725,7 +725,18 @@
   .num:nth-child(even) { padding-right: 0; border-right: 0; }
   .num:nth-child(1), .num:nth-child(2) { border-bottom: 1px solid var(--line); }
 }
-@media (max-width: 900px) {
+/*
+  1240, not 900. The menu mirrors the live site's ten items, which do not fit one bar
+  on a laptop. Raising the breakpoint hands them to the drawer while the burger is
+  actually on screen; hiding items between 900 and 1240 would have made them
+  unreachable, since the burger did not appear until 900.
+*/
+@media (min-width: 1241px) {
+  /* Ten items in one bar: tighter than the six-item menu this started as. */
+  .menu { gap: 20px; }
+  .menu a { font-size: 10.5px; letter-spacing: 0.1em; }
+}
+@media (max-width: 1240px) {
   .search-row { grid-template-columns: 1fr; }
   .field { border-right: 0; border-bottom: 1px solid var(--line); }
   .search-tabs a { flex: 1; padding-inline: 12px; text-align: center; }
@@ -1015,8 +1026,10 @@
   .posts { grid-template-columns: repeat(2, 1fr); }
   .quote-layout { grid-template-columns: 1fr; }
 }
-@media (max-width: 900px) {
+@media (max-width: 1240px) {
   .search-tabs button { flex: 1; padding-inline: 12px; text-align: center; }
+}
+@media (max-width: 900px) {
   .ticker-label { display: none; }
 }
 @media (max-width: 640px) {
@@ -1213,4 +1226,52 @@
   .contact-cols { grid-template-columns: 1fr; }
   .nf-paths { grid-template-columns: 1fr; }
   .cta-band-inner { align-items: flex-start; }
+}
+
+/* ============================================================
+   FAQ
+   ============================================================ */
+.faq-list { border-top: 1px solid var(--line); max-width: 82ch; }
+.faq { border-bottom: 1px solid var(--line); }
+.faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 24px 0;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  font-weight: 600;
+  line-height: 1.3;
+}
+/* Safari paints its own triangle without this. */
+.faq-q::-webkit-details-marker { display: none; }
+.faq-q:hover { color: var(--accent-dp); }
+.faq .svc-plus::before,
+.faq .svc-plus::after { background: var(--accent); }
+.faq[open] .svc-plus::after { transform: scaleY(0); }
+.faq-a { padding: 0 0 28px; }
+.faq-a p {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.72;
+  max-width: 68ch;
+}
+.faq-a p:last-child { margin-bottom: 0; }
+/*
+  Not decoration. CLAUDE.md rule 3 holds the compliance advisor to citing or staying
+  silent; a public FAQ touching Form 1 and cooling off is the same class of content, so
+  the disclaimer is given visual weight rather than buried as fine print.
+*/
+.faq-note {
+  margin: 40px 0 0;
+  max-width: 68ch;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--muted);
+  border-left: 2px solid var(--accent);
+  padding-left: 18px;
 }

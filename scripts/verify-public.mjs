@@ -53,7 +53,7 @@ async function loadAllImages(page) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await page.goto(BASE, { waitUntil: "networkidle" });
 
-  check("burger hidden on desktop", !(await page.locator(".burger").isVisible()));
+  check("burger hidden at 1440", !(await page.locator(".burger").isVisible()));
   check("nav CTA visible on desktop", await page.locator(".nav-cta .btn").isVisible());
   check("ticker rendered", await page.locator(".ticker-track .tick").first().isVisible());
   check("six cards", (await page.locator(".card").count()) === 6);
@@ -104,6 +104,16 @@ async function loadAllImages(page) {
   const sub = await page.locator(".sub").first().boundingBox();
   check("suburb tile is portrait", sub.height > sub.width, `${Math.round(sub.width)}x${Math.round(sub.height)}`);
 
+  /*
+    Ten menu items in one bar is the tight case. A nav that overflows its wrap does not
+    trigger a page-level scrollbar (the wrap clips it), so measure the bar itself.
+  */
+  const navFits = await page.evaluate(() => {
+    const wrap = document.querySelector("nav.nav .wrap");
+    return wrap.scrollWidth <= wrap.clientWidth + 1;
+  });
+  check("menu fits the bar at 1440", navFits);
+
   const docW = await page.evaluate(() => document.documentElement.scrollWidth);
   check("no horizontal overflow (1440)", docW <= 1440, `scrollWidth ${docW}`);
 
@@ -149,15 +159,15 @@ async function loadAllImages(page) {
   */
   await burger.click();
   await page.waitForTimeout(450);
-  await page.locator("#site-menu a", { hasText: "Suburbs" }).click();
-  await page.waitForURL("**/free-suburb-insight-report", { timeout: 10_000 });
-  check("tapping a drawer link navigates", page.url().endsWith("/free-suburb-insight-report"));
+  await page.locator("#site-menu a", { hasText: "FAQ" }).click();
+  await page.waitForURL("**/adelaide-property-faq", { timeout: 10_000 });
+  check("tapping a drawer link navigates", page.url().endsWith("/adelaide-property-faq"));
   // waitForURL resolves on the URL change, which beats the drawer's 400ms close.
   await page.waitForTimeout(700);
   check("drawer closed on the new page", !(await menuOpen(page)));
 
   const subW = await page.evaluate(() => document.documentElement.scrollWidth);
-  check("no horizontal overflow, suburbs page (390)", subW <= 390, `scrollWidth ${subW}`);
+  check("no horizontal overflow, FAQ page (390)", subW <= 390, `scrollWidth ${subW}`);
 
   await page.goto(BASE, { waitUntil: "networkidle" });
   const docW = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -188,7 +198,33 @@ async function loadAllImages(page) {
 
   const anchors = unique.filter((h) => h.startsWith("#"));
   check("no on-page anchors in nav, footer or section heads", anchors.length === 0, anchors.join(" "));
-  check("nav and footer carry real routes", unique.length >= 12, `${unique.length} distinct links`);
+  check("nav and footer carry real routes", unique.length >= 16, `${unique.length} distinct links`);
+
+  /*
+    The menu mirrors www.ozirealty.com.au item for item. Two slugs differ because the
+    live spelling is wrong and both 301 from the original, which the redirect checks
+    below cover.
+  */
+  // The whole header, not just #site-menu: "Free Appraisal" is the CTA button beside
+  // the menu rather than an item inside it, and it still has to be there.
+  const menu = await page.evaluate(() =>
+    [...document.querySelectorAll("nav.nav a")].map((a) => a.getAttribute("href")),
+  );
+  const EXPECTED = [
+    "/property-services",
+    "/property-strategy-services",
+    "/overseas-investment",
+    "/free-property-appraisal-sa",
+    "/about-adelaide-land-agent",
+    "/contact",
+    "/book-online",
+    "/realestate-gift-adelaide",
+    "/blog",
+    "/adelaide-property-faq",
+  ];
+  for (const href of EXPECTED) {
+    check(`menu carries ${href}`, menu.includes(href), menu.join(" "));
+  }
 
   for (const href of unique) {
     const r = await page.request.get(new URL(href, BASE).toString());

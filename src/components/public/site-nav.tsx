@@ -26,22 +26,36 @@ import { usePathname } from "next/navigation";
  */
 
 /**
- * Real routes, not on-page anchors.
+ * The site menu, mirroring www.ozirealty.com.au item for item.
  *
- * These were anchors while the pages did not exist, which meant every item scrolled the
- * home page instead of navigating. The slugs mirror www.ozirealty.com.au so the indexed
- * URLs survive cutover; see site-pages.ts for why they read the way they do.
+ * Read off the live site's rendered nav rather than guessed from the sitemap: the
+ * sitemap lists 22 pages, only these eleven are in the menu, and the labels are the
+ * agency's own wording ("Oversea Investment", "Gift Party", "Free Meeting").
  *
- * "Buy" is the exception: the live site has no for-sale search page, so /for-sale is a
- * new URL under the CLAUDE.md 16 scheme rather than a mirrored one.
+ * Two slugs differ from the live site because the live spelling is wrong, and both 301
+ * from the original in next.config.ts:
+ *
+ *   Oversea Investment  /oversees-investment               -> /overseas-investment
+ *   Contact Us          /contact-adelaide-realestae-agency -> /contact
+ *
+ * "Free Appraisal" is in the live menu and is not in this list, because it is the CTA
+ * button beside it. Listing it in both rendered the same words twice in one bar. The
+ * drawer appends it as its own item, so on a phone it still appears exactly once.
+ *
+ * Nine items do not fit one bar on a laptop, so the drawer takes over at 1240px rather
+ * than the 900px a six-item menu needed. Nothing is ever hidden without the burger
+ * appearing to reach it, which is the trap the alternative had.
  */
 const NAV = [
-  { href: "/for-sale", label: "Buy" },
-  { href: "/rent-property-house-adelaide", label: "Rent" },
-  { href: "/sell-property-house-adelaide", label: "Sell" },
-  { href: "/manage-property-adelaide", label: "Manage" },
-  { href: "/free-suburb-insight-report", label: "Suburbs" },
-  { href: "/blog", label: "Journal" },
+  { href: "/property-services", label: "Services" },
+  { href: "/property-strategy-services", label: "Strategy" },
+  { href: "/overseas-investment", label: "Oversea Investment" },
+  { href: "/about-adelaide-land-agent", label: "About" },
+  { href: "/contact", label: "Contact" },
+  { href: "/book-online", label: "Free Meeting" },
+  { href: "/realestate-gift-adelaide", label: "Gift Party" },
+  { href: "/blog", label: "Blog" },
+  { href: "/adelaide-property-faq", label: "FAQ" },
 ] as const;
 
 export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string }) {
