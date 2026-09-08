@@ -26,21 +26,22 @@ import { usePathname } from "next/navigation";
  */
 
 /**
- * On-page anchors, not routes — deliberately, and temporarily.
+ * Real routes, not on-page anchors.
  *
- * The real destinations are /for-sale, /for-rent, /appraisal,
- * /services/property-management, /suburbs and /journal. None of those routes exist yet,
- * and a nav in which every item 404s is a worse demo than one that scrolls. These revert
- * to real hrefs as each route lands; the template used the same anchors for the same
- * reason.
+ * These were anchors while the pages did not exist, which meant every item scrolled the
+ * home page instead of navigating. The slugs mirror www.ozirealty.com.au so the indexed
+ * URLs survive cutover; see site-pages.ts for why they read the way they do.
+ *
+ * "Buy" is the exception: the live site has no for-sale search page, so /for-sale is a
+ * new URL under the CLAUDE.md 16 scheme rather than a mirrored one.
  */
 const NAV = [
-  { href: "#listings", label: "Buy" },
-  { href: "#listings", label: "Rent" },
-  { href: "#appraise", label: "Sell" },
-  { href: "#services", label: "Manage" },
-  { href: "#suburbs", label: "Suburbs" },
-  { href: "#journal", label: "Journal" },
+  { href: "/for-sale", label: "Buy" },
+  { href: "/rent-property-house-adelaide", label: "Rent" },
+  { href: "/sell-property-house-adelaide", label: "Sell" },
+  { href: "/manage-property-adelaide", label: "Manage" },
+  { href: "/free-suburb-insight-report", label: "Suburbs" },
+  { href: "/blog", label: "Journal" },
 ] as const;
 
 export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string }) {
@@ -88,24 +89,20 @@ export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string
         </Link>
 
         <div className="menu" id="site-menu">
-          {NAV.map((n, i) => (
+          {NAV.map((n) => (
             <Link
               key={n.label}
               href={n.href}
               /*
-                Closing on click rather than only on a pathname change: while NAV holds
-                on-page anchors the pathname never changes, so the effect above would
-                leave the drawer covering the section it just scrolled to.
+                Kept alongside the pathname effect above: clicking the item you are
+                already on does not change the pathname, so the effect would not fire and
+                the drawer would stay open over the page.
               */
               onClick={() => setOpen(false)}
               aria-current={
-                n.href.startsWith("#")
-                  ? pathname === "/" && i === 0
-                    ? "page"
-                    : undefined
-                  : pathname === n.href || pathname.startsWith(n.href + "/")
-                    ? "page"
-                    : undefined
+                pathname === n.href || pathname.startsWith(n.href + "/")
+                  ? "page"
+                  : undefined
               }
             >
               {n.label}
@@ -117,13 +114,13 @@ export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string
             than disappearing — the template hid it on mobile, which removes the primary
             call to action from exactly the device most people arrive on.
           */}
-          <Link href="#appraise" className="menu-cta" onClick={() => setOpen(false)}>
+          <Link href="/free-property-appraisal-sa" className="menu-cta" onClick={() => setOpen(false)}>
             Free appraisal
           </Link>
         </div>
 
         <div className="nav-cta">
-          <Link className="btn" href="#appraise">
+          <Link className="btn" href="/free-property-appraisal-sa">
             Free appraisal
           </Link>
           <button

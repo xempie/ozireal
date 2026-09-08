@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { DemoListings } from "@/components/public/demo-listings";
 import { DemoAppraisalForm } from "@/components/public/demo-appraisal-form";
 import {
@@ -107,9 +108,9 @@ export default function HomePage() {
                 Open <em>this weekend</em>
               </h2>
             </div>
-            <span className="txtlink txtlink--flat">
-              All 128 listings <span aria-hidden="true">&rarr;</span>
-            </span>
+            <Link className="txtlink" href="/for-sale">
+              Every listing <span aria-hidden="true">&rarr;</span>
+            </Link>
           </div>
 
           <DemoListings />
@@ -177,9 +178,9 @@ export default function HomePage() {
                     <span>Auction or private treaty</span>
                     <span>No fee if unsold</span>
                   </div>
-                  <a className="txtlink" href="#appraise">
-                    Book an appraisal <span aria-hidden="true">&rarr;</span>
-                  </a>
+                  <Link className="txtlink" href="/sell-property-house-adelaide">
+                    How selling works <span aria-hidden="true">&rarr;</span>
+                  </Link>
                 </div>
               </details>
 
@@ -201,9 +202,9 @@ export default function HomePage() {
                     <span>100-day trial</span>
                     <span>Max 90 properties per manager</span>
                   </div>
-                  <a className="txtlink" href="#appraise">
-                    Get a rent estimate <span aria-hidden="true">&rarr;</span>
-                  </a>
+                  <Link className="txtlink" href="/manage-property-adelaide">
+                    How management works <span aria-hidden="true">&rarr;</span>
+                  </Link>
                 </div>
               </details>
 
@@ -224,9 +225,9 @@ export default function HomePage() {
                     <span>Fixed fee</span>
                     <span>Off-market access</span>
                   </div>
-                  <a className="txtlink" href="#listings">
+                  <Link className="txtlink" href="/buyer-agent-adelaide">
                     See how it works <span aria-hidden="true">&rarr;</span>
-                  </a>
+                  </Link>
                 </div>
               </details>
 
@@ -246,9 +247,9 @@ export default function HomePage() {
                     <span>Suburb reports</span>
                     <span>Subdivision feasibility</span>
                   </div>
-                  <a className="txtlink" href="#suburbs">
-                    Browse suburbs <span aria-hidden="true">&rarr;</span>
-                  </a>
+                  <Link className="txtlink" href="/overseas-investment">
+                    Investment services <span aria-hidden="true">&rarr;</span>
+                  </Link>
                 </div>
               </details>
             </div>
@@ -279,9 +280,9 @@ export default function HomePage() {
                 Three suburbs we <em>know cold</em>
               </h2>
             </div>
-            <span className="txtlink txtlink--flat">
-              All 34 suburb reports <span aria-hidden="true">&rarr;</span>
-            </span>
+            <Link className="txtlink" href="/free-suburb-insight-report">
+              All suburb reports <span aria-hidden="true">&rarr;</span>
+            </Link>
           </div>
 
           <div className="suburbs">
@@ -400,9 +401,9 @@ export default function HomePage() {
                 Notes from the <em>Adelaide market</em>
               </h2>
             </div>
-            <span className="txtlink txtlink--flat">
+            <Link className="txtlink" href="/blog">
               Read everything <span aria-hidden="true">&rarr;</span>
-            </span>
+            </Link>
           </div>
 
           <div className="posts">

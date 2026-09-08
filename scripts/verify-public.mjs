@@ -141,17 +141,72 @@ async function loadAllImages(page) {
     (await page.evaluate(() => getComputedStyle(document.body).overflow)) !== "hidden",
   );
 
+  /*
+    Tapping "Suburbs" now navigates rather than scrolling, so this also proves the drawer
+    does not survive a real page change. The overflow check that follows runs on the
+    destination, which is worth having: the standalone pages have their own hero and grid
+    and could overflow independently of the home page.
+  */
   await burger.click();
   await page.waitForTimeout(450);
   await page.locator("#site-menu a", { hasText: "Suburbs" }).click();
-  await page.waitForTimeout(600);
-  check("tapping a drawer link closes it", !(await menuOpen(page)));
+  await page.waitForURL("**/free-suburb-insight-report", { timeout: 10_000 });
+  check("tapping a drawer link navigates", page.url().endsWith("/free-suburb-insight-report"));
+  // waitForURL resolves on the URL change, which beats the drawer's 400ms close.
+  await page.waitForTimeout(700);
+  check("drawer closed on the new page", !(await menuOpen(page)));
 
+  const subW = await page.evaluate(() => document.documentElement.scrollWidth);
+  check("no horizontal overflow, suburbs page (390)", subW <= 390, `scrollWidth ${subW}`);
+
+  await page.goto(BASE, { waitUntil: "networkidle" });
   const docW = await page.evaluate(() => document.documentElement.scrollWidth);
   check("no horizontal overflow (390)", docW <= 390, `scrollWidth ${docW}`);
 
   await loadAllImages(page);
   await page.screenshot({ path: `${out}/mobile-full.png`, fullPage: true });
+  await page.close();
+}
+
+/* ------------------------------------------------- links go somewhere */
+/*
+  The point of this block: every nav and footer item used to be an on-page anchor, so
+  clicking one scrolled the home page instead of navigating. This asserts the opposite,
+  and that each destination actually resolves - a nav full of 200s that render nothing
+  is the failure mode a status check alone would miss.
+*/
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await page.goto(BASE, { waitUntil: "networkidle" });
+
+  const links = await page.evaluate(() =>
+    [...document.querySelectorAll("nav.nav a[href], footer.foot a[href], .sec-head a[href]")]
+      .map((a) => a.getAttribute("href"))
+      .filter((h) => h && !h.startsWith("tel:") && !h.startsWith("mailto:")),
+  );
+  const unique = [...new Set(links)];
+
+  const anchors = unique.filter((h) => h.startsWith("#"));
+  check("no on-page anchors in nav, footer or section heads", anchors.length === 0, anchors.join(" "));
+  check("nav and footer carry real routes", unique.length >= 12, `${unique.length} distinct links`);
+
+  for (const href of unique) {
+    const r = await page.request.get(new URL(href, BASE).toString());
+    const body = await r.text();
+    const ok = r.status() === 200 && /<h1[\s>]/.test(body);
+    check(`${href}`, ok, `HTTP ${r.status()}${/<h1[\s>]/.test(body) ? "" : ", no h1"}`);
+  }
+
+  // The two misspelt legacy URLs must 301, not 404, and land on the corrected page.
+  for (const [from, to] of [
+    ["/oversees-investment", "/overseas-investment"],
+    ["/contact-adelaide-realestae-agency", "/contact"],
+  ]) {
+    const r = await page.request.get(new URL(from, BASE).toString(), { maxRedirects: 0 });
+    const loc = r.headers()["location"] ?? "";
+    check(`${from} 301s to ${to}`, r.status() === 301 && loc.endsWith(to), `HTTP ${r.status()} -> ${loc || "none"}`);
+  }
+
   await page.close();
 }
 

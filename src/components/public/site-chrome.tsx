@@ -75,7 +75,7 @@ export function SiteFooter() {
             <br />
             what your street is <em>doing.</em>
           </h2>
-          <Link className="btn" href="#appraise">
+          <Link className="btn" href="/free-property-appraisal-sa">
             Book a free appraisal
           </Link>
         </div>
@@ -100,28 +100,28 @@ export function SiteFooter() {
           </div>
 
           {/*
-            On-page anchors for the same reason as the nav in site-nav.tsx: /for-sale,
-            /sold, /suburbs and the rest are not built yet, and a footer full of 404s
-            reads as a broken site. Each reverts to its real href as the route lands.
+            Real routes, mirroring www.ozirealty.com.au where an equivalent page exists.
+            See site-pages.ts for the slug rationale.
           */}
           <div>
             <h4>Property</h4>
             <ul>
-              <li><Link href="#listings">Buy</Link></li>
-              <li><Link href="#listings">Rent</Link></li>
-              <li><Link href="#appraise">Sell</Link></li>
-              <li><Link href="#services">Property management</Link></li>
-              <li><Link href="#listings">Recently sold</Link></li>
+              <li><Link href="/for-sale">Buy</Link></li>
+              <li><Link href="/rent-property-house-adelaide">Rent</Link></li>
+              <li><Link href="/sell-property-house-adelaide">Sell</Link></li>
+              <li><Link href="/manage-property-adelaide">Property management</Link></li>
+              <li><Link href="/sold">Recently sold</Link></li>
             </ul>
           </div>
 
           <div>
             <h4>Company</h4>
             <ul>
-              <li><Link href="#services">Our services</Link></li>
-              <li><Link href="#suburbs">Suburb reports</Link></li>
-              <li><Link href="#journal">Journal</Link></li>
-              <li><Link href="#appraise">Contact</Link></li>
+              <li><Link href="/property-services">Our services</Link></li>
+              <li><Link href="/free-suburb-insight-report">Suburb reports</Link></li>
+              <li><Link href="/blog">Journal</Link></li>
+              <li><Link href="/overseas-investment">Overseas investment</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
             </ul>
           </div>
 

@@ -43,6 +43,28 @@ const nextConfig: NextConfig = {
    * for the same reason as ever, bullmq/ioredis because bullmq probes for optional
    * drivers (valkey-glide) with dynamic requires that webpack can only warn about.
    */
+  /**
+   * Legacy URLs from the Wix site that are misspelt at the source.
+   *
+   * `docs/legacy-site.md` rule 6: fix the typo on the new site, 301 from the old
+   * spelling, never drop the indexed URL. Both of these are in the live sitemap today, so
+   * dropping them would throw away whatever ranking they carry.
+   *
+   * `statusCode: 301`, not `permanent: true`. Next's `permanent` emits a **308**, which
+   * preserves the request method and is a different thing from the 301 the redirect plan
+   * specifies. Google treats the two alike, but plenty of older crawlers, proxies and
+   * link checkers do not, and a marketing URL only ever gets a GET.
+   */
+  async redirects() {
+    return [
+      { source: "/oversees-investment", destination: "/overseas-investment", statusCode: 301 },
+      {
+        source: "/contact-adelaide-realestae-agency",
+        destination: "/contact",
+        statusCode: 301,
+      },
+    ];
+  },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],
 };
 

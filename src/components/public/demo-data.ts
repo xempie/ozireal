@@ -159,6 +159,70 @@ export const DEMO_LISTINGS: DemoListing[] = [
   },
 ];
 
+/**
+ * The sold and leased archive.
+ *
+ * Invented, like the rest of this module. It exists because the archive is the public
+ * site's best organic asset (CLAUDE.md 16: sold listings persist, and they are what the
+ * suburb pages are built from), so the page that will hold it needs something to show.
+ *
+ * `result` is an authored string for the same reason `price` is: nothing on a public
+ * page composes a currency figure from a number.
+ */
+export const DEMO_SOLD: DemoListing[] = [
+  {
+    id: "s1",
+    cat: "sale",
+    tag: "Sold",
+    tagClass: "tag--ink",
+    price: "Sold $1,182,000",
+    addr: "41 Alpha Road",
+    sub: "Prospect SA 5082",
+    bed: 3,
+    bath: 2,
+    car: 2,
+    land: "580m²",
+    agent: "Nadia Fielding",
+    open: "Sold 14 June",
+    img: "photo-1568605114967-8130f3a36994",
+    alt: "Character home in Prospect",
+  },
+  {
+    id: "s2",
+    cat: "sale",
+    tag: "Sold",
+    tagClass: "tag--ink",
+    price: "Sold $1,640,000",
+    addr: "9 Woods Street",
+    sub: "Norwood SA 5067",
+    bed: 4,
+    bath: 2,
+    car: 2,
+    land: "496m²",
+    agent: "Tom Rasheed",
+    open: "Sold 2 July",
+    img: "photo-1580587771525-78b9dba3b914",
+    alt: "Terrace home in Norwood",
+  },
+  {
+    id: "s3",
+    cat: "lease",
+    tag: "Leased",
+    tagClass: "tag--ink",
+    price: "Leased $690 per week",
+    addr: "2 / 18 Colley Terrace",
+    sub: "Glenelg SA 5045",
+    bed: 2,
+    bath: 1,
+    car: 1,
+    land: "128m²",
+    agent: "Priya Ellis",
+    open: "Leased 21 July",
+    img: "photo-1512917774080-9991f1c4c750",
+    alt: "Coastal apartment near Glenelg",
+  },
+];
+
 export const DEMO_FILTERS = [
   { key: "all", label: "Everything" },
   { key: "sale", label: "For sale" },
