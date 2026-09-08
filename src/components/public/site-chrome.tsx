@@ -26,14 +26,17 @@ import { AGENCY, EMAILS } from "./agency";
 export { AGENCY } from "./agency";
 
 /**
- * The wordmark, served from the Wix CDN the current site uses.
+ * The wordmark, served from our own origin.
  *
- * Fine for review and wrong for launch: it is a PNG with a white box baked behind it
- * (hence the blend modes in the stylesheet), and it disappears the day the Wix account
- * lapses. `assets/brand/README.md` has been asking for a vector since B0.
+ * It used to point at static.wixstatic.com, which was fine for review and wrong for
+ * launch: the file disappears the day the Wix account lapses, and the agency's brand mark
+ * sat outside its own control. `public/brand/logo.png` is the same asset, downloaded.
+ *
+ * Still a PNG with a white box baked behind the wordmark, which is why the stylesheet
+ * blends it (multiply on the light nav, screen on the dark footer). A vector would remove
+ * that hack; `assets/brand/README.md` has been asking for one since B0.
  */
-const LOGO =
-  "https://static.wixstatic.com/media/160674_f4475077d64f463b9fc5aac5b1632930~mv2.png/v1/fill/w_227,h_35,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/OZI%20logo%20(1).png";
+const LOGO = "/brand/logo.png";
 
 export function SiteHeader() {
   return (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/public/page-shell";
+import { PrincipalCard } from "@/components/public/principal";
 import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
 
 /**
@@ -37,6 +38,12 @@ export default function Page() {
       />
 
       <section className="sec">
+        <div className="wrap">
+          <PrincipalCard />
+        </div>
+      </section>
+
+      <section className="sec" style={{ background: "var(--paper-2)" }}>
         <div className="wrap page-cols">
           <div className="points">
             <h2 className="display">What we will cover</h2>

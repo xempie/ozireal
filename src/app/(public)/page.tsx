@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DemoListings } from "@/components/public/demo-listings";
+import { PrincipalCard } from "@/components/public/principal";
 import {
   AGENCY,
   HERO,
@@ -8,6 +9,7 @@ import {
   JOURNAL_POSTS,
   PROMISES,
   REPORTS,
+  PARTNERS,
   TESTIMONIAL,
   WHY_US,
   photo,
@@ -187,6 +189,31 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ========================================================= partners */}
+      {/*
+        "We Work With the Best" on the live site. Third-party marks the agency already
+        publishes, rendered under that heading and nothing stronger: "we work with" is a
+        different sentence from "endorsed by", and only one of them is a claim we could
+        not substantiate.
+      */}
+      <section className="sec sec--tight partners">
+        <div className="wrap">
+          <p className="eyebrow solo">We work with the best</p>
+          <div className="partner-row">
+            {PARTNERS.map((b) => (
+              <Image
+                key={b.name}
+                src={b.src}
+                alt={b.name}
+                width={b.w}
+                height={b.h}
+                sizes="160px"
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ============================================================ quote */}
       {/*
         One real quote, attributed as the live site attributes it. The template put a
@@ -227,10 +254,10 @@ export default function HomePage() {
               <article className="post" key={p.title}>
                 <div className="post-media">
                   <Image
-                    src={photo(p.img, 800)}
+                    src={p.src}
                     alt={p.alt}
-                    width={800}
-                    height={500}
+                    width={924}
+                    height={693}
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
@@ -244,20 +271,26 @@ export default function HomePage() {
 
       {/* ===================================================== consultation */}
       <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap cta-band-inner">
-          <div>
-            <p className="eyebrow">Free property strategy consultation</p>
-            <h2 className="display">
-              Speak directly with <em>{AGENCY.principal}</em>
-            </h2>
-            <p className="lede">
-              Principal of {AGENCY.name} ({AGENCY.licence}). No pressure, just clear,
-              professional advice about your property.
+        <div className="wrap">
+          <div className="sec-head">
+            <div>
+              <p className="eyebrow">Free property strategy consultation</p>
+              <h2 className="display">
+                Speak directly with <em>{AGENCY.principal}</em>
+              </h2>
+            </div>
+            <p className="lede" style={{ margin: 0 }}>
+              No pressure. Just clear, professional advice based on the South Australian
+              market.
             </p>
           </div>
-          <Link className="btn" href="/book-online">
-            Book a free consultation
-          </Link>
+          <PrincipalCard cta={{ label: "Book a free consultation", href: "/book-online" }}>
+            <p>
+              Whether you are planning to sell, invest, or need professional property
+              management, this one-on-one session gives you practical insight into your
+              property&rsquo;s value, its rental potential, and the options in front of you.
+            </p>
+          </PrincipalCard>
         </div>
       </section>
     </>

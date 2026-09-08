@@ -154,6 +154,41 @@ export const TESTIMONIAL = {
   name: "Molly Daniel",
 } as const;
 
+/**
+ * The principal's photograph, and the agency's wordmark.
+ *
+ * Both are downloaded into `public/brand/` rather than hotlinked from
+ * static.wixstatic.com. Pointing at somebody else's CDN was always wrong for launch: the
+ * images vanish the day the Wix account lapses, every visitor pays a DNS and TLS
+ * handshake to a third party, and the agency's own brand assets end up outside its
+ * control. Serving them from our origin also lets next/image resize and re-encode them.
+ */
+export const PORTRAIT = {
+  src: "/brand/esi-dor.jpg",
+  width: 806,
+  height: 810,
+  alt: "Esi Dor, Founder and CEO of OziRealty, real estate agent in South Australia",
+} as const;
+
+/**
+ * "We Work With the Best" on the live site.
+ *
+ * Third-party marks, reproduced because the agency already publishes them. They are
+ * rendered as a plain row with no claim attached beyond the heading: an endorsement the
+ * agency has not been given is a representation, and "we work with" is not the same
+ * sentence as "endorsed by".
+ */
+export const PARTNERS = [
+  { name: "realestate.com.au", src: "/brand/partner-rea.png", w: 376, h: 114 },
+  { name: "Domain", src: "/brand/partner-domain.png", w: 360, h: 120 },
+  { name: "CoreLogic", src: "/brand/partner-corelogic.png", w: 360, h: 120 },
+  { name: "Cotality", src: "/brand/partner-cotality.png", w: 360, h: 120 },
+  { name: "REISA", src: "/brand/partner-reisa.png", w: 360, h: 120 },
+  { name: "OnTheHouse", src: "/brand/partner-onthehouse.png", w: 360, h: 120 },
+  { name: "Reapit", src: "/brand/partner-reapit.png", w: 360, h: 120 },
+  { name: "Google", src: "/brand/partner-google.png", w: 360, h: 120 },
+] as const;
+
 /** The free reports the site offers, and what each one contains. */
 export const REPORTS = {
   appraisal: {
@@ -252,15 +287,15 @@ export const JOURNAL_POSTS = [
     title: "How Much Does a Property Manager Cost in Adelaide?",
     excerpt:
       "Property management fees vary more than most owners expect, and the cheapest quote is not always the one that leaves you better off.",
-    img: "photo-1605276374104-dee2a0ed3cd6",
-    alt: "Suburban house exterior",
+    src: "/brand/post-manager-cost.png",
+    alt: "How much does a property manager cost in Adelaide",
   },
   {
     title: "Where to Find Investment Property Advice in Adelaide",
     excerpt:
       "The hardest part is often not finding a property. It is knowing whose advice to trust.",
-    img: "photo-1583847268964-b28dc8f51f92",
-    alt: "Living room with a large window",
+    src: "/brand/post-investment-advice.png",
+    alt: "Where to find investment property advice in Adelaide",
   },
 ] as const;
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
-import { JOURNAL_POSTS, photo } from "@/components/public/agency";
+import { JOURNAL_POSTS } from "@/components/public/agency";
 
 /**
  * The journal.
@@ -42,10 +42,10 @@ export default function Page() {
               <article className="post" key={p.title}>
                 <div className="post-media">
                   <Image
-                    src={photo(p.img, 800)}
+                    src={p.src}
                     alt={p.alt}
-                    width={800}
-                    height={500}
+                    width={924}
+                    height={693}
                     sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
                   />
                 </div>
