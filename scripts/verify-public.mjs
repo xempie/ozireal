@@ -16,7 +16,7 @@
  *   pnpm verify:public
  */
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const BASE = process.env.BASE ?? "http://localhost:3200";
@@ -46,6 +46,60 @@ async function loadAllImages(page) {
   });
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(600);
+}
+
+/**
+ * Contrast of the hero text against the photograph actually behind it.
+ *
+ * The heroes put paper-coloured type over a photo dimmed by two gradients, so the
+ * contrast depends on the image, not just on the CSS. Lightening the overlay to show
+ * the photograph is exactly the change that quietly pushes the lede below legibility,
+ * which is why this measures instead of trusting the numbers.
+ *
+ * Method: hide the type, screenshot the band it occupies, then read the pixels back
+ * through a canvas. The worst (lightest) pixel is the one that decides, so that is what
+ * is scored, not the average.
+ */
+async function heroContrast(page, heroSel, textSel) {
+  const box = await page.locator(textSel).first().boundingBox();
+  if (!box) return null;
+  const hide = await page.addStyleTag({
+    content: `${heroSel} h1, ${heroSel} .lede, ${heroSel} .eyebrow, ${heroSel} .phero-facts, ${heroSel} .search, ${heroSel} .ticker { visibility: hidden !important; }`,
+  });
+  // A data URL, not file://: the probe page is about:blank and cannot read a local file.
+  const shot = join(out, "_contrast.png");
+  await page.screenshot({ path: shot, clip: box });
+  await hide.evaluate((n) => n.remove());
+
+  // browser.newPage() rather than page.context().newPage(): the implicit context a
+  // browser-level page gets refuses a second page.
+  const probe = await browser.newPage();
+  const lightest = await probe.evaluate(async (src) => {
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    const c = document.createElement("canvas");
+    c.width = img.width;
+    c.height = img.height;
+    const g = c.getContext("2d");
+    g.drawImage(img, 0, 0);
+    const d = g.getImageData(0, 0, c.width, c.height).data;
+    const lum = (r, gg, b) => {
+      const f = (v) => {
+        v /= 255;
+        return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      };
+      return 0.2126 * f(r) + 0.7152 * f(gg) + 0.0722 * f(b);
+    };
+    let max = 0;
+    for (let i = 0; i < d.length; i += 4) max = Math.max(max, lum(d[i], d[i + 1], d[i + 2]));
+    return max;
+  }, "data:image/png;base64," + readFileSync(shot).toString("base64"));
+  await probe.close();
+
+  // --paper #EAE7DE, the colour the hero type is painted in.
+  const paper = 0.2126 * 0.8069 + 0.7152 * 0.7835 + 0.0722 * 0.7305;
+  return (Math.max(paper, lightest) + 0.05) / (Math.min(paper, lightest) + 0.05);
 }
 
 /* ------------------------------------------------------------- desktop */
@@ -114,6 +168,14 @@ async function loadAllImages(page) {
   });
   check("menu fits the bar at 1440", navFits);
 
+  /*
+    3:1 is the WCAG AA floor for large text, which the hero h1 is at every breakpoint.
+    Measured against the lightest pixel behind it, so a bright sky in one photograph
+    cannot pass on the strength of a dark one.
+  */
+  const homeC = await heroContrast(page, ".hero", ".hero h1");
+  check("home hero text contrast >= 3:1", homeC >= 3, `${homeC.toFixed(2)}:1`);
+
   const docW = await page.evaluate(() => document.documentElement.scrollWidth);
   check("no horizontal overflow (1440)", docW <= 1440, `scrollWidth ${docW}`);
 
@@ -175,6 +237,39 @@ async function loadAllImages(page) {
 
   await loadAllImages(page);
   await page.screenshot({ path: `${out}/mobile-full.png`, fullPage: true });
+  await page.close();
+}
+
+/* ------------------------------------------------------- hero legibility */
+/*
+  Each standalone page has its own photograph behind the same overlay, so they are
+  checked individually: one bright image is enough to make the heading unreadable while
+  every other page passes.
+*/
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  for (const path of [
+    "/property-services",
+    "/property-strategy-services",
+    "/overseas-investment",
+    "/free-property-appraisal-sa",
+    "/about-adelaide-land-agent",
+    "/contact",
+    "/book-online",
+    "/realestate-gift-adelaide",
+    "/blog",
+    "/adelaide-property-faq",
+    "/for-sale",
+    "/sold",
+    "/free-suburb-insight-report",
+    "/rent-property-house-adelaide",
+    "/sell-property-house-adelaide",
+    "/manage-property-adelaide",
+  ]) {
+    await page.goto(new URL(path, BASE).toString(), { waitUntil: "networkidle" });
+    const c = await heroContrast(page, ".phero", ".phero h1");
+    check(`hero contrast ${path}`, c !== null && c >= 3, c === null ? "no h1" : `${c.toFixed(2)}:1`);
+  }
   await page.close();
 }
 
