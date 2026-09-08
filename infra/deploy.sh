@@ -110,11 +110,29 @@ command -v tsx >/dev/null || { echo "tsx is not installed; re-run provision.sh";
 # rest, so drizzle-orm and friends are absent from it. Installing production
 # dependencies here gives the worker a normal node_modules; the web server keeps
 # resolving its own bundled copies first and is unaffected.
-# Installed into a CLEAN directory first. npm cannot reconcile the standalone
-# bundle's hand-built node_modules and dies on it, so it never sees that tree.
+# Installed into a CLEAN directory first, so the resolver never sees the
+# standalone bundle's hand-built node_modules and try to reconcile it.
+#
+# pnpm, not npm, and the lockfile goes with the package.json. This step used to be
+# `npm install --omit=dev` against package.json alone, which made npm resolve the
+# whole tree from scratch every deploy. On 8 Sep 2026 that crashed outright with
+# "Cannot read properties of null (reading 'edgesOut')", an arborist bug, and
+# because the command ended in `>/dev/null 2>&1` the deploy reported nothing and
+# failed twenty lines later on the drizzle-orm assertion with no clue why. The web
+# service was already stopped by then, so the site stayed down until it was
+# started by hand.
+#
+# Two things fixed. This is a pnpm project — packageManager pins pnpm@9.15.9 and
+# pnpm-lock.yaml is what the build a few lines up installed from — so resolving it
+# with a different package manager and no lockfile was inviting exactly this. And
+# output is no longer discarded: a failure here has to be legible.
+#
+# --node-linker=hoisted because pnpm's default layout is symlinks into a global
+# store, and this tree gets copied to another directory. Hoisted gives real
+# directories that survive the copy.
 rm -rf /tmp/deps && mkdir -p /tmp/deps
-cp /tmp/build/package.json /tmp/deps/
-(cd /tmp/deps && npm install --omit=dev --ignore-scripts --no-audit --no-fund >/dev/null 2>&1)
+cp /tmp/build/package.json /tmp/build/pnpm-lock.yaml /tmp/deps/
+(cd /tmp/deps && pnpm install --prod --frozen-lockfile --node-linker=hoisted --ignore-scripts)
 # Merged with -n: anything the standalone bundle already provides WINS, so the
 # web server keeps the exact next/react it was traced against.
 # `|| true`: the standalone bundle's entries are symlinks, so cp reports
