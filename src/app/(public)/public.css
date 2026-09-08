@@ -1283,3 +1283,162 @@
   border-left: 2px solid var(--accent);
   padding-left: 18px;
 }
+
+/* ============================================================
+   REAL-CONTENT SECTIONS
+   ------------------------------------------------------------
+   The bands that replaced the template's invented ones: the "start here" strip where
+   the medians ticker was, the free-report cards, the why-work-with-us columns, and the
+   suburb insight list.
+   ============================================================ */
+
+/* ------------------------------------------------- start here strip --- */
+/*
+  Sits where the ticker did, and is navigation rather than a marquee: the items are
+  links to the pages the live site points them at. It scrolls horizontally on a narrow
+  screen instead of animating, so nothing moves out from under a tap.
+*/
+.journey {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(40px, 5vw, 68px);
+  border-top: 1px solid var(--line-dk);
+  border-bottom: 1px solid var(--line-dk);
+  background: rgba(15, 30, 34, 0.5);
+  display: flex;
+  align-items: stretch;
+}
+.journey-label {
+  display: flex;
+  align-items: center;
+  padding: 0 22px 0 var(--gutter);
+  background: var(--ink);
+  color: var(--accent-lt);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  border-right: 1px solid var(--line-dk);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.journey-track {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+  min-width: 0;
+}
+.journey-track::-webkit-scrollbar { display: none; }
+.journey-item {
+  padding: 17px 26px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(234, 231, 222, 0.78);
+  white-space: nowrap;
+  border-right: 1px solid var(--line-dk);
+  transition: background 0.25s, color 0.25s;
+}
+.journey-item:hover { background: var(--accent); color: var(--paper-2); }
+
+/* ---------------------------------------------------- report cards ---- */
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(18px, 2.2vw, 30px);
+}
+.report-card {
+  border: 1px solid var(--line-dk);
+  padding: clamp(24px, 2.6vw, 34px);
+}
+.report-card h3 {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 20px;
+  color: var(--paper);
+}
+.report-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 11px; }
+.report-card li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: rgba(234, 231, 222, 0.7);
+}
+.report-card li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 7px;
+  height: 1px;
+  background: var(--accent-lt);
+}
+.report-cta {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-wrap: wrap;
+  margin-top: clamp(30px, 3.4vw, 46px);
+}
+
+/* ------------------------------------------------- why work with us --- */
+.why-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 2.4vw, 34px);
+}
+.why-card { background: var(--paper-2); padding: clamp(26px, 2.8vw, 38px); }
+.why-card h3 {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent-dp);
+  margin: 0 0 22px;
+  font-weight: 400;
+}
+.why-card ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 13px; }
+.why-card li {
+  font-size: 15.5px;
+  line-height: 1.5;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.why-card li:last-child { border-bottom: 0; padding-bottom: 0; }
+
+/* ------------------------------------------------- suburb insight ----- */
+.insight-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.insight-grid li {
+  padding: 22px 24px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.insight-more { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent-dp); }
+
+/* Two posts, not three, because that is how many the live blog surfaces. */
+.posts--two { grid-template-columns: repeat(2, 1fr); }
+
+@media (max-width: 1080px) {
+  .report-grid, .why-grid { grid-template-columns: 1fr; }
+  .insight-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .insight-grid, .posts--two { grid-template-columns: 1fr; }
+  .journey-label { display: none; }
+}

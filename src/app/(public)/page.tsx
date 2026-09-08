@@ -1,55 +1,46 @@
 import Image from "next/image";
 import Link from "next/link";
 import { DemoListings } from "@/components/public/demo-listings";
-import { DemoAppraisalForm } from "@/components/public/demo-appraisal-form";
 import {
+  AGENCY,
+  HERO,
+  JOURNEY,
   JOURNAL_POSTS,
-  MEDIANS,
-  SALES_FIGURES,
-  SUBURB_CARDS,
+  PROMISES,
+  REPORTS,
   TESTIMONIAL,
+  WHY_US,
   photo,
-} from "@/components/public/demo-data";
+} from "@/components/public/agency";
 
 /**
- * The home page, rendered from the supplied template's sample data.
+ * The home page, built from www.ozirealty.com.au's own content.
  *
- * ## This page is currently disconnected on purpose
+ * ## What this page used to claim
  *
- * It reads nothing. Every listing, median, statistic, suburb card and journal post comes
- * from `src/components/public/demo-data.ts`, which is plain constants — so the page can
- * be reviewed and signed off before any of it is committed to the database.
+ * It was assembled from a design template, and the template's numbers came with it: 412
+ * properties sold, a 27-day median to contract, 98.6% occupancy, a ten-suburb medians
+ * ticker, and a five-star testimonial from "Molly & Dan Rasheed" with 218 Google reviews
+ * behind it. None of it was true, and all of it sat under RLA 350 628. Performance
+ * figures an agency did not achieve, and a review it did not receive, are misleading
+ * representations rather than placeholder copy.
  *
- * It previously read real rows through `onMarket()`, `onMarketCount()` and
- * `soldAndLeased()`. Restoring that is a small diff and is the intended end state: swap
- * the demo imports back for `@/server/public/listings`, delete `demo-data.ts`, and move
- * the approved listings into `src/db/seed/fixtures`. Nothing about the read boundary has
- * changed in the meantime — `tests/public-boundary.test.ts` still forbids anything under
- * `(public)` from importing `@/db`, and this page imports no data layer at all.
+ * Every one is gone. The bands they occupied now carry things the agency actually says:
  *
- * ## What is invented, and why it matters
+ *   - the statistics band became the four offers from the live site (2.99%, 100 days
+ *     risk-free, the $399 report, no middle man). Offers are the agency's own terms,
+ *     which it may advertise; results are claims about the past, which it may not make
+ *     without substantiation.
+ *   - the medians ticker became "Your Property Journey Starts Here", the live site's row
+ *     of destinations, which is real content in the same strip of design.
+ *   - the testimonial is the one real quote on the live site, without the invented star
+ *     average and review count beside it.
  *
- * The 412 sales, the 27-day median, the 98.6% occupancy, the ten suburb medians and the
- * named five-star testimonial with its 218 review count are all from the template and
- * none of them are true. On a demo host that is fine. On a page carrying RLA 350 628 it
- * is a misleading representation about an agency's performance, so they must be replaced
- * with substantiated figures — or removed — before cutover to www.ozirealty.com.au.
- * `demo-data.ts` keeps them in one file so that is a deletion, not a hunt.
+ * The listing cards in `demo-data.ts` are the only invented content left, and they exist
+ * because there is no stock in the database yet.
  */
 
 export default function HomePage() {
-  /* The ticker runs a marquee, so the set is printed twice and translated -50%. */
-  const tickerSet = (
-    <div className="ticker-set">
-      {MEDIANS.map((m) => (
-        <span className="tick" key={m.suburb}>
-          {m.suburb} <b>{m.price}</b>{" "}
-          <span className={m.up ? "up" : "dn"}>{m.move}</span>
-        </span>
-      ))}
-    </div>
-  );
-
   return (
     <>
       {/* ============================================================ hero */}
@@ -68,59 +59,38 @@ export default function HomePage() {
         <div className="hero-inner hero-inner--ticker">
           <div className="wrap">
             <div className="hero-copy">
-              <p className="eyebrow">Adelaide · South Australia</p>
+              <p className="eyebrow">Adelaide &middot; South Australia</p>
               <h1>
-                Adelaide,
+                {HERO.title}
                 <br />
-                <em>street by street.</em>
+                <em>{HERO.titleEm}</em>
               </h1>
-              <p className="lede">
-                We sell, lease and manage homes between Prospect and the sea. Last year
-                that was 412 campaigns, 27 days to contract on average, and not one
-                property listed by an agent who hadn&rsquo;t walked the street first.
-              </p>
+              <p className="lede">{HERO.lede}</p>
             </div>
-
-            {/*
-              The search panel is out for now. It is still built and still correct —
-              <DemoSearch /> in demo-search.tsx — so putting it back is one line here.
-              It comes back when /for-sale exists and it can submit somewhere real.
-            */}
           </div>
 
-          <div className="ticker" aria-label="Suburb median prices">
-            <div className="ticker-label">Medians · 30 Aug</div>
-            <div className="ticker-track" aria-hidden="true">
-              {tickerSet}
-              {tickerSet}
+          {/*
+            The live site's row of destinations, in the strip the invented medians ticker
+            used to occupy. Real links rather than a marquee, so it is navigation instead
+            of decoration.
+          */}
+          <div className="journey" aria-label="Where to start">
+            <div className="journey-label">Start here</div>
+            <div className="journey-track">
+              {JOURNEY.map((j) => (
+                <Link className="journey-item" key={j.label} href={j.href}>
+                  {j.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
       </header>
 
-      {/* ======================================================== listings */}
-      <section className="sec" id="listings">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">On the market</p>
-              <h2 className="display">
-                Open <em>this weekend</em>
-              </h2>
-            </div>
-            <Link className="txtlink" href="/for-sale">
-              Every listing <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-
-          <DemoListings />
-        </div>
-      </section>
-
-      {/* ========================================================= numbers */}
+      {/* ========================================================= promises */}
       <section className="numbers">
         <div className="wrap">
-          {SALES_FIGURES.map((n) => (
+          {PROMISES.map((n) => (
             <div className="num" key={n.caption}>
               <b>
                 {n.value}
@@ -132,273 +102,119 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ======================================================== services */}
-      <section className="sec dark" id="services">
+      {/* ========================================================= listings */}
+      <section className="sec" id="listings">
         <div className="wrap">
           <div className="sec-head">
             <div>
-              <p className="eyebrow">What we do</p>
+              <p className="eyebrow">On the market</p>
               <h2 className="display">
-                Four things, <em>done properly</em>
+                Currently <em>advertised</em>
+              </h2>
+            </div>
+            <Link className="txtlink" href="/for-sale">
+              Every listing <span aria-hidden="true">&rarr;</span>
+            </Link>
+          </div>
+
+          <DemoListings />
+        </div>
+      </section>
+
+      {/* ========================================================== reports */}
+      <section className="sec dark">
+        <div className="wrap">
+          <div className="sec-head">
+            <div>
+              <p className="eyebrow">Limited offer</p>
+              <h2 className="display">
+                Free premium <em>appraisal report</em>
               </h2>
             </div>
             <p className="lede" style={{ margin: 0 }}>
-              Each of our agents carries a maximum of six live campaigns. It is the whole
-              reason the numbers above look the way they do.
+              {REPORTS.appraisal.note}
             </p>
           </div>
 
-          <div className="svc-layout">
-            <div className="svc-list">
-              {/*
-                <details>/<summary> rather than the template's click handler: the
-                accordion works with JavaScript disabled, is keyboard operable for free,
-                and its content is in the DOM for a crawler whether it is open or not.
+          <div className="report-grid">
+            {[REPORTS.appraisal, REPORTS.consultation, REPORTS.rental].map((r) => (
+              <div className="report-card" key={r.title}>
+                <h3>{r.title}</h3>
+                <ul>
+                  {r.items.map((i) => (
+                    <li key={i}>{i}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
 
-                The shared `name` is what makes it exclusive — opening one panel closes
-                the other three, which is what the template's JavaScript did by hand.
-                It is a native browser behaviour, so it costs nothing and still needs no
-                client component. A browser too old to know the attribute simply lets
-                more than one sit open: the panels degrade to independent, never broken.
-              */}
-              <details className="svc" name="services" open>
-                <summary className="svc-top">
-                  <span className="svc-key">01 / SELL</span>
-                  <span className="svc-name">Selling your home</span>
-                  <span className="svc-plus" aria-hidden="true" />
-                </summary>
-                <div className="svc-panel-in">
-                  <p>
-                    A campaign built around your street, not a template. We price from
-                    comparable sales you can read yourself, photograph in the light your
-                    house actually gets, and give you a written buyer report every Monday
-                    until it sells.
-                  </p>
-                  <div className="svc-meta">
-                    <span>Auction or private treaty</span>
-                    <span>No fee if unsold</span>
-                  </div>
-                  <Link className="txtlink" href="/sell-property-house-adelaide">
-                    How selling works <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </details>
-
-              <details className="svc" name="services">
-                <summary className="svc-top">
-                  <span className="svc-key">02 / MANAGE</span>
-                  <span className="svc-name">Property management</span>
-                  <span className="svc-plus" aria-hidden="true" />
-                </summary>
-                <div className="svc-panel-in">
-                  <p>
-                    2.99% capped, with routine inspections every quarter and photographs
-                    attached to every report. One manager looks after your property from
-                    the first advert to the final bond release, so you will always know
-                    their name.
-                  </p>
-                  <div className="svc-meta">
-                    <span>From 2.99%</span>
-                    <span>100-day trial</span>
-                    <span>Max 90 properties per manager</span>
-                  </div>
-                  <Link className="txtlink" href="/manage-property-adelaide">
-                    How management works <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </details>
-
-              <details className="svc" name="services">
-                <summary className="svc-top">
-                  <span className="svc-key">03 / BUY</span>
-                  <span className="svc-name">Buyer advocacy</span>
-                  <span className="svc-plus" aria-hidden="true" />
-                </summary>
-                <div className="svc-panel-in">
-                  <p>
-                    For buyers who keep missing out. We shortlist against your brief,
-                    inspect before you spend a Saturday on it, pull the sales history, and
-                    bid on your behalf, including on the properties that never reach the
-                    portals.
-                  </p>
-                  <div className="svc-meta">
-                    <span>Fixed fee</span>
-                    <span>Off-market access</span>
-                  </div>
-                  <Link className="txtlink" href="/buyer-agent-adelaide">
-                    See how it works <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </details>
-
-              <details className="svc" name="services">
-                <summary className="svc-top">
-                  <span className="svc-key">04 / INVEST</span>
-                  <span className="svc-name">Investment &amp; land</span>
-                  <span className="svc-plus" aria-hidden="true" />
-                </summary>
-                <div className="svc-panel-in">
-                  <p>
-                    Yield, vacancy and growth data for every suburb we work in, plus
-                    subdivision advice for the deep blocks that are quietly worth twice
-                    their listing. We will tell you when a deal does not stack up.
-                  </p>
-                  <div className="svc-meta">
-                    <span>Suburb reports</span>
-                    <span>Subdivision feasibility</span>
-                  </div>
-                  <Link className="txtlink" href="/overseas-investment">
-                    Investment services <span aria-hidden="true">&rarr;</span>
-                  </Link>
-                </div>
-              </details>
-            </div>
-
-            <figure className="svc-figure">
-              <Image
-                src={photo("photo-1615873968403-89e068629265", 1200)}
-                alt="Living room with tan leather sofa against a dark green wall"
-                fill
-                sizes="(max-width: 1080px) 100vw, 45vw"
-                style={{ objectFit: "cover" }}
-              />
-              <figcaption>
-                62 Sydenham Road, Norwood &middot; Sold 14 August, four days on market
-              </figcaption>
-            </figure>
+          <div className="report-cta">
+            <Link className="btn" href="/free-property-appraisal-sa">
+              Get my free report
+            </Link>
+            <Link className="txtlink" href="/free-suburb-insight-report">
+              Free suburb insight report <span aria-hidden="true">&rarr;</span>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* ========================================================= suburbs */}
-      <section className="sec" id="suburbs">
+      {/* =========================================================== why us */}
+      <section className="sec" id="why-us">
         <div className="wrap">
           <div className="sec-head">
             <div>
-              <p className="eyebrow">Where we work</p>
+              <p className="eyebrow">Why work with us</p>
               <h2 className="display">
-                Three suburbs we <em>know cold</em>
+                Exclusive, available, <em>flexible</em>
               </h2>
             </div>
-            <Link className="txtlink" href="/free-suburb-insight-report">
-              All suburb reports <span aria-hidden="true">&rarr;</span>
-            </Link>
           </div>
 
-          <div className="suburbs">
-            {SUBURB_CARDS.map((s) => (
-              <article className="sub" key={s.name}>
-                <Image
-                  src={photo(s.img, 900)}
-                  alt={s.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
-                  style={{ objectFit: "cover" }}
-                />
-                <div className="sub-body">
-                  <h3>{s.name}</h3>
-                  <p className="m">{s.meta}</p>
-                  <div className="sub-stats">
-                    <div>
-                      <span>Median</span>
-                      <b>{s.median}</b>
-                    </div>
-                    <div>
-                      <span>12 mth</span>
-                      <b className="up">{s.move}</b>
-                    </div>
-                    <div>
-                      <span>Days</span>
-                      <b>{s.days}</b>
-                    </div>
-                  </div>
-                </div>
-              </article>
+          <div className="why-grid">
+            {WHY_US.map((g) => (
+              <div className="why-card" key={g.name}>
+                <h3>{g.name}</h3>
+                <ul>
+                  {g.points.map((p) => (
+                    <li key={p}>{p}</li>
+                  ))}
+                </ul>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ======================================================= appraisal */}
-      <section className="sec" id="appraise" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap appraise">
-          <figure className="appraise-fig">
-            <Image
-              src={photo("photo-1598928506311-c55ded91a20c", 1000)}
-              alt="Living room with marble fireplace"
-              fill
-              sizes="(max-width: 1080px) 100vw, 40vw"
-              style={{ objectFit: "cover" }}
-            />
-            <div className="appraise-badge">
-              Turnaround<b>48 hours</b>
-            </div>
-          </figure>
-
-          <div>
-            <p className="eyebrow">Appraisal</p>
-            <h2 className="display">
-              What is your home <em>actually</em> worth?
-            </h2>
-            <p className="lede">
-              Not an automated estimate. One of our agents walks through, then writes you
-              a report you could hand to your accountant.
-            </p>
-
-            <ul className="report">
-              <li>
-                <em>01</em> A price range, with the six comparable sales it came from
-              </li>
-              <li>
-                <em>02</em> Buyer demand for your street over the past ninety days
-              </li>
-              <li>
-                <em>03</em> Rental yield, if you would rather hold than sell
-              </li>
-              <li>
-                <em>04</em> The three jobs worth doing before you list, and what they
-                return
-              </li>
-            </ul>
-
-            <DemoAppraisalForm />
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================== quote */}
+      {/* ============================================================ quote */}
+      {/*
+        One real quote, attributed as the live site attributes it. The template put a
+        five-star average and a review count beside it; a rating is a representation about
+        the business and needs a verifiable source, so it is not reproduced.
+      */}
       <section className="sec sec--tight quote">
         <div className="wrap quote-layout">
           <div>
-            <p className="eyebrow">Clients</p>
-            <blockquote>
-              {TESTIMONIAL.before}
-              <em>{TESTIMONIAL.emphasis}</em>
-              {TESTIMONIAL.after}
-            </blockquote>
+            <p className="eyebrow">What our clients say</p>
+            <blockquote>{TESTIMONIAL.quote}</blockquote>
           </div>
           <div>
-            <div className="stars" aria-hidden="true">
-              ★★★★★
-            </div>
             <p className="quote-by">
               <b>{TESTIMONIAL.name}</b>
-              {TESTIMONIAL.detail}
-              <br />
-              {TESTIMONIAL.rating}
             </p>
           </div>
         </div>
       </section>
 
-      {/* ========================================================= journal */}
+      {/* ========================================================== journal */}
       <section className="sec" id="journal">
         <div className="wrap">
           <div className="sec-head">
             <div>
               <p className="eyebrow">Journal</p>
               <h2 className="display">
-                Notes from the <em>Adelaide market</em>
+                Discover Australia&rsquo;s <em>property market</em>
               </h2>
             </div>
             <Link className="txtlink" href="/blog">
@@ -406,7 +222,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="posts">
+          <div className="posts posts--two">
             {JOURNAL_POSTS.map((p) => (
               <article className="post" key={p.title}>
                 <div className="post-media">
@@ -415,15 +231,33 @@ export default function HomePage() {
                     alt={p.alt}
                     width={800}
                     height={500}
-                    sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
+                    sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
                 <h3>{p.title}</h3>
                 <p>{p.excerpt}</p>
-                <span className="meta">{p.meta}</span>
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ===================================================== consultation */}
+      <section className="sec" style={{ background: "var(--paper-2)" }}>
+        <div className="wrap cta-band-inner">
+          <div>
+            <p className="eyebrow">Free property strategy consultation</p>
+            <h2 className="display">
+              Speak directly with <em>{AGENCY.principal}</em>
+            </h2>
+            <p className="lede">
+              Principal of {AGENCY.name} ({AGENCY.licence}). No pressure, just clear,
+              professional advice about your property.
+            </p>
+          </div>
+          <Link className="btn" href="/book-online">
+            Book a free consultation
+          </Link>
         </div>
       </section>
     </>

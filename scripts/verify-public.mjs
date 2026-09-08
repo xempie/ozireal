@@ -34,6 +34,20 @@ const check = (label, ok, detail = "") => {
 const menuOpen = (page) =>
   page.evaluate(() => document.getElementById("site-menu").getBoundingClientRect().height > 10);
 
+/**
+ * Navigate without waiting for networkidle.
+ *
+ * Every hero pulls a photograph through next/image, which fetches from Unsplash on the
+ * server. When that host is slow or rate-limiting, networkidle never settles and the run
+ * dies on a 30s timeout having tested nothing. domcontentloaded plus a settle is enough:
+ * the assertions here are about markup and layout, and the one that genuinely needs
+ * decoded images calls loadAllImages() explicitly.
+ */
+async function go(page, url) {
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.waitForTimeout(400);
+}
+
 /** Walk the page so lazy images enter the viewport, then wait for decode. */
 async function loadAllImages(page) {
   await page.evaluate(async () => {
@@ -44,8 +58,9 @@ async function loadAllImages(page) {
     }
     window.scrollTo(0, 0);
   });
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(600);
+  // Tolerated rather than required: a slow image host must not fail the whole run.
+  await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(800);
 }
 
 /**
@@ -105,11 +120,14 @@ async function heroContrast(page, heroSel, textSel) {
 /* ------------------------------------------------------------- desktop */
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await go(page, BASE);
 
   check("burger hidden at 1440", !(await page.locator(".burger").isVisible()));
   check("nav CTA visible on desktop", await page.locator(".nav-cta .btn").isVisible());
-  check("ticker rendered", await page.locator(".ticker-track .tick").first().isVisible());
+  check(
+    "start-here strip is real links",
+    (await page.locator(".journey-track a.journey-item").count()) >= 5,
+  );
   check("six cards", (await page.locator(".card").count()) === 6);
 
   await page.getByRole("button", { name: "Auction" }).click();
@@ -119,28 +137,11 @@ async function heroContrast(page, heroSel, textSel) {
   await page.waitForTimeout(150);
   check("everything chip restores 6", (await page.locator(".card").count()) === 6);
 
-  // The hero search panel is deliberately out for now; it must not reappear by accident.
+  // The hero search panel is deliberately out; it must not reappear by accident.
   check("no search panel in the hero", (await page.locator(".hero .search").count()) === 0);
 
-  /*
-    The services accordion is exclusive via <details name="services">, so opening one
-    panel must close the other three. Asserted by clicking rather than by reading the
-    attribute, because the attribute is only a promise the browser has to keep.
-  */
-  const openCount = () => page.locator(".svc[open]").count();
-  check("one service panel open on load", (await openCount()) === 1, `${await openCount()} open`);
-  for (const name of ["Property management", "Buyer advocacy", "Investment & land"]) {
-    await page.locator(".svc-top", { hasText: name }).click();
-    await page.waitForTimeout(200);
-    const n = await openCount();
-    const isOnlyOne =
-      n === 1 && (await page.locator(".svc[open] .svc-name").innerText()).includes(name);
-    check(`opening "${name}" closes the others`, isOnlyOne, `${n} open`);
-  }
-  // Clicking the open one shuts it, rather than trapping the reader in an open panel.
-  await page.locator(".svc[open] .svc-top").click();
-  await page.waitForTimeout(200);
-  check("clicking the open panel closes it", (await openCount()) === 0);
+  check("three free-report cards", (await page.locator(".report-card").count()) === 3);
+  check("three why-us columns", (await page.locator(".why-card").count()) === 3);
 
   await loadAllImages(page);
 
@@ -151,12 +152,22 @@ async function heroContrast(page, heroSel, textSel) {
       .map((i) => (i.currentSrc || i.src).slice(0, 90)),
   );
   check("no broken images", broken.length === 0, broken.join(" | "));
-  const imgCount = await page.evaluate(() => document.images.length);
-  check("all section photography present", imgCount >= 15, `${imgCount} images`);
-
-  // The suburb tiles are portrait (3/3.6); a collapsed one means aspect-ratio lost.
-  const sub = await page.locator(".sub").first().boundingBox();
-  check("suburb tile is portrait", sub.height > sub.width, `${Math.round(sub.width)}x${Math.round(sub.height)}`);
+  /*
+    Counting images was a magic number that went stale the moment the page changed. What
+    actually matters is that every listing card has a photograph and the hero has one, so
+    that is what is asserted.
+  */
+  const shots = await page.evaluate(() => ({
+    hero: document.querySelectorAll(".hero-media img").length,
+    cards: document.querySelectorAll(".card").length,
+    cardImgs: document.querySelectorAll(".card-media img").length,
+  }));
+  check("hero has a photograph", shots.hero === 1);
+  check(
+    "every listing card has a photograph",
+    shots.cards > 0 && shots.cardImgs === shots.cards,
+    `${shots.cardImgs} images for ${shots.cards} cards`,
+  );
 
   /*
     Ten menu items in one bar is the tight case. A nav that overflows its wrap does not
@@ -186,7 +197,7 @@ async function heroContrast(page, heroSel, textSel) {
 /* -------------------------------------------------------------- mobile */
 {
   const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await go(page, BASE);
 
   const burger = page.locator(".burger");
   check("burger visible on mobile", await burger.isVisible());
@@ -231,7 +242,7 @@ async function heroContrast(page, heroSel, textSel) {
   const subW = await page.evaluate(() => document.documentElement.scrollWidth);
   check("no horizontal overflow, FAQ page (390)", subW <= 390, `scrollWidth ${subW}`);
 
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await go(page, BASE);
   const docW = await page.evaluate(() => document.documentElement.scrollWidth);
   check("no horizontal overflow (390)", docW <= 390, `scrollWidth ${docW}`);
 
@@ -266,7 +277,7 @@ async function heroContrast(page, heroSel, textSel) {
     "/sell-property-house-adelaide",
     "/manage-property-adelaide",
   ]) {
-    await page.goto(new URL(path, BASE).toString(), { waitUntil: "networkidle" });
+    await go(page, new URL(path, BASE).toString());
     const c = await heroContrast(page, ".phero", ".phero h1");
     check(`hero contrast ${path}`, c !== null && c >= 3, c === null ? "no h1" : `${c.toFixed(2)}:1`);
   }
@@ -282,7 +293,7 @@ async function heroContrast(page, heroSel, textSel) {
 */
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(BASE, { waitUntil: "networkidle" });
+  await go(page, BASE);
 
   const links = await page.evaluate(() =>
     [...document.querySelectorAll("nav.nav a[href], footer.foot a[href], .sec-head a[href]")]
@@ -293,7 +304,13 @@ async function heroContrast(page, heroSel, textSel) {
 
   const anchors = unique.filter((h) => h.startsWith("#"));
   check("no on-page anchors in nav, footer or section heads", anchors.length === 0, anchors.join(" "));
-  check("nav and footer carry real routes", unique.length >= 16, `${unique.length} distinct links`);
+  /*
+    The menu is asserted item by item below, so a count here adds nothing. What a count
+    cannot see is the footer, which carries routes the menu does not.
+  */
+  for (const href of ["/sold", "/for-sale", "/blog", "/contact"]) {
+    check(`footer or nav reaches ${href}`, unique.includes(href), unique.join(" "));
+  }
 
   /*
     The menu mirrors www.ozirealty.com.au item for item. Two slugs differ because the
@@ -321,11 +338,30 @@ async function heroContrast(page, heroSel, textSel) {
     check(`menu carries ${href}`, menu.includes(href), menu.join(" "));
   }
 
+  /*
+    The point of the content rewrite: nothing may claim a result the agency did not
+    achieve, name an agent who does not work there, or advertise an office that does not
+    exist. Checked on every page, because the invented copy was spread across all of them.
+  */
+  const FORBIDDEN = [
+    "Nadia Fielding",
+    "Tom Rasheed",
+    "Priya Ellis",
+    "Jetty Road",
+    "218 Google",
+    "98.6",
+    "412 campaigns",
+    "27 days to contract",
+    "Prospect &amp; Glenelg",
+  ];
+
   for (const href of unique) {
     const r = await page.request.get(new URL(href, BASE).toString());
     const body = await r.text();
     const ok = r.status() === 200 && /<h1[\s>]/.test(body);
     check(`${href}`, ok, `HTTP ${r.status()}${/<h1[\s>]/.test(body) ? "" : ", no h1"}`);
+    const bad = FORBIDDEN.filter((f) => body.includes(f));
+    check(`${href} claims nothing invented`, bad.length === 0, bad.join(", "));
   }
 
   // The two misspelt legacy URLs must 301, not 404, and land on the corrected page.

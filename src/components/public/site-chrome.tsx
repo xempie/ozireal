@@ -1,40 +1,36 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SiteNav } from "./site-nav";
-import { OPEN_HOMES } from "./demo-data";
+import { AGENCY, EMAILS } from "./agency";
 
 /**
- * The public site's utility bar, nav and footer, from the supplied template.
+ * The public site's utility bar and footer.
  *
- * The utility bar and footer are server components with no interactivity. The nav is
- * not: on a phone it is a drawer behind a burger, which needs state, so it lives in
- * `site-nav.tsx` as the one client island on the public site. Its links are still
- * server-rendered inside it, so the crawler and the first paint see the whole menu
- * whether the drawer is open or shut.
+ * The nav is a client island in `site-nav.tsx`, because the mobile drawer and the
+ * scrolled state both need state. Its links are server-rendered inside it, so a crawler
+ * and the first paint see the whole menu whether the drawer is open or shut.
  *
- * The agency's details are hardcoded and marked. `tenants` carries name, trading name,
- * ABN, licence and jurisdiction — and no phone, email or address at all. Stage 3 adds a
- * `site_settings` row and this file reads it instead.
+ * ## What changed here, and why it mattered
+ *
+ * The utility bar used to say "Prospect & Glenelg" and the footer carried a second
+ * address on Jetty Road. Both came from the design template. OziRealty has one office,
+ * at 308 Prospect Rd, and advertising a branch that does not exist is not a placeholder,
+ * it is a false statement about where a licensed agency operates.
+ *
+ * The agency's details now come from `agency.ts`, which holds what the live site says.
+ * They are still hardcoded rather than read from the database: `tenants` carries name,
+ * trading name, ABN, licence and jurisdiction, and no phone, email or address at all.
+ * A `site_settings` row replaces this file's constants later.
  */
 
-export const AGENCY = {
-  name: "Ozi Realty",
-  phone: "1800 400 333",
-  phoneHref: "tel:1800400333",
-  email: "support@ozirealty.com.au",
-  office: "308 Prospect Road, Prospect SA 5082",
-  licence: "RLA 350 628",
-  abn: "14 682 825 449",
-} as const;
+export { AGENCY } from "./agency";
 
 /**
  * The wordmark, served from the Wix CDN the current site uses.
  *
- * It is the first real brand asset this project has had — `assets/brand/README.md` has
- * been asking for a vector since B0 and nothing ever arrived. Pointing at somebody
- * else's CDN is fine for review and wrong for launch: it is a PNG with a white box baked
- * behind it (hence the blend modes in the stylesheet), and it disappears the day the Wix
- * account lapses. The SVG belongs in the repo before cutover.
+ * Fine for review and wrong for launch: it is a PNG with a white box baked behind it
+ * (hence the blend modes in the stylesheet), and it disappears the day the Wix account
+ * lapses. `assets/brand/README.md` has been asking for a vector since B0.
  */
 const LOGO =
   "https://static.wixstatic.com/media/160674_f4475077d64f463b9fc5aac5b1632930~mv2.png/v1/fill/w_227,h_35,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/OZI%20logo%20(1).png";
@@ -45,21 +41,15 @@ export function SiteHeader() {
       <div className="utility">
         <div className="wrap">
           <div>
-            {AGENCY.licence}
-            <span className="dot">/</span>
-            Prospect &amp; Glenelg
+            Licence Number: {AGENCY.licence}
           </div>
           <div className="u-right">
-            <span>Inspections run Sat 10&ndash;12</span>
+            <span>Property Management From 2.99%</span>
             <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
           </div>
         </div>
       </div>
 
-      {/*
-        The nav itself. It knows the current path and whether the page has scrolled, so
-        it is a client component — see site-nav.tsx for why each of those is needed.
-      */}
       <SiteNav logo={LOGO} agencyName={AGENCY.name} />
     </>
   );
@@ -71,9 +61,9 @@ export function SiteFooter() {
       <div className="wrap">
         <div className="foot-cta">
           <h2>
-            Come and see
+            Your property journey
             <br />
-            what your street is <em>doing.</em>
+            <em>starts here.</em>
           </h2>
           <Link className="btn" href="/free-property-appraisal-sa">
             Book a free appraisal
@@ -94,47 +84,53 @@ export function SiteFooter() {
             <p className="foot-blurb">{AGENCY.office}</p>
             <p className="foot-blurb">
               <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
+            </p>
+            <p className="foot-blurb">
+              Licence Number: {AGENCY.licence}
               <br />
-              <a href={`mailto:${AGENCY.email}`}>{AGENCY.email}</a>
+              ABN: {AGENCY.abn}
             </p>
           </div>
 
           {/*
-            Real routes, mirroring www.ozirealty.com.au where an equivalent page exists.
-            See site-pages.ts for the slug rationale.
+            Real routes, mirroring www.ozirealty.com.au. See site-pages.ts for the slug
+            rationale, and site-nav.tsx for why two of them differ from the live spelling.
           */}
           <div>
-            <h4>Property</h4>
+            <h4>Quick Links</h4>
             <ul>
-              <li><Link href="/for-sale">Buy</Link></li>
-              <li><Link href="/rent-property-house-adelaide">Rent</Link></li>
-              <li><Link href="/sell-property-house-adelaide">Sell</Link></li>
-              <li><Link href="/manage-property-adelaide">Property management</Link></li>
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/property-services">Services</Link></li>
+              <li><Link href="/property-strategy-services">Strategy Services</Link></li>
+              <li><Link href="/overseas-investment">Oversea Investment</Link></li>
+              <li><Link href="/free-property-appraisal-sa">Free Appraisal</Link></li>
+              <li><Link href="/about-adelaide-land-agent">About</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4>More</h4>
+            <ul>
+              <li><Link href="/contact">Contact Us</Link></li>
+              <li><Link href="/book-online">Free Meeting</Link></li>
+              <li><Link href="/realestate-gift-adelaide">Gift Party</Link></li>
+              <li><Link href="/blog">Blog</Link></li>
+              <li><Link href="/adelaide-property-faq">FAQ</Link></li>
               <li><Link href="/sold">Recently sold</Link></li>
             </ul>
           </div>
 
-          <div>
-            <h4>Company</h4>
-            <ul>
-              <li><Link href="/property-services">Our services</Link></li>
-              <li><Link href="/free-suburb-insight-report">Suburb reports</Link></li>
-              <li><Link href="/blog">Journal</Link></li>
-              <li><Link href="/overseas-investment">Overseas investment</Link></li>
-              <li><Link href="/contact">Contact</Link></li>
-            </ul>
-          </div>
-
           {/*
-            The template's fourth column. Sample data — these open homes are invented,
-            and the column comes out with demo-data.ts when real inspections are wired
-            in. The contact details it replaced are already in the first column.
+            One address per department, as the live site lists them. An enquiry sent to
+            the right desk is the cheapest routing the agency has.
           */}
           <div>
-            <h4>Saturday openings</h4>
+            <h4>Emails</h4>
             <ul>
-              {OPEN_HOMES.map((o) => (
-                <li key={o}>{o}</li>
+              {EMAILS.map((e) => (
+                <li key={e.address}>
+                  <a href={`mailto:${e.address}`}>{e.address}</a>
+                </li>
               ))}
             </ul>
           </div>
@@ -142,12 +138,13 @@ export function SiteFooter() {
 
         <div className="foot-bar">
           <span>
-            &copy; {new Date().getFullYear()} {AGENCY.name} &middot; {AGENCY.licence} &middot; ABN{" "}
-            {AGENCY.abn}
+            &copy; {new Date().getFullYear()} {AGENCY.name}. All rights reserved.
           </span>
-          {/* Plain text until /privacy and /complaints exist — a policy link that 404s
-              is worse than none, and these are the pages a regulator looks for. */}
-          <span>Privacy &middot; Complaints &middot; Member REISA</span>
+          {/*
+            Plain text until /privacy and /complaints exist. A policy link that 404s is
+            worse than none, and these are the pages a regulator looks for.
+          */}
+          <span>Privacy &middot; Complaints</span>
         </div>
       </div>
     </footer>

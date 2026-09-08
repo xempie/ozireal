@@ -1,29 +1,31 @@
 /**
- * Copy for the standalone public pages.
+ * The standalone pages, written from www.ozirealty.com.au's own copy.
  *
- * ## The URLs mirror the live Wix site on purpose
+ * ## URLs mirror the live site
  *
- * `docs/legacy-site.md` inventories 22 indexed pages on www.ozirealty.com.au. Twenty of
- * them keep their exact slug here, so at cutover those URLs carry their ranking straight
- * across with no redirect to get wrong. That is why the paths read like
- * `/sell-property-house-adelaide` rather than `/sell`: the ugly slug is the one Google
- * already knows.
+ * `docs/legacy-site.md` inventories 22 indexed pages there. These keep their exact slug,
+ * so at cutover those URLs carry their ranking across with no redirect to get wrong.
+ * That is why the paths read like `/sell-property-house-adelaide` rather than `/sell`:
+ * the ugly slug is the one Google already knows.
  *
- * Two are corrected, because they are misspelt at the source:
+ * Two are corrected, because they are misspelt at the source, and both 301 from the old
+ * spelling in next.config.ts per rule 6 of the redirect plan:
  *
- *   /oversees-investment              -> /overseas-investment
+ *   /oversees-investment               -> /overseas-investment
  *   /contact-adelaide-realestae-agency -> /contact
  *
- * Both old spellings 301 to the new ones in next.config.ts. Rule 6 of the redirect plan
- * is explicit that the old URL is never simply dropped.
+ * ## The copy is the agency's, not invented
  *
- * ## The copy is demo content
+ * An earlier version of this file was written from a design template and invented most of
+ * what it said: agents who do not work here, a second office, service terms nobody
+ * offers. It has been replaced with what the live site actually says. Where a claim
+ * appears (2.99%, 100 days risk-free, the $399 report) it is reproduced from the live
+ * site rather than composed, and confirming those are current is still the licensee's job
+ * before cutover.
  *
- * Same standing as `demo-data.ts`: written from the supplied template and the agency's
- * existing pages, not signed off by the licensee. Nothing here states a statistic. Where
- * the template used a number it was either dropped or moved to `demo-data.ts`, which is
- * the one module carrying invented figures. Fee percentages appear because they are on
- * the live site already, and they are the first thing to check before cutover.
+ * One thing deliberately not carried across: the live overseas-investment page runs three
+ * named investor testimonials. They are reproduced nowhere here, because a testimonial is
+ * a representation and it should be republished by the agency, not copied over by a build.
  */
 
 export interface PageSection {
@@ -47,7 +49,7 @@ export interface ServicePage {
   imageAlt: string;
   /** Short mono chips under the lede. */
   facts: string[];
-  /** The numbered list, styled like the home page's appraisal report. */
+  /** The numbered list, styled like the appraisal report. */
   points: string[];
   sections: PageSection[];
   cta: { label: string; href: string };
@@ -55,95 +57,123 @@ export interface ServicePage {
 
 export const SERVICE_PAGES: ServicePage[] = [
   {
-    slug: "sell-property-house-adelaide",
-    eyebrow: "Selling",
-    title: "Selling your home,",
-    titleEm: "street by street",
-    lede: "A campaign built around your street, not a template. We price from comparable sales you can read yourself, and we tell you what we think before you have signed anything.",
-    metaTitle: "Sell your property in Adelaide",
+    slug: "property-services",
+    eyebrow: "Our services",
+    title: "Your property journey",
+    titleEm: "starts here",
+    lede: "A comprehensive range of real estate services tailored to meet your needs, whether you are selling, buying, investing overseas, or managing a rental property.",
+    metaTitle: "Property services in Adelaide",
     metaDescription:
-      "Sell your Adelaide home with an agent who has walked the street. Auction or private treaty, written buyer reports every week, and no fee if it does not sell.",
-    image: "photo-1600596542815-ffad4c1539a9",
-    imageAlt: "White rendered home under a blue sky",
-    facts: ["Auction or private treaty", "No fee if unsold", "Written weekly reporting"],
+      "Selling, property management from 2.99%, buyer advocacy, investment and overseas property. Local Adelaide expertise combined with global insight.",
+    image: "photo-1615873968403-89e068629265",
+    imageAlt: "Living room with a tan leather sofa against a dark green wall",
+    facts: ["Local and global", "Transparent fees", "Licensed and regulated"],
     points: [
-      "An appraisal that shows its working, with the comparable sales it came from",
-      "Photography shot in the light your house actually gets, not a template package",
-      "A written buyer report every Monday, including the feedback you would rather not hear",
-      "One agent from the first appraisal to settlement, so you are never handed on",
+      "Sell my property, with a strategy built on comparable sales rather than a guess",
+      "Rent out my property, managed from 2.99% with 100 days risk-free",
+      "Buyer agent services, from search through to settlement",
+      "Investment, land and business sales, including overseas opportunities",
     ],
     sections: [
       {
-        heading: "Pricing you can check yourself",
+        heading: "One team across the whole journey",
         body: [
-          "An appraisal is only useful if you can see how it was reached. Ours lists the comparable sales behind the range, with the dates and the addresses, so you can drive past them.",
-          "If we think the number you have been quoted elsewhere is optimistic, we will say so at the appraisal rather than three weeks into a campaign. Overquoting to win a listing is the most common way a sale goes badly, and it costs the vendor, not the agent.",
-        ],
-      },
-      {
-        heading: "Auction or private treaty",
-        body: [
-          "Both work. Which one suits depends on the property, the street and how much competition we expect, and that is a conversation rather than an agency policy.",
-          "Whichever you choose, the campaign runs to a written plan with dates on it, and you get the buyer feedback in full.",
+          "Our dedicated team combines local market expertise with global insights to guide you through every stage of your property journey. With a commitment to transparency, results, and long-term value, we are here to help you make smarter, more confident real estate decisions.",
+          "OziRealty blends real estate expertise with financial advising and finance broking, providing seamless property and investment solutions. That combination is unusual in a local agency, and it is why a strategy conversation here can cover the finance as well as the property.",
         ],
       },
     ],
-    cta: { label: "Book a free appraisal", href: "/free-property-appraisal-sa" },
+    cta: { label: "Book a free consultation", href: "/free-property-appraisal-sa" },
   },
 
   {
-    slug: "manage-property-adelaide",
-    eyebrow: "Property management",
-    title: "Management from",
-    titleEm: "2.99%",
-    lede: "One manager looks after your property from the first advert to the final bond release, so you will always know their name.",
-    metaTitle: "Property management in Adelaide",
+    slug: "property-strategy-services",
+    eyebrow: "Strategy services",
+    title: "Turn property into a strategy,",
+    titleEm: "not a guess",
+    lede: "Making the right property decisions is not about luck. It is about having a clear strategy based on real data, market insight, and long-term goals.",
+    metaTitle: "Property strategy services in Adelaide",
     metaDescription:
-      "Adelaide property management from 2.99%, capped, with no letting or admin add-ons. Routine inspections with photographs attached to every report.",
-    image: "photo-1605146769289-440113cc3d00",
-    imageAlt: "Grey and white contemporary home",
-    facts: ["From 2.99%, capped", "100-day trial", "Photographs on every report"],
+      "Property strategy for Adelaide investors, homeowners and landlords. Identify high-performing suburbs, analyse rental demand, and structure a plan around your financial goals.",
+    image: "photo-1600596542815-ffad4c1539a9",
+    imageAlt: "White rendered home under a blue sky",
+    facts: ["Backed by local data", "Investors and owners", "Reduce risk, increase returns"],
     points: [
-      "A capped fee, with no letting fee, no admin fee and no statement fee bolted on",
-      "Routine inspections with photographs attached, not a tick-box summary",
-      "One named manager, reachable directly, rather than a shared inbox",
-      "Arrears chased the day they happen, not at the end of the month",
+      "Identify high-performing suburbs, with the data behind the shortlist",
+      "Analyse rental demand before you commit, not after",
+      "Structure a strategy that aligns with your financial goals",
+      "Review a portfolio you already hold, and see where it is concentrated",
     ],
     sections: [
       {
-        heading: "What the fee actually covers",
+        heading: "Who it is for",
         body: [
-          "The percentage is the whole fee. Letting, re-letting, routine inspections, statements, end of financial year summaries and tribunal attendance are inside it.",
-          "The add-ons are where management pricing usually stops being comparable between agencies, which is why ours are not there. Ask any agency you are comparing us against for their fee including every charge for a full year.",
+          "Our property strategy services are designed to help investors, homeowners, and landlords make smarter decisions across buying, holding, and managing property. Whether you are looking to grow a portfolio, improve rental returns, or enter the market with confidence, we provide tailored guidance backed by local Adelaide market data.",
+          "From first-time investors to experienced property owners, our approach is simple: reduce risk, increase returns, and make every move count.",
         ],
       },
       {
-        heading: "The hundred day trial",
+        heading: "What it is not",
         body: [
-          "If the service is not what we described, leave inside a hundred days and pay nothing for the management we have done.",
-          "We would rather carry that risk than write a management agreement you cannot get out of.",
+          "This is property advice. Where a question needs your accountant, your broker or a solicitor, we will say so rather than answer it ourselves.",
         ],
       },
     ],
-    cta: { label: "Get a rent estimate", href: "/free-property-appraisal-sa" },
+    cta: { label: "Book a free consultation", href: "/free-property-appraisal-sa" },
+  },
+
+  {
+    slug: "sell-property-house-adelaide",
+    eyebrow: "Selling",
+    title: "Sell with a strategy,",
+    titleEm: "not a guess",
+    lede: "A campaign built on comparable sales, buyer demand for your street, and a price-maximisation strategy you can read for yourself.",
+    metaTitle: "Sell your property in Adelaide",
+    metaDescription:
+      "Sell your Adelaide property with OziRealty. Free premium appraisal report valued at $399, comparable sales, buyer demand analysis and a price-maximisation strategy.",
+    image: "photo-1598228723793-52759bba239c",
+    imageAlt: "Brick home framed by green trees",
+    facts: ["Free appraisal report", "Valued at $399", "No obligation"],
+    points: [
+      "Current market value range, with the comparable recent sales behind it",
+      "A buyer demand score for your property, not the suburb average",
+      "A rental yield estimate, if holding is still on the table",
+      "A price-maximisation strategy and the suburb growth outlook",
+    ],
+    sections: [
+      {
+        heading: "Start with the report, not the agreement",
+        body: [
+          "The premium appraisal report is free and carries no obligation and no pressure. It tells you what the property is worth now, what comparable homes actually sold for, and what could be done to improve the result.",
+          "Plenty of those reports do not turn into a listing, and that is the point of offering one. A decision to sell should follow the numbers rather than the appointment.",
+        ],
+      },
+      {
+        heading: "Selling is one option among several",
+        body: [
+          "The same report covers rental yield, because for some owners holding is the better answer that year. If that is where the numbers point, we will tell you.",
+        ],
+      },
+    ],
+    cta: { label: "Get my free appraisal", href: "/free-property-appraisal-sa" },
   },
 
   {
     slug: "rent-property-house-adelaide",
     eyebrow: "Renting",
-    title: "Renting in",
-    titleEm: "Adelaide",
-    lede: "Every property we advertise, with inspection times you can actually attend and an application process that tells you where you stand.",
+    title: "Looking for a rental",
+    titleEm: "in Adelaide",
+    lede: "The properties we are advertising, with inspection times you can attend and an application process that tells you where you stand.",
     metaTitle: "Rental properties in Adelaide",
     metaDescription:
-      "Houses, units and townhouses for rent across Adelaide. Inspection times, application requirements and what to prepare before you apply.",
-    image: "photo-1600210491892-03d54c0aaf87",
-    imageAlt: "Apartment living room with a fireplace",
-    facts: ["Inspections most Saturdays", "Applications answered", "No application fee"],
+      "Houses, units and townhouses for rent across Adelaide with OziRealty. Inspection times, application requirements and what to prepare before you apply.",
+    image: "photo-1605146769289-440113cc3d00",
+    imageAlt: "Grey and white contemporary home",
+    facts: ["Adelaide wide", "Applications answered", "rent@ozirealty.com.au"],
     points: [
       "Photo identification, one hundred points between the applicants",
-      "Proof of income, most recently two payslips or a letter from your employer",
-      "A reference from your last agent or landlord, and a contact for it that answers",
+      "Proof of income, usually two recent payslips or a letter from your employer",
+      "A reference from your last agent or landlord, with a contact that answers",
       "Pet details if you have one, including whether it is registered and desexed",
     ],
     sections: [
@@ -151,7 +181,7 @@ export const SERVICE_PAGES: ServicePage[] = [
         heading: "You will hear back either way",
         body: [
           "An application that goes unanswered is the most common complaint tenants have about agents, and it is entirely avoidable. We tell you the outcome, including when it is no.",
-          "If a property is gone before we get to your application, we will say that rather than leaving it open.",
+          "If a property is gone before we reach your application, we will say that rather than leaving it open.",
         ],
       },
       {
@@ -166,207 +196,155 @@ export const SERVICE_PAGES: ServicePage[] = [
   },
 
   {
-    slug: "property-services",
-    eyebrow: "What we do",
-    title: "Four things,",
-    titleEm: "done properly",
-    lede: "Sales, management, buyer advocacy and investment, run out of one office on Prospect Road by the people who answer the phone.",
-    metaTitle: "Property services in Adelaide",
+    slug: "buyer-agent-adelaide",
+    eyebrow: "Buyer agent",
+    title: "From searching to settlement,",
+    titleEm: "we are with you",
+    lede: "Buying a home or investment property can be complex without the right support. We help South Australian buyers find the right property and buy it with confidence.",
+    metaTitle: "Buyer agent services in Adelaide",
     metaDescription:
-      "Selling, property management, buyer advocacy and investment advice across Adelaide, from an agency that caps its agents at six live campaigns each.",
-    image: "photo-1615873968403-89e068629265",
-    imageAlt: "Living room with a tan leather sofa against a dark green wall",
-    facts: ["One office", "Six live campaigns per agent", "Prospect and Glenelg"],
+      "OziRealty buyer agent services for South Australian buyers: market research, suburb growth analysis, valuation, building inspection coordination and negotiation support.",
+    image: "photo-1600210491892-03d54c0aaf87",
+    imageAlt: "Apartment living room with a fireplace",
+    facts: ["On, pre and off-market", "Negotiation support", "buy@ozirealty.com.au"],
     points: [
-      "Selling, with pricing you can check and weekly written reporting",
-      "Property management from 2.99%, capped, with a hundred day trial",
-      "Buyer advocacy for buyers who keep missing out at auction",
-      "Investment and land, including subdivision feasibility on deep blocks",
+      "Tailored property search, with access to on-market, pre-market and off-market opportunities",
+      "Building quality inspection coordination, and identification of hidden issues",
+      "Property valuation, comparable sales analysis and rental yield insight",
+      "Strategic price negotiation, and guidance through to settlement",
     ],
     sections: [
       {
-        heading: "Why the campaign cap matters",
+        heading: "Property search and risk reduction",
         body: [
-          "Each of our agents carries a maximum of six live campaigns. An agent running twenty is not returning calls on nineteen of them, and you can tell which one is yours by whether the phone gets answered.",
-          "It is the reason we turn work away in a busy month, and the reason a campaign here gets the attention it was sold on.",
+          "The search is tailored to your goals, whether the property is an investment or a home, and shortlisting happens before you spend a Saturday on it. Building condition assessment and inspection coordination sit inside the service, along with guidance on maintenance and future costs.",
+          "Knowing what is wrong with a property before you bid is worth more than finding it faster.",
+        ],
+      },
+      {
+        heading: "Market analysis and negotiation",
+        body: [
+          "Property valuation and price assessment, comparable sales analysis, and a market trend and growth review, so the number you offer has something behind it.",
+          "From there we handle strategic price negotiation, the offer and contract stages, and communication with the selling agent and vendor.",
         ],
       },
     ],
-    cta: { label: "Book a free appraisal", href: "/free-property-appraisal-sa" },
+    cta: { label: "Find the right property", href: "/contact" },
   },
 
   {
-    slug: "property-strategy-services",
-    eyebrow: "Strategy",
-    title: "Strategy before",
-    titleEm: "transaction",
-    lede: "Most people come to an agent with a decision already made. The useful conversation happens earlier, when buying, selling, holding and subdividing are all still on the table.",
-    metaTitle: "Property strategy services in Adelaide",
+    slug: "overseas-investment",
+    eyebrow: "Oversea investment",
+    title: "Unlock Dubai:",
+    titleEm: "a gateway to smart investment",
+    lede: "A dynamic global hub for investors who think ahead. From high-return real estate to booming business sectors, Dubai offers potential in a safe, tax-friendly, and future-focused environment.",
+    metaTitle: "Overseas property investment in Dubai",
     metaDescription:
-      "Independent property strategy for Adelaide owners and investors: hold or sell, subdivide or not, and what the numbers actually look like across a full year.",
-    image: "photo-1600596542815-ffad4c1539a9",
-    imageAlt: "White rendered home under a blue sky",
-    facts: ["Paid for advice", "Written, not verbal", "No listing attached"],
+      "Invest in Dubai property through OziRealty. Real estate expertise combined with financial advising and finance broking, from property selection to finance and settlement.",
+    image: "photo-1628624747186-a941c476b7ef",
+    imageAlt: "Coastal home with established trees",
+    facts: ["Dubai portfolio", "Dual expertise", "oversea@ozirealty.com.au"],
     points: [
-      "Hold or sell, run both ways with the costs and the tax position noted",
-      "Whether a deep block is worth subdividing, and what council will actually allow",
-      "Where a portfolio is concentrated, and what that exposes you to",
-      "A written recommendation you can take to your accountant",
+      "Dual expertise: real estate knowledge combined with financial advising and finance broking",
+      "Strategic investment planning, risk-aware and matched to your long-term goals",
+      "End-to-end service, from property selection and market analysis through to settlement",
+      "A comparison of the Australian and Dubai markets, backed by industry data",
     ],
     sections: [
       {
-        heading: "The advice is the product",
+        heading: "Seamless cross-border investment",
         body: [
-          "A strategy session that ends in a listing agreement every time is not strategy, it is a pitch with a longer preamble. We are paid for the work, so the recommendation can be that you do nothing for two years.",
-          "If selling is the right answer we will say so and you are free to take it to any agent you like.",
+          "We blend real estate knowledge with financial advising and finance brokering, offering a complete investment solution: from finding the right property to securing the best financial strategy.",
+          "From property selection and market analysis to finance and settlement, we offer a guided experience with no guesswork and no gaps.",
         ],
       },
       {
-        heading: "What it is not",
+        heading: "Before you commit",
         body: [
-          "This is property advice, not financial, legal or tax advice. We will tell you where a question needs your accountant or a solicitor, and there are more of those than most agents admit.",
+          "Cross-border purchases carry approval, tax and currency questions that a local one does not, and they change. Get your position confirmed in writing by an accountant and a solicitor who know your circumstances.",
+          "This page is general information about how we work. It is not legal, tax or financial advice, and no return is guaranteed.",
         ],
       },
     ],
-    cta: { label: "Start a conversation", href: "/contact" },
+    cta: { label: "Register your interest", href: "/contact" },
   },
 
   {
     slug: "about-adelaide-land-agent",
-    eyebrow: "About",
-    title: "One office,",
-    titleEm: "one street at a time",
-    lede: "We are a small Adelaide agency working between Prospect and the sea. Small is the point: every agent here carries a maximum of six live campaigns.",
-    metaTitle: "About Ozi Realty",
+    eyebrow: "About us",
+    title: "Where property",
+    titleEm: "meets purpose",
+    lede: "More than a real estate agency. Based in Adelaide, South Australia, we specialise in residential sales, property management, and investment opportunities across the state and beyond.",
+    metaTitle: "About OziRealty",
     metaDescription:
-      "An independent Adelaide real estate agency in Prospect. Sales, property management, buyer advocacy and property strategy, capped at six live campaigns per agent.",
+      "OziRealty is an Adelaide real estate agency led by principal Esi Dor, blending real estate expertise with financial advising and finance broking. RLA 350 628.",
     image: "photo-1568605114967-8130f3a36994",
     imageAlt: "Character home in Prospect",
-    facts: ["RLA 350 628", "Member REISA", "Prospect and Glenelg"],
+    facts: ["RLA 350 628", "308 Prospect Rd", "Led by Esi Dor"],
     points: [
-      "A maximum of six live campaigns per agent, so the phone gets answered",
-      "The person who appraises your property is the person who sells it",
-      "Written reporting every week, including the feedback you would rather not hear",
-      "Results stay published, whether they were good or not",
+      "Residential sales across Adelaide and South Australia",
+      "Property management from 2.99%, with 100 days risk-free",
+      "Buyer advocacy, investment guidance and overseas opportunities",
+      "Real estate expertise combined with financial advising and finance broking",
     ],
     sections: [
       {
-        heading: "Why we cap the campaigns",
+        heading: "Mission",
         body: [
-          "An agent running twenty listings is not returning calls on nineteen of them. The cap is the whole reason our reporting is weekly and our vendors can reach us, and it is why we occasionally turn work away in a busy month.",
-          "It also means we are choosier about what we take on. A campaign we do not believe in is a campaign we will run badly.",
+          "OziRealty is committed to delivering top-tier real estate services across Australia. We help buyers, sellers, and investors navigate the property market with expert advice, innovative solutions, and a client-first approach.",
         ],
       },
       {
-        heading: "We publish what settled",
+        heading: "Vision",
         body: [
-          "The sold and leased archive stays up. An agency that quietly removes its results is showing you a filtered version of its record, and the filtering is the information.",
+          "To be Australia's most trusted real estate agency, setting industry standards with exceptional property services, market insights, and seamless transactions for homebuyers and investors.",
+        ],
+      },
+      {
+        heading: "How we work",
+        body: [
+          "With deep market knowledge, personalised service, and a commitment to transparent communication, OziRealty is redefining the real estate experience. We combine modern marketing strategies, including digital advertising and SEO, with genuine care for our clients' goals.",
+          "OziRealty blends real estate expertise with financial advising and finance broking, providing seamless property and investment solutions.",
         ],
       },
     ],
-    cta: { label: "Book a free appraisal", href: "/free-property-appraisal-sa" },
+    cta: { label: "Talk to Esi", href: "/contact" },
   },
 
   {
     slug: "realestate-gift-adelaide",
     eyebrow: "Gift party",
-    title: "The housewarming,",
-    titleEm: "on us",
-    lede: "Every client who buys or sells through us gets their housewarming covered. It is a small thing, and it is the part people actually remember.",
-    metaTitle: "Housewarming gift party",
+    title: "A bundle for buyers,",
+    titleEm: "sellers and investors",
+    lede: "Get on the list and we will send the bundle to your inbox. It is where the finance side of the business pays off for clients on the property side.",
+    metaTitle: "Gift Party bundle",
     metaDescription:
-      "Buy or sell through Ozi Realty and your housewarming is on us. What is included, how to book it, and how long you have to use it.",
+      "OziRealty's Gift Party bundle: a discount on an individual tax return, a free loan consultation, cash-back on refinances, borrowing power strategy and a home buying guide.",
     image: "photo-1615873968403-89e068629265",
     imageAlt: "Living room with a tan leather sofa against a dark green wall",
-    facts: ["Every client", "Twelve months to use it", "No catch"],
+    facts: ["Buy, rent, invest or sell", "Sent to your inbox"],
     points: [
-      "Catering for a housewarming at the property, for up to thirty people",
-      "Booked on a date that suits you, any time in the twelve months after settlement",
-      "Available whether you bought through us or sold through us",
-      "No obligation to list with us again, and no photographer turning up",
+      "30% off one individual tax return",
+      "A free one-to-one loan consultation, and $200 cash-back on refinances",
+      "Free borrowing power calculation and strategy, with a complete loan guide",
+      "10 Truths About Finding the Right Home, a guide to avoiding common buying traps",
     ],
     sections: [
       {
-        heading: "Why we do it",
+        heading: "Why we can offer it",
         body: [
-          "Moving is exhausting and the first weeks in a house are the worst time to organise anything. Taking one thing off the list is genuinely useful, which is more than can be said for most closing gifts.",
-          "To be clear about what this is not: there is no marketing attached. We are not turning up with a photographer or a stack of business cards for your guests.",
+          "Comprehensive expertise: we blend real estate services with financial advising and finance brokering for seamless property and investment solutions. The bundle is that combination handed to clients, rather than kept as a cross-sell.",
+          "Integrity and transparency, customer focus, and a local and global perspective are what the agency runs on, and this is one of the places that shows up as something concrete.",
+        ],
+      },
+      {
+        heading: "The terms",
+        body: [
+          "Financial and tax services are provided under the relevant licences and are subject to their own terms and eligibility. Ask us for the detail that applies to your circumstances before relying on any of it.",
         ],
       },
     ],
     cta: { label: "Talk to the office", href: "/contact" },
-  },
-  {
-    slug: "buyer-agent-adelaide",
-    eyebrow: "Buyer advocacy",
-    title: "For buyers who keep",
-    titleEm: "missing out",
-    lede: "We shortlist against your brief, inspect before you spend a Saturday on it, pull the sales history, and bid on your behalf.",
-    metaTitle: "Buyer's agent in Adelaide",
-    metaDescription:
-      "An Adelaide buyer's agent who works only for the buyer. Shortlisting, inspection, sales history and auction bidding on a fixed fee, including off-market properties.",
-    image: "photo-1600210491892-03d54c0aaf87",
-    imageAlt: "Apartment living room with a fireplace",
-    facts: ["Fixed fee", "Off-market access", "We bid for you"],
-    points: [
-      "A written brief, so we are both clear on what you are actually buying",
-      "Properties inspected before they reach your Saturday, including the ones we reject",
-      "The full sales history and what the vendor is likely to accept",
-      "Bidding at auction on your behalf, to a limit you set in advance",
-    ],
-    sections: [
-      {
-        heading: "We are paid by you, not the vendor",
-        body: [
-          "A selling agent works for the vendor, and is very good at it. If you are buying without your own representation, everybody in the room is being paid by the other side.",
-          "Our fee is fixed and agreed before we start, so it does not rise with the price we negotiate. An agent whose fee grows with what you pay is not on your side of the table.",
-        ],
-      },
-      {
-        heading: "The properties that never reach the portals",
-        body: [
-          "A meaningful share of Adelaide stock sells before it is advertised, to the agents who already know who is looking. Being on that list is most of what an advocate is for.",
-          "We will also tell you to walk away, which is the part people remember. Talking a buyer out of the wrong purchase is worth more than finding them a fast one.",
-        ],
-      },
-    ],
-    cta: { label: "Start a conversation", href: "/contact" },
-  },
-  {
-    slug: "overseas-investment",
-    eyebrow: "Overseas investment",
-    title: "Buying from",
-    titleEm: "outside Australia",
-    lede: "Adelaide is one of the few Australian capitals where the numbers still work for an offshore buyer. That does not make every listing a good buy.",
-    metaTitle: "Overseas property investment in Adelaide",
-    metaDescription:
-      "Buying Adelaide property from overseas. Approval requirements, the costs that surprise offshore buyers, and independent advice on whether a deal stacks up.",
-    image: "photo-1628624747186-a941c476b7ef",
-    imageAlt: "Coastal home with established trees",
-    facts: ["Independent of the vendor", "Written feasibility", "We inspect in person"],
-    points: [
-      "Whether the purchase needs approval before you commit, and how long that takes",
-      "The duties and surcharges that apply to a foreign purchaser in South Australia",
-      "Rental demand for that specific street, not the suburb average",
-      "The holding costs across a full year, including the ones nobody quotes",
-    ],
-    sections: [
-      {
-        heading: "We will tell you when it does not stack up",
-        body: [
-          "We are paid for the advice, not the transaction, so there is no version of this where the answer is always yes.",
-          "Buying sight unseen from another timezone is where the worst outcomes happen. Somebody walks through the property before you commit, and you get photographs of what is actually there.",
-        ],
-      },
-      {
-        heading: "Approval is not optional",
-        body: [
-          "Foreign investment rules change, and they carry real penalties. Get the position confirmed in writing before you sign anything, and treat any agent who waves this away as a warning.",
-          "This page is general information about how we work, not legal or tax advice. Take the specifics to a solicitor and an accountant who know your circumstances.",
-        ],
-      },
-    ],
-    cta: { label: "Start a conversation", href: "/contact" },
   },
 ];
 
@@ -374,8 +352,8 @@ export const servicePageBySlug = (slug: string) =>
   SERVICE_PAGES.find((p) => p.slug === slug);
 
 /**
- * The two misspelt legacy slugs, kept here so the redirect in next.config.ts and the
- * note in this file cannot drift apart.
+ * The two misspelt legacy slugs, kept here so the redirect in next.config.ts and the note
+ * at the top of this file cannot drift apart.
  */
 export const LEGACY_TYPO_REDIRECTS = [
   { from: "/oversees-investment", to: "/overseas-investment" },

@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { photo, type DemoListing } from "./demo-data";
+import { photo } from "./agency";
+import { type DemoListing } from "./demo-data";
 
 /**
  * One listing card.

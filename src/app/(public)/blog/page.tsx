@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
-import { JOURNAL_POSTS, photo } from "@/components/public/demo-data";
+import { JOURNAL_POSTS, photo } from "@/components/public/agency";
 
 /**
  * The journal.
@@ -29,15 +29,15 @@ export default function Page() {
         eyebrow="Journal"
         title="Notes from the"
         titleEm="Adelaide market"
-        lede="What we have learned doing this street by street, written up properly rather than as a listing pitch with a headline on it."
+        lede="Discover Australia's property market. Notes on management fees, investment advice and what the numbers actually say."
         image="photo-1605276374104-dee2a0ed3cd6"
         imageAlt="Suburban house exterior"
-        facts={["Written by the agents", "No sponsored posts"]}
+        facts={["Written by the principal", "No sponsored posts"]}
       />
 
       <section className="sec">
         <div className="wrap">
-          <div className="posts">
+          <div className="posts posts--two">
             {JOURNAL_POSTS.map((p) => (
               <article className="post" key={p.title}>
                 <div className="post-media">
@@ -51,7 +51,6 @@ export default function Page() {
                 </div>
                 <h3>{p.title}</h3>
                 <p>{p.excerpt}</p>
-                <span className="meta">{p.meta}</span>
               </article>
             ))}
           </div>
@@ -59,8 +58,8 @@ export default function Page() {
       </section>
 
       <CtaBand
-        heading="Questions the journal has not"
-        headingEm="answered?"
+        heading="Your property journey"
+        headingEm="starts here."
         label="Talk to the office"
         href="/contact"
       />

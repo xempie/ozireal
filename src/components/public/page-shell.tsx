@@ -1,15 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { photo } from "./demo-data";
+import { photo } from "./agency";
 import type { ServicePage } from "./site-pages";
 
 /**
  * The shell every standalone page shares: a compact hero, then the body.
  *
- * Deliberately not the home page's hero. That one is full-bleed, nearly a screen tall
- * and carries the medians ticker, which is right for a landing page and wrong for the
- * eleventh page of a site, where the visitor has already arrived somewhere and wants
- * the content. This one is the same palette and type at about a third of the height.
+ * Deliberately not the home page's hero. That one is full-bleed, nearly a screen tall and
+ * carries the "start here" strip, which is right for a landing page and wrong deeper in
+ * the site, where the visitor has already arrived somewhere and wants the content. This
+ * one is the same palette and type at about a third of the height.
  *
  * Server components throughout. Nothing on these pages is interactive except the
  * appraisal form, which brings its own client island.
@@ -135,8 +135,8 @@ export function CtaBand({
 }
 
 /**
- * A whole service page from its data. The five service pages differ only in content,
- * so they share one component and one layout rather than five near-identical files.
+ * A whole service page from its data. The service pages differ only in content, so they
+ * share one component and one layout rather than eight near-identical files.
  */
 export function ServicePageBody({ page }: { page: ServicePage }) {
   return (
@@ -163,8 +163,8 @@ export function ServicePageBody({ page }: { page: ServicePage }) {
       </section>
 
       <CtaBand
-        heading="Come and see what your street is"
-        headingEm="doing."
+        heading="Your property journey"
+        headingEm="starts here."
         label={page.cta.label}
         href={page.cta.href}
       />

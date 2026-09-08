@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { PageHero } from "@/components/public/page-shell";
 import { DemoAppraisalForm } from "@/components/public/demo-appraisal-form";
-import { photo } from "@/components/public/demo-data";
+import { photo } from "@/components/public/agency";
 
 /**
  * The appraisal request.

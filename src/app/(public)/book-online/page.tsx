@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/components/public/page-shell";
-import { AGENCY } from "@/components/public/site-chrome";
+import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
 
 /**
  * Free meeting.
@@ -13,9 +13,9 @@ import { AGENCY } from "@/components/public/site-chrome";
  * not build public booking, Phase 3 builds the calendar (3.1, 3.7), and in between there
  * is nothing to receive a booking.
  *
- * So this page does not have a booking widget, and it must not grow a fake one. A form
- * that takes a name, a date and a phone number and drops them is worse than no page at
- * all, because the visitor leaves believing an appointment exists.
+ * So this page has no booking widget, and it must not grow a fake one. A form that takes
+ * a name, a date and a phone number and drops them is worse than no page at all, because
+ * the visitor leaves believing an appointment exists.
  *
  * Two acceptable outcomes at cutover, and they are a decision for the business, not for
  * this file:
@@ -28,9 +28,9 @@ import { AGENCY } from "@/components/public/site-chrome";
  */
 
 export const metadata: Metadata = {
-  title: "Book a free meeting",
+  title: "Free Meeting",
   description:
-    "Book a free, no obligation meeting with an Ozi Realty agent about selling, renting out, buying or property strategy in Adelaide.",
+    "Book a one-on-one real estate consultation with Esi Dor, Principal of OziRealty (RLA 350 628). Expert property advice, no pressure and no obligation.",
   alternates: { canonical: "/book-online" },
 };
 
@@ -39,57 +39,67 @@ export default function Page() {
     <>
       <PageHero
         eyebrow="Free meeting"
-        title="Half an hour,"
-        titleEm="no obligation"
-        lede="Bring a question about a property, a street or a decision you are weighing. There is nothing to sign and no listing pitch at the end of it."
+        title={`Expert property advice with`}
+        titleEm={AGENCY.principal}
+        lede={`Book a one-on-one real estate consultation with ${AGENCY.principal}, Principal of ${AGENCY.name} (Licence Number: ${AGENCY.licence}).`}
         image="photo-1600210491892-03d54c0aaf87"
         imageAlt="Apartment living room with a fireplace"
-        facts={["Free", "About 30 minutes", "In the office or at the property"]}
+        facts={["Free", "One-on-one", "No obligation"]}
       />
 
       <section className="sec">
-        <div className="wrap contact-cols">
-          <div className="contact-block">
-            <h2>Call the office</h2>
-            <p>
-              The fastest way to get a time in the diary. Ring during business hours and
-              you will speak to an agent rather than a queue.
-            </p>
-            <p>
-              <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
-              <br />
-              <a href={`mailto:${AGENCY.email}`}>{AGENCY.email}</a>
-            </p>
+        <div className="wrap page-cols">
+          <div className="points">
+            <h2 className="display">{REPORTS.consultation.title}</h2>
+            <ul className="report">
+              {REPORTS.consultation.items.map((p, i) => (
+                <li key={p}>
+                  <em>{String(i + 1).padStart(2, "0")}</em> {p}
+                </li>
+              ))}
+            </ul>
           </div>
 
-          <div className="contact-block">
-            <h2>When we are available</h2>
-            <p>Monday to Friday, 9:00 to 5:30</p>
-            <p>Saturday, 9:00 to 1:00</p>
-            <p>
-              Evening appointments are usually possible with a few days notice. Say so
-              when you call.
-            </p>
-          </div>
+          <div className="contact-cols">
+            <div className="contact-block">
+              <h2>Book by phone</h2>
+              <p>
+                The fastest way to get a time in the diary. Call during business hours and
+                you will speak to the principal rather than a queue.
+              </p>
+              <p>
+                <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
+              </p>
+            </div>
 
-          <div className="contact-block">
-            <h2>What to bring</h2>
-            <p>
-              Nothing at all is fine. If the meeting is about a specific property, the
-              address is enough for us to have the sales history and the comparables in
-              front of us before you arrive.
-            </p>
-          </div>
+            <div className="contact-block">
+              <h2>Or email</h2>
+              <ul className="plain-list">
+                {EMAILS.map((e) => (
+                  <li key={e.address}>
+                    {e.label}: <a href={`mailto:${e.address}`}>{e.address}</a>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-          <div className="contact-block">
-            <h2>If it is about a valuation</h2>
-            <p>
-              Book the appraisal instead. It happens at the property, takes about forty
-              minutes, and you get a written report rather than a conversation.
-            </p>
-            <Link className="btn" href="/free-property-appraisal-sa">
-              Book a free appraisal
-            </Link>
+            <div className="contact-block">
+              <h2>Where</h2>
+              <p>{AGENCY.office}</p>
+              <p>
+                At the office, at the property, or by video call if that suits you better.
+              </p>
+            </div>
+
+            <div className="contact-block">
+              <h2>If it is about a valuation</h2>
+              <p>
+                Request the premium appraisal report instead. {REPORTS.appraisal.note}
+              </p>
+              <Link className="btn" href="/free-property-appraisal-sa">
+                Get my free report
+              </Link>
+            </div>
           </div>
         </div>
       </section>

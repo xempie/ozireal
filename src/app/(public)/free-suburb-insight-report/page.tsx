@@ -1,24 +1,30 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import { PageHero, Points, CtaBand } from "@/components/public/page-shell";
-import { SUBURB_CARDS, photo } from "@/components/public/demo-data";
+import { PageHero, CtaBand } from "@/components/public/page-shell";
+import { REPORTS } from "@/components/public/agency";
 
 /**
- * Suburb reports.
+ * The suburb insight report.
  *
- * `/free-suburb-insight-report` mirrors the live Wix page. It is a lead form there, and
- * the nav's "Suburbs" item points here because it is the closest existing equivalent.
+ * `/free-suburb-insight-report` mirrors the live Wix page, one of the two lead forms on
+ * the current site.
  *
- * The medians on the cards are invented, like the ticker they came from. Real figures
- * mean a data licence (RP Data or PropTrack) or deriving them from settled listings once
- * there are enough, and publishing a median an agency cannot substantiate is the same
- * problem as publishing a sales statistic it did not achieve.
+ * ## What this page deliberately does not show
+ *
+ * It used to render three suburb cards carrying medians, twelve-month movement and days
+ * on market for Prospect, Norwood and Glenelg. Every one of those figures was invented by
+ * the design template. Publishing market statistics an agency cannot source is a
+ * misleading representation, and it is worse here than elsewhere because the whole point
+ * of the page is that the numbers are trustworthy.
+ *
+ * Real medians mean a data licence (RP Data, PropTrack) or deriving them from settled
+ * listings once there are enough. Until one of those exists, the page describes what the
+ * report contains rather than previewing numbers it cannot stand behind.
  */
 
 export const metadata: Metadata = {
-  title: "Suburb reports",
+  title: "Free Suburb Insight Report",
   description:
-    "What a suburb is actually doing: median, twelve month movement, days on market, and the streets within it that behave differently from the average.",
+    "Stay ahead of the next market shift. Median prices, rental yields, vacancy rates, growth performance, demand levels and school catchments for your suburb.",
   alternates: { canonical: "/free-suburb-insight-report" },
 };
 
@@ -26,71 +32,55 @@ export default function Page() {
   return (
     <>
       <PageHero
-        eyebrow="Suburb reports"
-        title="Know the suburb,"
-        titleEm="then the street"
-        lede="A suburb median tells you very little about one street inside it. The report is written for the street you are actually asking about."
+        eyebrow="Suburb insight"
+        title="Stay ahead of the"
+        titleEm="next market shift"
+        lede="A written report on the suburb you are asking about, covering what the market is doing now and what it has done over the past several years."
         image="photo-1568605114967-8130f3a36994"
         imageAlt="Character home in Prospect"
-        facts={["Free", "No obligation", "Written, not automated"]}
+        facts={["Free", "No obligation", "South Australia"]}
       />
 
       <section className="sec">
         <div className="wrap">
           <div className="sec-head">
             <div>
-              <p className="eyebrow">Where we work</p>
+              <p className="eyebrow">What is in it</p>
               <h2 className="display">
-                Three suburbs we <em>know cold</em>
+                {REPORTS.suburb.title.replace("Free ", "")}
               </h2>
             </div>
+            <p className="lede" style={{ margin: 0 }}>
+              {REPORTS.suburb.note}
+            </p>
           </div>
 
-          <div className="suburbs">
-            {SUBURB_CARDS.map((s) => (
-              <article className="sub" key={s.name}>
-                <Image
-                  src={photo(s.img, 900)}
-                  alt={s.alt}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
-                  style={{ objectFit: "cover" }}
-                />
-                <div className="sub-body">
-                  <h3>{s.name}</h3>
-                  <p className="m">{s.meta}</p>
-                  <div className="sub-stats">
-                    <div>
-                      <span>Median</span>
-                      <b>{s.median}</b>
-                    </div>
-                    <div>
-                      <span>12 mth</span>
-                      <b className="up">{s.move}</b>
-                    </div>
-                    <div>
-                      <span>Days</span>
-                      <b>{s.days}</b>
-                    </div>
-                  </div>
-                </div>
-              </article>
+          <ul className="insight-grid">
+            {REPORTS.suburb.items.map((i) => (
+              <li key={i}>{i}</li>
             ))}
-          </div>
+            <li className="insight-more">And more</li>
+          </ul>
         </div>
       </section>
 
       <section className="sec" style={{ background: "var(--paper-2)" }}>
         <div className="wrap page-cols">
-          <Points
-            title="What the report covers"
-            items={[
-              "The median and the twelve month movement, with the sale count behind it",
-              "Days on market, and whether that is trending up or down",
-              "The streets inside the suburb that consistently beat the average, and why",
-              "What is listed right now, and what we expect to come up next quarter",
-            ]}
-          />
+          <div className="points">
+            <h2 className="display">Also available</h2>
+            <ul className="report">
+              <li>
+                <em>01</em> {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
+              </li>
+              <li>
+                <em>02</em> {REPORTS.rental.title}, for weekly rent and yield
+              </li>
+              <li>
+                <em>03</em> {REPORTS.consultation.title}, one-on-one with the principal
+              </li>
+            </ul>
+          </div>
+
           <div className="prose-stack">
             <div className="prose">
               <h2>Why not an automated estimate</h2>
@@ -98,11 +88,12 @@ export default function Page() {
                 An automated valuation reads sale prices and square metres. It cannot see
                 that one side of a street backs onto a main road, that a block is deep
                 enough to subdivide, or that the house two doors down sold badly because
-                of a probate deadline.
+                of a deadline rather than the market.
               </p>
               <p>
                 Those are the things that move a price by six figures, and they are why
-                the report is written by somebody who has walked it.
+                the report is written by somebody who knows the area rather than generated
+                from a postcode.
               </p>
             </div>
           </div>
@@ -110,8 +101,9 @@ export default function Page() {
       </section>
 
       <CtaBand
-        heading="Ask about your street"
-        label="Request a suburb report"
+        heading="Unlock my"
+        headingEm="suburb insights"
+        label="Request the report"
         href="/contact"
       />
     </>
