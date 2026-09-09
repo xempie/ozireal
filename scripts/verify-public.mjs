@@ -375,6 +375,54 @@ async function heroContrast(page, heroSel, textSel) {
   await page.close();
 }
 
+/* --------------------------------------------------- service page blocks */
+/*
+  The persuasion layer: three benefit cards, a photograph band, and the pitch that sits
+  directly above the form. Checked on every page that declares extras, because the
+  content lives in one map and a missing key would silently render a thinner page rather
+  than fail.
+*/
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const WITH_EXTRAS = [
+    "/sell-property-house-adelaide",
+    "/rent-out-my-property-adelaide",
+    "/rent-property-house-adelaide",
+    "/buyer-agent-adelaide",
+    "/property-investment",
+    "/land-opportunities-sa-adelaide",
+    "/sell-my-business-australia",
+    "/property-strategy-services",
+    "/overseas-investment",
+    "/realestate-gift-adelaide",
+  ];
+  for (const path of WITH_EXTRAS) {
+    await go(page, new URL(path, BASE).toString());
+    const shape = await page.evaluate(() => ({
+      cards: document.querySelectorAll(".benefit").length,
+      icons: document.querySelectorAll(".benefit-icon svg").length,
+      figures: document.querySelectorAll(".gallery-figs figure img").length,
+      pitch: document.querySelectorAll(".pitch").length,
+      bullets: document.querySelectorAll(".pitch-list li").length,
+      cost: document.querySelectorAll(".pitch-cost").length,
+      /* The pitch has to come BEFORE the form, or it is not doing its job. */
+      order: (() => {
+        const pitch = document.querySelector(".pitch");
+        const form = document.querySelector("form.enq");
+        if (!pitch || !form) return false;
+        return !!(pitch.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING);
+      })(),
+    }));
+    check(path + " has three benefit cards", shape.cards === 3, shape.cards + " cards");
+    check(path + " benefit cards have icons", shape.icons === 3, shape.icons + " icons");
+    check(path + " has two photographs", shape.figures === 2, shape.figures + " images");
+    check(path + " has a pitch with bullets", shape.pitch === 1 && shape.bullets >= 3, shape.bullets + " bullets");
+    check(path + " pitch names a cost", shape.cost === 1);
+    check(path + " pitch sits above the form", shape.order);
+  }
+  await page.close();
+}
+
 /* ------------------------------------------------------- hero legibility */
 /*
   Each standalone page has its own photograph behind the same overlay, so they are

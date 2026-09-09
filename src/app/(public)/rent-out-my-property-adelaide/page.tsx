@@ -18,8 +18,9 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <>
-      <ServicePageBody page={page} />
-      <FormSection slug="rent-out-my-property-adelaide" />
+      <ServicePageBody page={page}>
+        <FormSection slug="rent-out-my-property-adelaide" />
+      </ServicePageBody>
     </>
   );
 }

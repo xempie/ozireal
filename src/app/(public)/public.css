@@ -2064,3 +2064,153 @@
   .pager { justify-content: center; }
   .pager-nums { order: -1; width: 100%; justify-content: center; }
 }
+
+/* ============================================================
+   SERVICE PAGE BLOCKS
+   ------------------------------------------------------------
+   Benefit cards under the hero, a photograph band, and the pitch that sits directly
+   above the form. The order is what you get, why it matters, what waiting costs, then
+   the form, so the reader arrives at the fields already knowing why.
+   ============================================================ */
+
+/* --------------------------------------------------- benefit cards ---- */
+.benefit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(18px, 2.2vw, 30px);
+}
+.benefit {
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--accent);
+  padding: clamp(24px, 2.6vw, 34px);
+}
+.benefit-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 20px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--accent);
+}
+.benefit-icon svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.benefit h3 {
+  font-family: var(--serif);
+  font-size: 1.24rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+.benefit p { margin: 0; color: var(--muted); font-size: 14.8px; line-height: 1.62; }
+
+/* ------------------------------------------------- photograph band ---- */
+.gallery-band { background: var(--ink); color: var(--paper); }
+.gallery-layout {
+  display: grid;
+  grid-template-columns: 1fr 0.9fr;
+  gap: clamp(30px, 4vw, 64px);
+  align-items: center;
+}
+/*
+  Two figures, the second dropped and scaled slightly, so the pair reads as photographs
+  laid down rather than a grid cell each. Overlap only above 900px, where there is room
+  for it to look deliberate.
+*/
+.gallery-figs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.gallery-figs figure { margin: 0; overflow: hidden; background: var(--ink-2); aspect-ratio: 4/5; }
+.gallery-figs img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (min-width: 901px) {
+  .gallery-figs figure:nth-child(2) { margin-top: 44px; }
+}
+.gallery-copy .eyebrow { color: var(--accent-lt); }
+.gallery-copy .eyebrow::after { background: var(--accent-lt); }
+.gallery-copy p {
+  margin: 0;
+  font-size: clamp(16px, 1.25vw, 18px);
+  line-height: 1.72;
+  color: rgba(234, 231, 222, 0.78);
+  max-width: 46ch;
+}
+
+/* ------------------------------------------------------------ pitch --- */
+.pitch { background: var(--paper-2); }
+.pitch-layout {
+  display: grid;
+  grid-template-columns: 1fr 0.85fr;
+  gap: clamp(30px, 4vw, 68px);
+  align-items: start;
+}
+.pitch .display { max-width: 15ch; margin: 0 0 18px; }
+.pitch .lede { margin: 0 0 26px; }
+
+/*
+  The one line of urgency on the page, and it is always a real consequence of the process
+  rather than a manufactured deadline. Set apart so it reads as a caution, not a banner.
+*/
+.pitch-cost {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 18px;
+  background: var(--white);
+  border-left: 3px solid var(--accent);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 52ch;
+}
+.pitch-cost svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pitch-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.pitch-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.pitch-list li:first-child { border-top: 1px solid var(--line); }
+.pitch-list svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 1080px) {
+  .benefit-grid { grid-template-columns: 1fr; }
+  .gallery-layout, .pitch-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .gallery-figs { gap: 12px; }
+  .gallery-figs figure { aspect-ratio: 3/4; }
+}

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { photo } from "./agency";
 import type { ServicePage } from "./site-pages";
 import { formForSlug } from "./forms/definitions";
+import { Icon } from "./icons";
+import { extrasFor, type ServiceCard, type ServiceExtras } from "./service-extras";
 
 /**
  * The shell every standalone page shares: a compact hero, then the body.
@@ -136,10 +138,110 @@ export function CtaBand({
 }
 
 /**
- * A whole service page from its data. The service pages differ only in content, so they
- * share one component and one layout rather than eight near-identical files.
+ * Three benefit cards. The first thing under the hero, because a visitor deciding whether
+ * to read on is deciding on these rather than on a paragraph.
  */
-export function ServicePageBody({ page }: { page: ServicePage }) {
+function Benefits({ cards }: { cards: ServiceCard[] }) {
+  return (
+    <div className="benefit-grid">
+      {cards.map((c) => (
+        <div className="benefit" key={c.title}>
+          <span className="benefit-icon">
+            <Icon name={c.icon} />
+          </span>
+          <h3>{c.title}</h3>
+          <p>{c.body}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Two photographs and the argument that runs with them.
+ *
+ * The images are placeholders on an allow-listed host; see service-extras.ts for why they
+ * are not Freepik and why the agency's own photography should replace them.
+ */
+function Gallery({ extras }: { extras: ServiceExtras }) {
+  return (
+    <section className="sec gallery-band">
+      <div className="wrap gallery-layout">
+        <div className="gallery-figs">
+          {extras.gallery.map((g) => (
+            <figure key={g.image}>
+              <Image
+                src={photo(g.image, 900)}
+                alt={g.alt}
+                width={900}
+                height={640}
+                sizes="(max-width: 900px) 50vw, 28vw"
+              />
+            </figure>
+          ))}
+        </div>
+        <div className="gallery-copy">
+          <p className="eyebrow">{extras.galleryLead}</p>
+          <p>{extras.galleryBody}</p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * The block immediately above the form.
+ *
+ * Its job is to make filling the form the obvious next action, which means being concrete
+ * about what arrives and what it costs to leave it. The `cost` line is the closest this
+ * gets to urgency, and it is always a real consequence of the process rather than an
+ * invented deadline: a vacant week, a stale campaign, an auction you were not registered
+ * for. No countdown, no "limited places", nothing the agency would have to defend.
+ */
+function Pitch({ extras }: { extras: ServiceExtras }) {
+  return (
+    <section className="sec pitch">
+      <div className="wrap pitch-layout">
+        <div>
+          <h2 className="display">
+            {extras.pitch.heading} <em>{extras.pitch.headingEm}</em>
+          </h2>
+          <p className="lede">{extras.pitch.body}</p>
+          <p className="pitch-cost">
+            <Icon name="clock" />
+            <span>{extras.pitch.cost}</span>
+          </p>
+        </div>
+        <ul className="pitch-list">
+          {extras.pitch.bullets.map((b) => (
+            <li key={b}>
+              <Icon name="check" />
+              <span>{b}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+/**
+ * A whole service page from its data. The service pages differ only in content, so they
+ * share one component and one layout rather than a dozen near-identical files.
+ *
+ * The order is deliberate: what you get, why it matters, what it costs to wait, then the
+ * form. `children` is where the page's own form goes, so the pitch sits directly above it
+ * rather than being separated by a section the reader has to scroll past.
+ */
+export function ServicePageBody({
+  page,
+  children,
+}: {
+  page: ServicePage;
+  children?: React.ReactNode;
+}) {
+  const extras = extrasFor(page.slug);
+
   return (
     <>
       <PageHero
@@ -152,7 +254,15 @@ export function ServicePageBody({ page }: { page: ServicePage }) {
         facts={page.facts}
       />
 
-      <section className="sec">
+      {extras && (
+        <section className="sec sec--tight">
+          <div className="wrap">
+            <Benefits cards={extras.cards} />
+          </div>
+        </section>
+      )}
+
+      <section className="sec" style={{ background: "var(--paper-2)" }}>
         <div className="wrap page-cols">
           <Points title="What you get" items={page.points} />
           <div className="prose-stack">
@@ -163,10 +273,14 @@ export function ServicePageBody({ page }: { page: ServicePage }) {
         </div>
       </section>
 
+      {extras && <Gallery extras={extras} />}
+      {extras && <Pitch extras={extras} />}
+
+      {children}
+
       {/*
         No closing band when the page carries an enquiry form. The form IS the call to
-        action, and the site footer already ends every page with one. Three stacked CTAs
-        was two too many, and the middle one repeated the footer's line word for word.
+        action, and the site footer already ends every page with one.
       */}
       {!formForSlug(page.slug) && (
         <CtaBand
