@@ -215,6 +215,26 @@ export const FORMS: FormDefinition[] = [
   },
 
   {
+    slug: "book-online",
+    formName: "Free meeting request",
+    title: "Request your free consultation",
+    intro:
+      "Tell us what it is about and when suits, and we will come back to confirm a time. This is a request rather than a confirmed booking, so nothing is held in the diary until we reply.",
+    submitLabel: "Request my consultation",
+    fields: [
+      ...IDENTITY(),
+      { id: "topic", label: "What would you like to discuss?", kind: "radio", required: true,
+        options: ["Selling", "Renting out", "Buying", "Investing", "Property management", "Something else"] },
+      { id: "when", label: "When generally suits?", kind: "checkbox", required: true,
+        options: ["Weekday morning", "Weekday afternoon", "Weekday evening", "Saturday morning"] },
+      { id: "preferredDate", label: "Preferred date, if you have one", kind: "date", half: true },
+      { id: "where", label: "Where", kind: "radio", required: true,
+        options: ["At the office", "At my property", "Video call", "By phone"] },
+      { id: "address", label: "Property address, if the meeting is about one", kind: "text" },
+      { id: "notes", label: "Anything we should know beforehand?", kind: "textarea" },
+    ],
+  },
+  {
     slug: "free-property-appraisal-sa",
     formName: "Free property appraisal",
     title: "Request your free appraisal report",

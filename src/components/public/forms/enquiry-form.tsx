@@ -232,6 +232,7 @@ export function EnquiryForm({
             onChange={(e) => setPrivacy(e.target.checked)}
             required
           />
+          <span className="enq-mark" aria-hidden="true" />
           <span>
             I have read the privacy notice and agree to OziRealty handling my details in
             order to respond to this enquiry. <b>Required</b>
@@ -249,6 +250,7 @@ export function EnquiryForm({
             checked={optIn}
             onChange={(e) => setOptIn(e.target.checked)}
           />
+          <span className="enq-mark" aria-hidden="true" />
           <span>
             {meta?.consentWording ??
               "Send me property updates by email. You can unsubscribe at any time."}{" "}
@@ -263,9 +265,15 @@ export function EnquiryForm({
         </p>
       )}
 
-      <button className="btn" type="submit" disabled={busy || !meta}>
-        {busy ? "Sending…" : definition.submitLabel}
-      </button>
+      <div className="enq-submit">
+        <button className="btn" type="submit" disabled={busy || !meta}>
+          {busy ? "Sending…" : definition.submitLabel}
+        </button>
+        <p className="enq-reassure">
+          No obligation. We usually reply the same business day, and you can always phone{" "}
+          <a href={phoneHref}>{phone}</a>.
+        </p>
+      </div>
     </form>
   );
 }
@@ -288,13 +296,21 @@ function Field({
 
   if (f.kind === "radio" || f.kind === "checkbox") {
     const selected = Array.isArray(value) ? value : value ? [value as string] : [];
+    /*
+      Two layouts, chosen by content. A set of short answers (Yes / No, 6 months /
+      12 months) reads best as small chips sitting together; a set of long ones
+      ("Established mid-range areas ($700k – $900k)") has to be a grid, or flex shrinks
+      them to different widths and wraps the text to three ragged lines.
+    */
+    const longest = Math.max(...(f.options ?? [""]).map((o) => o.length));
+    const compact = longest <= 16;
     return (
       <fieldset className={`${cls} enq-field--group`}>
         <legend>
           {f.label}
-          {f.required && <span aria-hidden="true"> *</span>}
+          {f.required && <span className="enq-req" aria-hidden="true">*</span>}
         </legend>
-        <div className="enq-options">
+        <div className={`enq-options${compact ? " enq-options--compact" : ""}`}>
           {f.options?.map((o) => (
             <label className="enq-opt" key={o}>
               <input
@@ -304,7 +320,8 @@ function Field({
                 checked={selected.includes(o)}
                 onChange={() => (f.kind === "radio" ? onText(o) : onToggle(o))}
               />
-              <span>{o}</span>
+              <span className="enq-mark" aria-hidden="true" />
+              <span className="enq-opt-label">{o}</span>
             </label>
           ))}
         </div>
@@ -316,7 +333,7 @@ function Field({
     <div className={cls}>
       <label htmlFor={id}>
         {f.label}
-        {f.required && <span aria-hidden="true"> *</span>}
+        {f.required && <span className="enq-req" aria-hidden="true">*</span>}
       </label>
       {f.kind === "textarea" ? (
         <textarea

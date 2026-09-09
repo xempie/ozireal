@@ -270,6 +270,7 @@ async function heroContrast(page, heroSel, textSel) {
     "/sell-my-business-australia",
     "/free-property-appraisal-sa",
     "/free-suburb-insight-report",
+    "/book-online",
   ];
   for (const path of WITH_FORMS) {
     await go(page, new URL(path, BASE).toString());
@@ -294,10 +295,55 @@ async function heroContrast(page, heroSel, textSel) {
       required box; the Spam Act wants it separate, specific and voluntary, so the
       required one acknowledges privacy and the optional one is the marketing consent.
     */
-    const enabled = await page.evaluate(
-      () => !document.querySelector("form.enq button[type=submit]")?.disabled,
-    );
-    check(`${path} form is live, not disabled`, enabled);
+    /*
+      Wait for the state rather than sampling it. The submit stays disabled until the
+      token GET resolves, so reading it immediately after navigation tests how fast the
+      page happened to load, not whether the form works. It failed exactly that way on
+      the heaviest page in the set.
+    */
+    const enabled = await page
+      .waitForFunction(
+        () => !document.querySelector("form.enq button[type=submit]")?.disabled,
+        undefined,
+        { timeout: 15000 },
+      )
+      .then(() => true)
+      .catch(() => false);
+    check(`${path} form becomes live`, enabled);
+  }
+  await page.close();
+}
+
+/* ------------------------------------------------------------------ blog */
+/*
+  The blog is the biggest surface on the site now, 54 posts migrated out of Wix. The
+  check follows a real card rather than a hardcoded slug: what matters is that the index
+  links to posts that actually render, and a fixed slug would stop testing that the day
+  the blog is re-scraped.
+*/
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await go(page, new URL("/blog", BASE).toString());
+  const cards = await page.locator(".post").count();
+  check("blog lists its posts", cards >= 20, cards + " cards");
+
+  const href = await page.locator(".post").first().getAttribute("href");
+  check(
+    "post links keep the live /post/<slug> pattern",
+    !!href && href.startsWith("/post/"),
+    href || "none",
+  );
+
+  if (href) {
+    await go(page, new URL(href, BASE).toString());
+    const shape = await page.evaluate(() => ({
+      h1: document.querySelector(".post-head h1")?.textContent?.trim() || "",
+      paras: document.querySelectorAll(".post-body p").length,
+      cover: document.querySelectorAll(".post-cover img").length,
+    }));
+    check(href + " has a heading", shape.h1.length > 5, shape.h1.slice(0, 50));
+    check(href + " has body copy", shape.paras >= 3, shape.paras + " paragraphs");
+    check(href + " has a cover image", shape.cover === 1);
   }
   await page.close();
 }

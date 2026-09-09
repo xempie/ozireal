@@ -914,43 +914,6 @@
 .chip { cursor: pointer; }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 
-/*
-  Section headers whose "all 128 listings" link has nowhere to go yet. Same type, no
-  hover affordance, so it does not read as a link that is broken.
-*/
-.txtlink--flat { color: var(--muted); cursor: default; }
-.txtlink--flat:hover { border-color: var(--line); gap: 9px; }
-
-/* ---------------------------------------------------- appraisal form -- */
-.form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; max-width: 600px; }
-.form input {
-  padding: 15px 16px;
-  border: 1px solid var(--line);
-  background: var(--paper-2);
-  font-size: 15px;
-}
-.form input:focus { border-color: var(--ink); outline: none; }
-.form .full { grid-column: 1 / -1; }
-.form .btn { grid-column: 1 / -1; justify-content: center; }
-.form-note {
-  margin: 16px 0 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.form-done {
-  border: 1px solid var(--accent);
-  padding: 20px;
-  max-width: 600px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-
 /* --------------------------------------------------------- quote ------ */
 .quote { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .quote-layout {
@@ -1517,101 +1480,514 @@
 
 /* ============================================================
    ENQUIRY FORMS
+   ------------------------------------------------------------
+   The forms carry every lead on the site, so they get the same care as the listings.
+   Two problems drove this layout.
+
+   Radio and checkbox groups were a flex row, which shrank every chip to a different
+   width and wrapped "Established mid-range areas ($700k - $900k)" onto three ragged
+   lines with the control stranded to its left. They are a grid now, so every option in
+   a group is the same size and the label sits beside its control.
+
+   The native controls were a 13px grey circle that read as unstyled next to everything
+   else on the page. They are drawn here instead, at a size that is comfortable to hit.
    ============================================================ */
+
 .enq-sec { background: var(--paper-2); border-top: 1px solid var(--line); }
-.enq { max-width: 860px; }
+
+/* A white card on the paper section: a form should look like a thing you fill in. */
+.enq {
+  max-width: 880px;
+  background: var(--white);
+  border: 1px solid var(--line);
+  padding: clamp(28px, 4vw, 52px);
+}
 .enq-title {
   font-family: var(--serif);
-  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
   font-weight: 600;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.01em;
   margin: 0 0 12px;
 }
-.enq-intro { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 60ch; margin: 0 0 34px; }
+.enq-intro {
+  color: var(--muted);
+  font-size: 15.5px;
+  line-height: 1.7;
+  max-width: 58ch;
+  margin: 0 0 8px;
+}
 
-.enq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 22px; }
-.enq-field { display: flex; flex-direction: column; grid-column: 1 / -1; }
+/* ---------------------------------------------------------- fields ----- */
+.enq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 24px;
+  margin-top: 32px;
+}
+.enq-field { display: flex; flex-direction: column; grid-column: 1 / -1; min-width: 0; }
 .enq-field--half { grid-column: span 1; }
+
 .enq-field > label,
 .enq-field legend {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 8px;
+  color: var(--ink-3);
+  margin-bottom: 10px;
   padding: 0;
 }
+.enq-req { color: var(--accent); font-size: 12px; line-height: 1; }
+
 .enq-field input,
 .enq-field textarea {
   width: 100%;
-  padding: 14px 16px;
+  padding: 0 16px;
+  height: 52px;
   border: 1px solid var(--line);
+  border-radius: 2px;
   background: var(--white);
-  font-size: 15.5px;
+  /* 16px, so iOS does not zoom the page when the field takes focus. */
+  font-size: 16px;
   font-family: inherit;
   color: var(--ink);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.enq-field textarea { resize: vertical; min-height: 92px; }
+.enq-field textarea {
+  height: auto;
+  min-height: 108px;
+  padding: 14px 16px;
+  resize: vertical;
+  line-height: 1.6;
+}
+.enq-field input::placeholder,
+.enq-field textarea::placeholder { color: #A9B2B2; }
+.enq-field input:hover,
+.enq-field textarea:hover { border-color: var(--muted); }
 .enq-field input:focus,
-.enq-field textarea:focus { border-color: var(--ink); outline: none; }
-.enq-field-error { margin: 6px 0 0; font-size: 13px; color: var(--accent-dp); }
+.enq-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.14);
+}
+.enq-field-error { margin: 7px 0 0; font-size: 13.5px; color: var(--accent-dp); }
 
-/* Radio and checkbox groups. A fieldset so the question is announced with its options. */
+/* ------------------------------------------------- option groups ------ */
 .enq-field--group { border: 0; margin: 0; padding: 0; min-width: 0; }
-.enq-options { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/*
+  A grid, not a flex row. auto-fit with a minimum keeps every option the same width and
+  reflows to fewer columns as space narrows, instead of shrinking chips unevenly.
+*/
+.enq-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+/* Short answers (Yes / No, 6 months) sit together rather than stretching a full row. */
+.enq-options--compact { display: flex; flex-wrap: wrap; }
+.enq-options--compact .enq-opt { flex: 0 0 auto; min-width: 116px; }
+
 .enq-opt {
-  display: inline-flex;
+  position: relative;
+  display: flex;
   align-items: center;
-  gap: 9px;
-  /*
-    Do not shrink below the label. Without this the flex row squeezes three chips onto
-    one line and "$400,000 to $800,000" breaks across three, which reads as a layout
-    bug. Long options simply take their own row instead.
-  */
-  flex: 0 0 auto;
-  max-width: 100%;
-  padding: 11px 16px;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
+  border-radius: 2px;
   background: var(--white);
-  font-size: 14.5px;
+  font-size: 15px;
+  line-height: 1.4;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
 }
-.enq-opt:hover { border-color: var(--ink); }
-.enq-opt input { accent-color: var(--accent); margin: 0; }
-/* :has is what lets the whole chip show selection, not just the control inside it. */
-.enq-opt:has(input:checked) { border-color: var(--accent); background: rgba(216, 67, 21, 0.06); }
+.enq-opt:hover { border-color: var(--muted); background: var(--paper-2); }
+.enq-opt-label { flex: 1; }
+
+/* The real control, kept for semantics and keyboards, painted over by .enq-mark. */
+.enq-opt input,
+.enq-check input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  margin: 0;
+}
+
+.enq-mark {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid var(--muted-2);
+  background: var(--white);
+  display: inline-block;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+/*
+  A radio is round and a checkbox is square. That shape is how a reader knows whether
+  they are choosing one answer or several, before reading a word of the question.
+*/
+.enq-opt input[type="radio"] ~ .enq-mark,
+.enq-check input[type="radio"] ~ .enq-mark { border-radius: 50%; }
+.enq-opt input[type="checkbox"] ~ .enq-mark,
+.enq-check input[type="checkbox"] ~ .enq-mark { border-radius: 2px; }
+
+.enq-opt input:checked ~ .enq-mark,
+.enq-check input:checked ~ .enq-mark { border-color: var(--accent); background: var(--accent); }
+
+/* Radio: an inner dot. Checkbox: a tick drawn from two borders. */
+.enq-opt input[type="radio"]:checked ~ .enq-mark::after,
+.enq-check input[type="radio"]:checked ~ .enq-mark::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: var(--white);
+}
+.enq-opt input[type="checkbox"]:checked ~ .enq-mark::after,
+.enq-check input[type="checkbox"]:checked ~ .enq-mark::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid var(--white);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.enq-opt:has(input:checked) { border-color: var(--accent); background: rgba(216, 67, 21, 0.05); }
+/* Focus lands on the hidden input, so the ring is drawn on what can actually be seen. */
 .enq-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.enq-check:has(input:focus-visible) .enq-mark { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Off-screen rather than display:none, which a modern bot skips. */
 .enq-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-.enq-consent { display: grid; gap: 14px; margin: 30px 0 24px; }
-.enq-check { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.6; color: var(--muted); cursor: pointer; }
-.enq-check input { margin-top: 4px; accent-color: var(--accent); flex-shrink: 0; }
+/* --------------------------------------------------------- consent ---- */
+.enq-consent {
+  display: grid;
+  gap: 16px;
+  margin: 34px 0 0;
+  padding: 24px;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+}
+.enq-check {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  cursor: pointer;
+  position: relative;
+}
+.enq-check .enq-mark { margin-top: 1px; }
 .enq-check b {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 7px;
+  background: var(--paper);
+  border: 1px solid var(--line);
   font-family: var(--mono);
-  font-size: 9.5px;
-  letter-spacing: 0.16em;
+  font-size: 9px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 400;
-  color: var(--accent-dp);
+  color: var(--muted);
+  vertical-align: 1px;
 }
+
+/* ---------------------------------------------------------- submit ---- */
+.enq-submit {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+.enq-submit .btn { padding: 17px 34px; }
+.enq-reassure {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 42ch;
+}
+.enq-reassure a { color: var(--accent-dp); }
+.enq button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .enq-error {
-  margin: 0 0 18px;
-  padding: 14px 16px;
-  border-left: 2px solid var(--accent);
+  margin: 24px 0 0;
+  padding: 15px 18px;
+  border-left: 3px solid var(--accent);
   background: rgba(216, 67, 21, 0.06);
   font-size: 14.5px;
   line-height: 1.6;
   color: var(--ink);
 }
 .enq-error a { color: var(--accent-dp); text-decoration: underline; }
-.enq button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.form-done {
+  max-width: 880px;
+  border: 1px solid var(--accent);
+  border-left-width: 3px;
+  background: var(--white);
+  padding: clamp(26px, 3vw, 38px);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--ink);
+}
+.form-done a { color: var(--accent-dp); text-decoration: underline; }
 
 @media (max-width: 640px) {
   .enq-grid { grid-template-columns: 1fr; }
   .enq-field--half { grid-column: 1 / -1; }
+  .enq-options { grid-template-columns: 1fr; }
+  .enq-options--compact .enq-opt { flex: 1 1 calc(50% - 5px); }
+  .enq-submit { align-items: stretch; }
+  .enq-submit .btn { width: 100%; justify-content: center; }
+}
+
+/* ============================================================
+   SERVICE CARDS
+   ------------------------------------------------------------
+   /property-services used to be points-and-prose, which is the wrong shape for a page
+   whose only job is to route somebody to the right service. Eight labelled cards do
+   that in one glance, and every one lands on a page carrying that service's form.
+   ============================================================ */
+
+.svc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: clamp(16px, 1.8vw, 24px);
+}
+
+.svc-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--line);
+  padding: clamp(24px, 2.4vw, 32px);
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.svc-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -22px rgba(15, 30, 34, 0.5);
+}
+/* The whole card is the link, so the ring belongs on the card rather than the text. */
+.svc-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+.svc-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 22px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+  color: var(--accent);
+  transition: background 0.25s, border-color 0.25s, color 0.25s;
+}
+.svc-card-icon svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.svc-card:hover .svc-card-icon { background: var(--accent); border-color: var(--accent); color: var(--paper-2); }
+
+.svc-card h3 {
+  font-family: var(--serif);
+  font-size: 1.32rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  margin: 0 0 10px;
+}
+.svc-card p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.62;
+  flex: 1;
+}
+.svc-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-dp);
+  transition: gap 0.25s;
+}
+.svc-card:hover .svc-card-go { gap: 14px; }
+
+/* On the dark band the cards invert, keeping the same structure. */
+.dark .svc-card { background: rgba(234, 231, 222, 0.05); border-color: var(--line-dk); }
+.dark .svc-card h3 { color: var(--paper); }
+.dark .svc-card p { color: rgba(234, 231, 222, 0.66); }
+.dark .svc-card-icon { background: transparent; border-color: var(--line-dk); color: var(--accent-lt); }
+.dark .svc-card-go { color: var(--accent-lt); border-top-color: var(--line-dk); }
+
+/* ============================================================
+   JOURNAL
+   ------------------------------------------------------------
+   The blog migrated out of Wix: an index of every post and the post pages themselves at
+   /post/<slug>, which is the live site's URL pattern kept verbatim.
+   ============================================================ */
+
+/* ------------------------------------------------------ lead post ----- */
+.post-lead {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(24px, 3.4vw, 52px);
+  align-items: center;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  transition: border-color 0.25s;
+}
+.post-lead:hover { border-color: var(--accent); }
+.post-lead-media { overflow: hidden; aspect-ratio: 16/10; background: var(--ink-2); }
+.post-lead-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.9s cubic-bezier(.2,.7,.2,1);
+}
+.post-lead:hover .post-lead-media img { transform: scale(1.04); }
+.post-lead-body { padding: clamp(24px, 2.6vw, 40px) clamp(24px, 2.6vw, 44px) clamp(24px, 2.6vw, 40px) 0; }
+.post-lead-body h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  margin: 0 0 14px;
+  max-width: 22ch;
+}
+.post-lead-excerpt { margin: 0 0 18px; color: var(--muted); font-size: 15.5px; line-height: 1.65; max-width: 46ch; }
+
+/* ---------------------------------------------------- post cards ------ */
+.posts--three { grid-template-columns: repeat(3, 1fr); }
+.post h3 { transition: color 0.2s; }
+.post:hover h3 { color: var(--accent-dp); }
+
+/* ---------------------------------------------------- post page ------- */
+.post-page { padding-top: clamp(40px, 5vw, 68px); }
+.post-head { padding-bottom: clamp(26px, 3vw, 40px); }
+.post-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-dp);
+  margin-bottom: 26px;
+}
+.post-back:hover { gap: 14px; }
+.post-head h1 {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4.2vw, 3.2rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.014em;
+  margin: 0;
+  max-width: 24ch;
+}
+.post-meta {
+  margin: 20px 0 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.post-cover { overflow: hidden; background: var(--ink-2); margin-bottom: clamp(32px, 4vw, 56px); }
+.post-cover img { width: 100%; height: auto; display: block; }
+
+/*
+  One column at a readable measure. Long-form prose is the one place on this site where
+  the line length matters more than filling the grid.
+*/
+.post-body { max-width: 72ch; padding-bottom: clamp(48px, 6vw, 80px); }
+.post-body p {
+  margin: 0 0 22px;
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+.post-body h2 {
+  font-family: var(--serif);
+  font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  margin: 42px 0 16px;
+}
+.post-body h3 {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 32px 0 12px;
+}
+.post-body ul { margin: 0 0 22px; padding: 0; list-style: none; }
+.post-body li {
+  position: relative;
+  padding-left: 22px;
+  margin-bottom: 11px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+.post-body li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 13px;
+  width: 9px;
+  height: 1px;
+  background: var(--accent);
+}
+.post-signoff {
+  margin-top: 44px;
+  padding-top: 26px;
+  border-top: 1px solid var(--line);
+  font-size: 15px !important;
+  line-height: 1.7;
+  color: var(--muted) !important;
+}
+.post-signoff a { color: var(--accent-dp); }
+
+@media (max-width: 1080px) {
+  .post-lead { grid-template-columns: 1fr; }
+  .post-lead-body { padding: 0 clamp(22px, 3vw, 32px) clamp(26px, 3vw, 34px); }
+  .posts--three { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .posts--three { grid-template-columns: 1fr; }
+  .post-body p, .post-body li { font-size: 16.5px; }
 }

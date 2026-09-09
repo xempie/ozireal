@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero } from "@/components/public/page-shell";
 import { PrincipalCard } from "@/components/public/principal";
 import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
@@ -14,18 +15,21 @@ import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
  * not build public booking, Phase 3 builds the calendar (3.1, 3.7), and in between there
  * is nothing to receive a booking.
  *
- * So this page has no booking widget, and it must not grow a fake one. A form that takes
- * a name, a date and a phone number and drops them is worse than no page at all, because
- * the visitor leaves believing an appointment exists.
+ * So the form on this page is a REQUEST, not a booking, and the difference is load
+ * bearing. It captures what the meeting is about and when generally suits, lands in the
+ * CRM like every other enquiry, and says plainly that nothing is held in the diary until
+ * the office replies. What it must never do is show a calendar of times and let somebody
+ * pick one: that reads as a confirmed appointment, and there is nothing behind it to
+ * confirm against.
  *
- * Two acceptable outcomes at cutover, and they are a decision for the business, not for
- * this file:
+ * Two acceptable outcomes at cutover, and they are a decision for the business:
  *
  *   1. `/book-online` keeps pointing at Wix Bookings until Phase 3 lands, or
- *   2. Phase 2B ships a real booking form writing to `calendar_events`, with consent
- *      provenance captured the same way the appraisal form will capture it.
+ *   2. Phase 3's calendar (3.1, 3.7) backs a real booking that writes `calendar_events`,
+ *      at which point this form becomes the fallback rather than the whole path.
  *
- * Until one of those happens, this page routes people to the phone, which works.
+ * Either way the phone number stays on the page, because it is the only route that
+ * confirms a time in one step today.
  */
 
 export const metadata: Metadata = {
@@ -110,6 +114,8 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <FormSection slug="book-online" />
     </>
   );
 }

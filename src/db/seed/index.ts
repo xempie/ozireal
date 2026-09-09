@@ -552,6 +552,7 @@ async function main() {
     ["Property investment enquiry", "Send me investment opportunities and market analysis by email. I can unsubscribe at any time."],
     ["Land opportunities enquiry", "Send me land and development opportunities matching this brief. I can unsubscribe at any time."],
     ["Rental enquiry", "Send me rental properties matching these requirements before they are advertised. I can unsubscribe at any time."],
+    ["Free meeting request", "Send me property market updates by email alongside my consultation. I can unsubscribe at any time."],
     ["Sell my business enquiry", "Send me business sale market updates by email. I can unsubscribe at any time."],
   ] as [string, string][]) {
     await sql`insert into consent_templates (tenant_id, form_name, wording)

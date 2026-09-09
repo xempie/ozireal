@@ -66,6 +66,10 @@ const TEMPLATES = [
     "Send me rental properties matching these requirements before they are advertised. I can unsubscribe at any time.",
   ],
   [
+    "Free meeting request",
+    "Send me property market updates by email alongside my consultation. I can unsubscribe at any time.",
+  ],
+  [
     "Sell my business enquiry",
     "Send me business sale market updates by email. I can unsubscribe at any time.",
   ],

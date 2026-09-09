@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { DemoListings } from "@/components/public/demo-listings";
 import { PrincipalCard } from "@/components/public/principal";
+import { ServiceGrid } from "@/components/public/service-grid";
 import {
   AGENCY,
   HERO,
@@ -159,6 +160,30 @@ export default function HomePage() {
               Free suburb insight report <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ========================================================= services */}
+      {/*
+        The services as cards with icons, each landing on the page that carries that
+        service's enquiry form. The "start here" strip in the hero is the same set of
+        destinations as a compact row; this is the version with room to say what each
+        one actually is.
+      */}
+      <section className="sec" id="services" style={{ background: "var(--paper-2)" }}>
+        <div className="wrap">
+          <div className="sec-head">
+            <div>
+              <p className="eyebrow">What we do</p>
+              <h2 className="display">
+                Eight services, <em>one office</em>
+              </h2>
+            </div>
+            <Link className="txtlink" href="/property-services">
+              All services <span aria-hidden="true">&rarr;</span>
+            </Link>
+          </div>
+          <ServiceGrid />
         </div>
       </section>
 

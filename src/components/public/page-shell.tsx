@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { photo } from "./agency";
 import type { ServicePage } from "./site-pages";
+import { formForSlug } from "./forms/definitions";
 
 /**
  * The shell every standalone page shares: a compact hero, then the body.
@@ -162,12 +163,19 @@ export function ServicePageBody({ page }: { page: ServicePage }) {
         </div>
       </section>
 
-      <CtaBand
-        heading="Your property journey"
-        headingEm="starts here."
-        label={page.cta.label}
-        href={page.cta.href}
-      />
+      {/*
+        No closing band when the page carries an enquiry form. The form IS the call to
+        action, and the site footer already ends every page with one. Three stacked CTAs
+        was two too many, and the middle one repeated the footer's line word for word.
+      */}
+      {!formForSlug(page.slug) && (
+        <CtaBand
+          heading="Not sure where to"
+          headingEm="start?"
+          label={page.cta.label}
+          href={page.cta.href}
+        />
+      )}
     </>
   );
 }

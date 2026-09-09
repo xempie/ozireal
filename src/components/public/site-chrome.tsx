@@ -63,10 +63,16 @@ export function SiteFooter() {
     <footer className="foot">
       <div className="wrap">
         <div className="foot-cta">
+          {/*
+            Deliberately NOT "Your property journey starts here". That is the agency's
+            headline and it is already the h1 on the home page and on /property-services,
+            so the footer repeating it put the same sentence on screen twice. The footer
+            closes with the offer instead, which is the thing the button next to it does.
+          */}
           <h2>
-            Your property journey
+            Free appraisal,
             <br />
-            <em>starts here.</em>
+            <em>valued at $399.</em>
           </h2>
           <Link className="btn" href="/free-property-appraisal-sa">
             Book a free appraisal
