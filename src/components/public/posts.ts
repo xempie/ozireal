@@ -70,3 +70,22 @@ export function formatDate(iso: string): string {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
+
+/**
+ * Twelve to a page.
+ *
+ * Fifty-four cards on one page was one request and no pagination to get wrong, which is
+ * the right trade at fifty. It stops being the right trade as the blog grows: the page
+ * carries every cover image, so the weight climbs with the archive and the reader pays
+ * for fifty posts to reach the three they wanted.
+ *
+ * Twelve fills four rows of three on a desktop and is a short scroll on a phone.
+ */
+export const POSTS_PER_PAGE = 12;
+
+export const pageCount = () => Math.max(1, Math.ceil(POSTS.length / POSTS_PER_PAGE));
+
+export function postsForPage(n: number): Post[] {
+  const start = (n - 1) * POSTS_PER_PAGE;
+  return POSTS.slice(start, start + POSTS_PER_PAGE);
+}

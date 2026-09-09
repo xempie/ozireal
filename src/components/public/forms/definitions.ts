@@ -215,6 +215,102 @@ export const FORMS: FormDefinition[] = [
   },
 
   {
+    slug: "property-services",
+    formName: "General enquiry",
+    title: "Not sure which service you need?",
+    intro:
+      "Describe the situation and we will point you at the right one. It is a faster route than reading eight pages to work out which applies.",
+    submitLabel: "Send my enquiry",
+    fields: [
+      ...IDENTITY(),
+      { id: "need", label: "What do you need help with?", kind: "checkbox", required: true,
+        options: [
+          "Selling",
+          "Renting out",
+          "Property management",
+          "Buying",
+          "Renting",
+          "Investing",
+          "Land",
+          "Selling a business",
+        ] },
+      { id: "message", label: "Tell us about it", kind: "textarea", required: true,
+        placeholder: "The property, the timeframe, and what you are trying to work out" },
+    ],
+  },
+
+  {
+    slug: "property-strategy-services",
+    formName: "Property strategy enquiry",
+    title: "Book a strategy conversation",
+    intro:
+      "Bring the portfolio or the decision you are weighing. We will tell you what the data says, including when the answer is to do nothing this year.",
+    submitLabel: "Request a strategy session",
+    fields: [
+      ...IDENTITY(),
+      { id: "situation", label: "Where are you now?", kind: "radio", required: true,
+        options: [
+          "I own one property",
+          "I own several",
+          "I am about to buy my first",
+          "I am deciding whether to hold or sell",
+        ] },
+      { id: "goal", label: "What are you trying to achieve?", kind: "checkbox", required: true,
+        options: ["Grow a portfolio", "Improve rental returns", "Reduce risk", "Plan an exit", "Still working it out"] },
+      { id: "properties", label: "Which properties should we look at?", kind: "textarea",
+        placeholder: "Addresses or suburbs, if that is where the question sits" },
+      { id: "timeframe", label: "Timeframe", kind: "radio",
+        options: ["Now", "3–6 months", "6–12 months", "Just researching"] },
+    ],
+  },
+
+  {
+    slug: "overseas-investment",
+    formName: "Dubai investment register",
+    title: "Register your interest",
+    intro:
+      "Tell us what you are investing for and when, and we will send the portfolio and the market comparison. Nothing is committed by registering.",
+    submitLabel: "Register my interest",
+    fields: [
+      ...IDENTITY(false),
+      { id: "goal", label: "Investment goal", kind: "checkbox", required: true,
+        options: ["Capital growth", "Rental yield", "Tax benefits", "Other"] },
+      { id: "timeframe", label: "Timeframe to invest", kind: "radio", required: true,
+        options: ["0–3 months", "3–6 months", "6–12 months", "Just researching"] },
+      { id: "budget", label: "Budget range", kind: "radio",
+        options: ["Under $500,000", "$500,000 to $1,000,000", "$1,000,000 to $2,000,000", "More than $2,000,000"] },
+      { id: "notes", label: "Anything else we should know?", kind: "textarea" },
+    ],
+  },
+
+  {
+    slug: "realestate-gift-adelaide",
+    formName: "Gift Party bundle",
+    title: "Get on the list",
+    intro: "We will send the bundle to your inbox.",
+    submitLabel: "Send me the bundle",
+    fields: [
+      ...IDENTITY(),
+      { id: "looking", label: "Tell us what you are looking for", kind: "textarea", required: true,
+        placeholder: "Buying, selling, renting out, investing, or just curious" },
+    ],
+  },
+
+  {
+    slug: "contact",
+    formName: "Website enquiry",
+    title: "Send us a message",
+    intro:
+      "The office answers the phone during business hours, and this reaches the same place if it is easier.",
+    submitLabel: "Send my message",
+    fields: [
+      ...IDENTITY(),
+      { id: "about", label: "What is it about?", kind: "radio", required: true,
+        options: ["Selling", "Renting out", "Buying", "Renting", "Property management", "Something else"] },
+      { id: "message", label: "Your message", kind: "textarea", required: true },
+    ],
+  },
+  {
     slug: "book-online",
     formName: "Free meeting request",
     title: "Request your free consultation",

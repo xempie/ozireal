@@ -77,30 +77,84 @@ function jsonLd(html) {
  * something renderable. Scoped to the content-viewer node: outside it the same tags are
  * navigation, related posts and the comment form.
  */
+/**
+ * Boilerplate that is not part of any post.
+ *
+ * The content-viewer node is followed by the site's own footer, and the first pass swept
+ * it into every post: "Recent Posts", the five department emails, the address, the licence
+ * number, the whole Quick Links nav and the copyright line. Cutting at the first of these
+ * is reliable because all of it sits AFTER the article, in the same order, on every post.
+ */
+const CUT_AT = [
+  /^Recent Posts$/i,
+  /^Email\s*\/\s*Call$/i,
+  /^Quick Links$/i,
+  /^Tel:\s/i,
+  /^Emails:/i,
+  /^Address:\s/i,
+  /^Licence Number:/i,
+  /^ABN:/i,
+  /All rights reserved/i,
+  /^Comments?$/i,
+  /^Share this post/i,
+  /^Recommended Posts$/i,
+];
+
+/** Individual lines that are footer furniture wherever they appear. */
+const DROP = [
+  /^[a-z]+@ozirealty\.com\.au$/i,
+  /^(Home|Services|Strategy Services|Oversea Investment|Free Appraisal|About|Contact Us|Free Meeting|Gift Party|Blog|FAQ)$/,
+  /^\d+ min read$/i,
+  /^\d+ views?$/i,
+  /^Write a comment/i,
+  /^Log in \/ Sign up/i,
+  /^Ozi ?Realty$/i,
+  /* Trailing sign-offs the author added inside the article, which duplicate the site
+     footer once the post is rendered inside this layout. */
+  /^Ozi ?Realty\s*[—|-]\s*(308\s*Prospect|RLA)/i,
+  /^RLA\s?350\s?628\.?$/i,
+];
+
+/**
+ * The article body, as blocks rather than one blob, so headings and lists survive into
+ * something renderable. Scoped to the content-viewer node, then truncated at the first
+ * footer marker, because Wix does not close that node before the footer starts.
+ */
 function blocks(html) {
   const start = html.indexOf('data-id="content-viewer"');
   if (start === -1) return [];
-  // Wix has nothing else after the viewer worth keeping; cut at the comments widget.
-  const end = html.indexOf("comments-widget", start);
-  const body = html.slice(start, end === -1 ? start + 400_000 : end);
+  const body = html.slice(start);
 
   const out = [];
   for (const m of body.matchAll(/<(p|h2|h3|h4|ul|ol)\b[^>]*>([\s\S]*?)<\/\1>/g)) {
     const tag = m[1];
+
     if (tag === "ul" || tag === "ol") {
       const items = [...m[2].matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/g)]
         .map((li) => text(li[1]))
-        .filter(Boolean);
+        .filter((t) => t && !DROP.some((re) => re.test(t)));
       if (items.length) out.push({ t: "ul", items });
       continue;
     }
+
     const t = text(m[2]);
     if (!t) continue;
+    if (CUT_AT.some((re) => re.test(t))) break;
+    if (DROP.some((re) => re.test(t))) continue;
+
     if (tag === "h2" || tag === "h3" || tag === "h4") {
       out.push({ t: tag === "h4" ? "h3" : tag, text: t });
     } else if (t.length > 1) {
       out.push({ t: "p", text: t });
     }
+  }
+
+  /*
+    A trailing heading with nothing under it is the start of a section that was cut, so
+    it reads as a dangling title. Drop them.
+  */
+  while (out.length && out[out.length - 1].t !== "p" && out[out.length - 1].t !== "ul") {
+    out.pop();
   }
   return out;
 }

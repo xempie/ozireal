@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FormSection } from "@/components/public/forms/form-section";
 import { ServicePageBody } from "@/components/public/page-shell";
 import { servicePageBySlug } from "@/components/public/site-pages";
 
@@ -15,5 +16,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ServicePageBody page={page} />;
+  return (
+    <>
+      <ServicePageBody page={page} />
+      <FormSection slug="property-strategy-services" />
+    </>
+  );
 }

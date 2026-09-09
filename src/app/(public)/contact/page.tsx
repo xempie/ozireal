@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero } from "@/components/public/page-shell";
 import { PrincipalCard } from "@/components/public/principal";
 import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
@@ -123,6 +124,7 @@ export default function Page() {
           </div>
         </div>
       </section>
+      <FormSection slug="contact" />
     </>
   );
 }

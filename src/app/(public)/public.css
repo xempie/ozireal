@@ -1991,3 +1991,76 @@
   .posts--three { grid-template-columns: 1fr; }
   .post-body p, .post-body li { font-size: 16.5px; }
 }
+
+/* ============================================================
+   PAGINATION
+   ------------------------------------------------------------
+   /blog and /blog/page/<n>. Paths rather than a query string, so each page prerenders
+   and carries its own canonical: query-string pagination is the version where every page
+   canonicalises to /blog and the archive quietly leaves the index.
+   ============================================================ */
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: clamp(36px, 4vw, 56px);
+  padding-top: clamp(24px, 2.6vw, 34px);
+  border-top: 1px solid var(--line);
+}
+
+.pager-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 20px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition: border-color 0.2s, background 0.2s, gap 0.2s;
+}
+.pager-step:hover { border-color: var(--accent); gap: 15px; }
+/*
+  Rendered as an inert span at the ends rather than a disabled link. A control that looks
+  clickable and does nothing is worse than one that plainly cannot be used.
+*/
+.pager-step--off { opacity: 0.4; cursor: default; }
+.pager-step--off:hover { border-color: var(--line); gap: 10px; }
+
+.pager-nums { display: flex; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.pager-nums li { display: flex; align-items: center; gap: 6px; }
+
+.pager-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44px, so a page number is a comfortable tap target rather than a precision test. */
+  min-width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink);
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.pager-num:hover { border-color: var(--ink); }
+.pager-num--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper-2);
+  cursor: default;
+}
+.pager-gap { font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 0 2px; }
+
+@media (max-width: 640px) {
+  .pager { justify-content: center; }
+  .pager-nums { order: -1; width: 100%; justify-content: center; }
+}

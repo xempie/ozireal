@@ -3,7 +3,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CtaBand } from "@/components/public/page-shell";
-import { AGENCY } from "@/components/public/agency";
 import { POSTS, postBySlug, readingMinutes, formatDate } from "@/components/public/posts";
 
 /**
@@ -101,10 +100,6 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               return <p key={i}>{b.text}</p>;
             })}
 
-            <p className="post-signoff">
-              Written by {post.author} at {AGENCY.name} ({AGENCY.licence}). Questions about
-              your own property? Call <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>.
-            </p>
           </div>
         </div>
       </article>

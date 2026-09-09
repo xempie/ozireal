@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero } from "@/components/public/page-shell";
 import { ServiceGrid } from "@/components/public/service-grid";
 import { REPORTS } from "@/components/public/agency";
@@ -124,6 +125,7 @@ export default function Page() {
           </div>
         </div>
       </section>
+      <FormSection slug="property-services" />
     </>
   );
 }

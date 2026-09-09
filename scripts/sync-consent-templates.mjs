@@ -70,6 +70,22 @@ const TEMPLATES = [
     "Send me property market updates by email alongside my consultation. I can unsubscribe at any time.",
   ],
   [
+    "General enquiry",
+    "Send me property updates and market news relevant to my enquiry. I can unsubscribe at any time.",
+  ],
+  [
+    "Property strategy enquiry",
+    "Send me market analysis and strategy updates for the areas I am invested in. I can unsubscribe at any time.",
+  ],
+  [
+    "Dubai investment register",
+    "Send me the Dubai portfolio and overseas investment opportunities as they come up. I can unsubscribe at any time.",
+  ],
+  [
+    "Gift Party bundle",
+    "Send me the bundle and occasional property and finance updates. I can unsubscribe at any time.",
+  ],
+  [
     "Sell my business enquiry",
     "Send me business sale market updates by email. I can unsubscribe at any time.",
   ],

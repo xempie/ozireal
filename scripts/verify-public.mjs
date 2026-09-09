@@ -271,6 +271,11 @@ async function heroContrast(page, heroSel, textSel) {
     "/free-property-appraisal-sa",
     "/free-suburb-insight-report",
     "/book-online",
+    "/property-services",
+    "/property-strategy-services",
+    "/overseas-investment",
+    "/realestate-gift-adelaide",
+    "/contact",
   ];
   for (const path of WITH_FORMS) {
     await go(page, new URL(path, BASE).toString());
@@ -324,8 +329,9 @@ async function heroContrast(page, heroSel, textSel) {
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await go(page, new URL("/blog", BASE).toString());
-  const cards = await page.locator(".post").count();
-  check("blog lists its posts", cards >= 20, cards + " cards");
+  /* .post-lead as well as .post: page one promotes the newest post to a wider card. */
+  const cards = await page.locator(".post, .post-lead").count();
+  check("blog lists a page of posts", cards === 12, cards + " posts");
 
   const href = await page.locator(".post").first().getAttribute("href");
   check(
@@ -345,6 +351,27 @@ async function heroContrast(page, heroSel, textSel) {
     check(href + " has body copy", shape.paras >= 3, shape.paras + " paragraphs");
     check(href + " has a cover image", shape.cover === 1);
   }
+
+  /*
+    Pagination. The page-size check is the one that matters: a paginator that renders but
+    puts every post on page one is indistinguishable from a working one until the archive
+    grows. /blog/page/1 must NOT exist, because it would be a second URL for page one.
+  */
+  await go(page, new URL("/blog", BASE).toString());
+  const first = await page.locator(".post, .post-lead").count();
+  check("page one shows 12 posts", first === 12, first + " posts");
+
+  await go(page, new URL("/blog/page/2", BASE).toString());
+  const second = await page.locator(".post").count();
+  check("page two shows 12 posts", second === 12, second + " cards");
+  check("page two has a pager", (await page.locator(".pager").count()) === 1);
+
+  const past = await page.request.get(new URL("/blog/page/99", BASE).toString());
+  check("a page past the end is a 404", past.status() === 404, "HTTP " + past.status());
+
+  const dupe = await page.request.get(new URL("/blog/page/1", BASE).toString());
+  check("/blog/page/1 does not duplicate /blog", dupe.status() === 404, "HTTP " + dupe.status());
+
   await page.close();
 }
 
