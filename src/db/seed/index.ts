@@ -540,6 +540,19 @@ async function main() {
     ["Listing enquiry", consentWording],
     ["Free property appraisal", consentWording.replace("properties and services that match my enquiry", "the appraisal of my property and related services")],
     ["Suburb insight report", "Send me the report and occasional market updates for this suburb. I can unsubscribe at any time."],
+    /**
+     * One per service form (B3.4 + the Phase 2B enquiry forms). The wording is what the
+     * consent row stores as evidence of what was on screen, so it is specific to what
+     * the person actually asked about rather than one generic sentence everywhere.
+     */
+    ["Property management enquiry", "Send me rental market updates and property management news by email. I can unsubscribe at any time."],
+    ["Sell my property enquiry", consentWording.replace("properties and services that match my enquiry", "selling my property and the local sales market")],
+    ["Rent out my property enquiry", "Send me rental market updates relevant to letting my property. I can unsubscribe at any time."],
+    ["Buyer agent enquiry", "Send me properties matching this brief, including off-market opportunities. I can unsubscribe at any time."],
+    ["Property investment enquiry", "Send me investment opportunities and market analysis by email. I can unsubscribe at any time."],
+    ["Land opportunities enquiry", "Send me land and development opportunities matching this brief. I can unsubscribe at any time."],
+    ["Rental enquiry", "Send me rental properties matching these requirements before they are advertised. I can unsubscribe at any time."],
+    ["Sell my business enquiry", "Send me business sale market updates by email. I can unsubscribe at any time."],
   ] as [string, string][]) {
     await sql`insert into consent_templates (tenant_id, form_name, wording)
               values (${TENANT}, ${form}, ${wording})`;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { PageHero } from "@/components/public/page-shell";
-import { DemoAppraisalForm } from "@/components/public/demo-appraisal-form";
+import { FormSection } from "@/components/public/forms/form-section";
 import { photo } from "@/components/public/agency";
 
 /**
@@ -10,11 +10,10 @@ import { photo } from "@/components/public/agency";
  * `/free-property-appraisal-sa` mirrors the live Wix page, which is one of the two lead
  * forms on the current site and therefore one of the URLs it would hurt most to break.
  *
- * The form is still the preview island: it discloses that it stores nothing, above the
- * fields rather than after them. Wiring it up means fetching a signed token and the exact
- * consent wording from `/api/forms/[key]`, posting through the Phase 1 web adapter, and
- * storing that wording with the enquiry as consent provenance. That is a real endpoint
- * with a legal reason to exist, not a fetch bolted onto a component.
+ * The form is real now. It fetches a signed token and the exact consent wording from
+ * `/api/forms/[key]`, posts through the Phase 1 web adapter, and the consent row records
+ * the wording that was actually on screen. The preview island it replaced disclosed that
+ * it stored nothing, which was honest and is no longer necessary.
  */
 
 export const metadata: Metadata = {
@@ -74,10 +73,11 @@ export default function Page() {
               </li>
             </ul>
 
-            <DemoAppraisalForm />
           </div>
         </div>
       </section>
+
+      <FormSection slug="free-property-appraisal-sa" />
     </>
   );
 }

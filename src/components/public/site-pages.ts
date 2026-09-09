@@ -196,6 +196,143 @@ export const SERVICE_PAGES: ServicePage[] = [
   },
 
   {
+    slug: "rent-out-my-property-adelaide",
+    eyebrow: "Landlords",
+    title: "Rent out your property,",
+    titleEm: "properly priced",
+    lede: "A rental appraisal based on what comparable properties actually leased for, a pricing strategy that minimises vacancy, and a manager you can reach.",
+    metaTitle: "Rent out my property in Adelaide",
+    metaDescription:
+      "Rent out your Adelaide property with OziRealty. Free rental appraisal, careful tenant screening, and management from 2.99% with 100 days risk-free.",
+    image: "photo-1605146769289-440113cc3d00",
+    imageAlt: "Grey and white contemporary home",
+    facts: ["Free rental appraisal", "From 2.99%", "rent@ozirealty.com.au"],
+    points: [
+      "An accurate weekly rent range, with the comparable lettings behind it",
+      "Careful tenant screening and leasing management",
+      "A pricing strategy built to minimise vacancy rather than maximise the headline",
+      "Routine inspections and maintenance coordination once it is let",
+    ],
+    sections: [
+      {
+        heading: "Pricing is the whole game",
+        body: [
+          "Overpricing a rental costs more in vacancy than the extra rent recovers. Two weeks empty wipes out a year of an extra ten dollars a week, and that arithmetic is the reason the appraisal comes first.",
+          "We will give you the range, the comparable results, and a recommendation. What you list at is your decision.",
+        ],
+      },
+      {
+        heading: "Then it is managed",
+        body: [
+          "Letting and ongoing management run on the same plans as the rest of the rent roll, from 2.99% with 100 days risk-free. Details are on the management page.",
+        ],
+      },
+    ],
+    cta: { label: "How management works", href: "/manage-property-adelaide" },
+  },
+
+  {
+    slug: "property-investment",
+    eyebrow: "Investment",
+    title: "Invest on the numbers,",
+    titleEm: "not the pitch",
+    lede: "Capital growth, rental yield and tax position pull in different directions. Which one leads decides the shortlist, so that is the first question we ask.",
+    metaTitle: "Property investment in Adelaide",
+    metaDescription:
+      "Investment property advice for Adelaide and overseas. Yield, growth and holding costs across a full year, with real estate expertise combined with finance broking.",
+    image: "photo-1628624747186-a941c476b7ef",
+    imageAlt: "Coastal home with established trees",
+    facts: ["South Australia and overseas", "Dual expertise", "Written analysis"],
+    points: [
+      "Whether the goal is capital growth, rental yield, a tax position, or a mix",
+      "Rental demand for the specific street rather than the suburb average",
+      "Holding costs across a full year, including the ones nobody quotes",
+      "Finance structured alongside the purchase rather than after it",
+    ],
+    sections: [
+      {
+        heading: "The finance and the property together",
+        body: [
+          "OziRealty blends real estate expertise with financial advising and finance broking. For an investor that matters more than it sounds: the property that suits your borrowing position is not always the one that looks best on the listing.",
+          "We will tell you when a deal does not stack up. That is what being paid for the advice rather than the transaction is for.",
+        ],
+      },
+      {
+        heading: "Not financial advice",
+        body: [
+          "This page describes how we work. Your circumstances decide what actually applies, and the tax position in particular belongs with your accountant. No return is guaranteed.",
+        ],
+      },
+    ],
+    cta: { label: "Talk about your goals", href: "/contact" },
+  },
+
+  {
+    slug: "land-opportunities-sa-adelaide",
+    eyebrow: "Land",
+    title: "Land, and what you can",
+    titleEm: "actually build on it",
+    lede: "A block is only worth what council will let you do with it. We look at the zoning and the feasibility before the price.",
+    metaTitle: "Land opportunities in Adelaide and South Australia",
+    metaDescription:
+      "Land for sale and subdivision opportunities across Adelaide and South Australia. Zoning, feasibility and holding costs assessed before you commit.",
+    image: "photo-1600596542815-ffad4c1539a9",
+    imageAlt: "White rendered home under a blue sky",
+    facts: ["Build, invest or subdivide", "Feasibility first", "South Australia"],
+    points: [
+      "What the zoning allows, and what council is likely to approve",
+      "Subdivision feasibility on deep blocks, run with the council costs included",
+      "Holding costs while you build, and what they do to the return",
+      "What is available now, and what we expect to come up",
+    ],
+    sections: [
+      {
+        heading: "The feasibility comes before the offer",
+        body: [
+          "The deep block that is quietly worth twice its listing and the one that cannot be split look identical from the street. The difference is zoning, frontage, easements and services, and none of that is in the advertisement.",
+          "We will tell you which one you are looking at before you commit to either.",
+        ],
+      },
+    ],
+    cta: { label: "Tell us what you are after", href: "/contact" },
+  },
+
+  {
+    slug: "sell-my-business-australia",
+    eyebrow: "Business brokerage",
+    title: "Selling a business,",
+    titleEm: "confidentially",
+    lede: "Nothing is advertised, and nothing is discussed with a buyer, without your say-so. For most owners confidentiality is the whole brief.",
+    metaTitle: "Sell my business in Australia",
+    metaDescription:
+      "Confidential business sales through OziRealty. Valuation, buyer qualification and negotiation, without staff, customers or suppliers finding out first.",
+    image: "photo-1615873968403-89e068629265",
+    imageAlt: "Living room with a tan leather sofa against a dark green wall",
+    facts: ["Confidential", "Buyers qualified first", "Australia wide"],
+    points: [
+      "A valuation based on the numbers a buyer will actually underwrite",
+      "Buyers qualified before they see anything identifying",
+      "Negotiation and contract support through to settlement",
+      "Timing advice, including when not to go to market yet",
+    ],
+    sections: [
+      {
+        heading: "Confidentiality is a process, not a promise",
+        body: [
+          "Staff, customers and suppliers finding out before you are ready is the risk that does real damage, and it usually happens through a careless advertisement rather than a leak.",
+          "So the listing is written to describe the business without identifying it, and buyers are qualified and under agreement before they see more.",
+        ],
+      },
+      {
+        heading: "Get your books in order first",
+        body: [
+          "The single biggest thing that moves a business price is clean, verifiable financials. If they are not there yet, the honest advice is to spend a year getting them there rather than going to market now.",
+        ],
+      },
+    ],
+    cta: { label: "Start a confidential conversation", href: "/contact" },
+  },
+  {
     slug: "buyer-agent-adelaide",
     eyebrow: "Buyer agent",
     title: "From searching to settlement,",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
 import { REPORTS } from "@/components/public/agency";
 
@@ -99,6 +100,8 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <FormSection slug="free-suburb-insight-report" />
 
       <CtaBand
         heading="Unlock my"

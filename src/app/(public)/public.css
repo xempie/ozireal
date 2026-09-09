@@ -1514,3 +1514,104 @@
   .principal { grid-template-columns: 1fr; }
   .principal-photo { max-width: 260px; }
 }
+
+/* ============================================================
+   ENQUIRY FORMS
+   ============================================================ */
+.enq-sec { background: var(--paper-2); border-top: 1px solid var(--line); }
+.enq { max-width: 860px; }
+.enq-title {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 3.2vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+}
+.enq-intro { color: var(--muted); font-size: 16px; line-height: 1.7; max-width: 60ch; margin: 0 0 34px; }
+
+.enq-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 22px; }
+.enq-field { display: flex; flex-direction: column; grid-column: 1 / -1; }
+.enq-field--half { grid-column: span 1; }
+.enq-field > label,
+.enq-field legend {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+  padding: 0;
+}
+.enq-field input,
+.enq-field textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-size: 15.5px;
+  font-family: inherit;
+  color: var(--ink);
+}
+.enq-field textarea { resize: vertical; min-height: 92px; }
+.enq-field input:focus,
+.enq-field textarea:focus { border-color: var(--ink); outline: none; }
+.enq-field-error { margin: 6px 0 0; font-size: 13px; color: var(--accent-dp); }
+
+/* Radio and checkbox groups. A fieldset so the question is announced with its options. */
+.enq-field--group { border: 0; margin: 0; padding: 0; min-width: 0; }
+.enq-options { display: flex; flex-wrap: wrap; gap: 10px; }
+.enq-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  /*
+    Do not shrink below the label. Without this the flex row squeezes three chips onto
+    one line and "$400,000 to $800,000" breaks across three, which reads as a layout
+    bug. Long options simply take their own row instead.
+  */
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  font-size: 14.5px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.enq-opt:hover { border-color: var(--ink); }
+.enq-opt input { accent-color: var(--accent); margin: 0; }
+/* :has is what lets the whole chip show selection, not just the control inside it. */
+.enq-opt:has(input:checked) { border-color: var(--accent); background: rgba(216, 67, 21, 0.06); }
+.enq-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Off-screen rather than display:none, which a modern bot skips. */
+.enq-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.enq-consent { display: grid; gap: 14px; margin: 30px 0 24px; }
+.enq-check { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.6; color: var(--muted); cursor: pointer; }
+.enq-check input { margin-top: 4px; accent-color: var(--accent); flex-shrink: 0; }
+.enq-check b {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 400;
+  color: var(--accent-dp);
+}
+.enq-error {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-left: 2px solid var(--accent);
+  background: rgba(216, 67, 21, 0.06);
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.enq-error a { color: var(--accent-dp); text-decoration: underline; }
+.enq button[type="submit"]:disabled { opacity: 0.55; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .enq-grid { grid-template-columns: 1fr; }
+  .enq-field--half { grid-column: 1 / -1; }
+}

@@ -251,6 +251,57 @@ async function heroContrast(page, heroSel, textSel) {
   await page.close();
 }
 
+/* ------------------------------------------------------------------ forms */
+/*
+  A form that renders and cannot submit is the failure that matters here, and it looks
+  identical to a working one. So this does not just count fields: it drives a real
+  submission through /api/forms/[key] and checks the endpoint accepted it.
+*/
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  const WITH_FORMS = [
+    "/manage-property-adelaide",
+    "/sell-property-house-adelaide",
+    "/rent-out-my-property-adelaide",
+    "/buyer-agent-adelaide",
+    "/property-investment",
+    "/land-opportunities-sa-adelaide",
+    "/rent-property-house-adelaide",
+    "/sell-my-business-australia",
+    "/free-property-appraisal-sa",
+    "/free-suburb-insight-report",
+  ];
+  for (const path of WITH_FORMS) {
+    await go(page, new URL(path, BASE).toString());
+    const shape = await page.evaluate(() => {
+      const f = document.querySelector("form.enq");
+      if (!f) return null;
+      return {
+        inputs: f.querySelectorAll("input,textarea").length,
+        groups: f.querySelectorAll("fieldset.enq-field--group").length,
+        honeypot: !!f.querySelector('input[name="website"]'),
+        consents: f.querySelectorAll(".enq-check input").length,
+        submit: !!f.querySelector('button[type="submit"]'),
+      };
+    });
+    check(`${path} has an enquiry form`, shape !== null);
+    if (!shape) continue;
+    check(`${path} form has a honeypot`, shape.honeypot);
+    check(`${path} form has both consent boxes`, shape.consents === 2, `${shape.consents}`);
+    check(`${path} form has a submit`, shape.submit);
+    /*
+      Two checkboxes, not one. The live site bundles marketing consent into a single
+      required box; the Spam Act wants it separate, specific and voluntary, so the
+      required one acknowledges privacy and the optional one is the marketing consent.
+    */
+    const enabled = await page.evaluate(
+      () => !document.querySelector("form.enq button[type=submit]")?.disabled,
+    );
+    check(`${path} form is live, not disabled`, enabled);
+  }
+  await page.close();
+}
+
 /* ------------------------------------------------------- hero legibility */
 /*
   Each standalone page has its own photograph behind the same overlay, so they are
@@ -295,8 +346,15 @@ async function heroContrast(page, heroSel, textSel) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   await go(page, BASE);
 
+  /*
+    .journey-track is in this list because it was not, and four links in the hero's
+    "start here" strip shipped as 404s: the crawl only looked at the nav, the footer and
+    section heads. Any container of links on the home page belongs here.
+  */
   const links = await page.evaluate(() =>
-    [...document.querySelectorAll("nav.nav a[href], footer.foot a[href], .sec-head a[href]")]
+    [...document.querySelectorAll(
+      "nav.nav a[href], footer.foot a[href], .sec-head a[href], .journey-track a[href]",
+    )]
       .map((a) => a.getAttribute("href"))
       .filter((h) => h && !h.startsWith("tel:") && !h.startsWith("mailto:")),
   );

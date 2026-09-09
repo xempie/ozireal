@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero, Points, CtaBand } from "@/components/public/page-shell";
 import { MANAGEMENT_PLANS, REPORTS } from "@/components/public/agency";
 
@@ -127,6 +128,8 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <FormSection slug="manage-property-adelaide" />
 
       <CtaBand
         heading="Get your"
