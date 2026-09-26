@@ -26,7 +26,7 @@ import {
  * There is no send tool. The furthest a message gets is a draft in Approvals.
  */
 
-const ROLES = ["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor"] as const;
+const ROLES = ["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor", "agent"] as const;
 const PROPERTY_TYPES = ["house", "unit", "townhouse", "land", "acreage", "commercial"] as const;
 const uuid = () => z.string().uuid();
 

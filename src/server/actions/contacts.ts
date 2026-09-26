@@ -161,6 +161,7 @@ const CONTACT_ROLES = [
   "referrer",
   "investor",
   "business_vendor",
+  "agent",
 ] as const;
 
 const contactInput = z.object({

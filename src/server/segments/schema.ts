@@ -45,6 +45,7 @@ export const CONTACT_ROLES = [
   "referrer",
   "investor",
   "business_vendor",
+  "agent",
 ] as const;
 
 export const INTENT_TYPES = [

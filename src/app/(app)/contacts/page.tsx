@@ -26,6 +26,7 @@ const roleTone = {
   referrer: "neutral",
   investor: "ai",
   business_vendor: "stock",
+  agent: "brand",
 } as const;
 
 const filters = [

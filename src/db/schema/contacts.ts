@@ -30,6 +30,7 @@ export const contactRole = pgEnum("contact_role", [
   "referrer",
   "investor",
   "business_vendor",
+  "agent",
 ]);
 
 export const channel = pgEnum("channel", [

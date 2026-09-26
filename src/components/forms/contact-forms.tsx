@@ -30,6 +30,8 @@ const ROLES = [
   "tenant",
   "referrer",
   "investor",
+  "business_vendor",
+  "agent",
 ] as const;
 
 /* ------------------------------------------------------------ new contact */
@@ -96,7 +98,7 @@ export function NewContactButton() {
                   className="inline-flex items-center gap-1.5 text-[12.5px] border rounded-md px-2 py-1.5 surface-3 cursor-pointer"
                 >
                   <input type="checkbox" name="roles" value={r} defaultChecked={r === "buyer"} />
-                  {r}
+                  {r.replace("_", " ")}
                 </label>
               ))}
             </div>
@@ -501,7 +503,7 @@ export function EditContactButton({ contact }: { contact: EditableContact }) {
                     value={r}
                     defaultChecked={contact.roles.includes(r)}
                   />
-                  {r}
+                  {r.replace("_", " ")}
                 </label>
               ))}
             </div>
