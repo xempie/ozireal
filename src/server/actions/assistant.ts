@@ -82,8 +82,35 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
   const s = await session();
   if (!s) return { ok: false, error: "You are signed out. Sign in and try again." };
 
-  const parsed = z.object({ messages: z.array(message).min(1).max(120) }).safeParse(raw);
+  const parsed = z
+    .object({
+      messages: z.array(message).min(1).max(120),
+      /** Where the agent is. Strictly shaped, so a URL cannot carry text into the prompt. */
+      page: z
+        .object({
+          path: z.string().max(120).regex(/^\/[a-z0-9/-]*$/i),
+          record: z
+            .object({ kind: z.enum(["contact", "property", "listing"]), id: z.string().uuid() })
+            .nullable()
+            .optional(),
+        })
+        .optional(),
+    })
+    .safeParse(raw);
   if (!parsed.success) return { ok: false, error: "That conversation could not be read. Start a new chat." };
+
+  const page = parsed.data.page;
+  const pageContext = !page
+    ? ""
+    : page.record
+      ? ` The agent is on the page for one ${page.record.kind} (id ${page.record.id}). "This ${page.record.kind}" means that record: look it up first (${
+          page.record.kind === "contact"
+            ? "get_contact"
+            : page.record.kind === "property"
+              ? "get_property"
+              : "list_listings and get_matches"
+        }) rather than asking which one.`
+      : ` The agent is on the ${page.path} page.`;
 
   const history: ChatMessage[] = trim(parsed.data.messages);
   const prompt = loadPrompt(PROMPT);
@@ -106,7 +133,7 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
         output: "prose",
         system: [
           { text: fillPrompt(prompt.text, { agency: agency.name, user: agency.user.name }), cache: true },
-          { text: `It is now ${now} in Adelaide.` },
+          { text: `It is now ${now} in Adelaide.${pageContext}` },
         ],
         messages: history as { role: "user" | "assistant"; content: string | ContentBlock[] }[],
         tools: TOOL_DEFINITIONS,

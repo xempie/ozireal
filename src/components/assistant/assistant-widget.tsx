@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { suggestionsFor, recordFromPath, type Suggestion } from "./page-suggestions";
 import { Sparkles, X, Send, RotateCcw, Check, Ban, Loader2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -36,13 +37,6 @@ type CardState = {
 type Stored = { messages: ChatMessage[]; cards: Record<string, CardState> };
 
 const STORE_KEY = "ozi-assistant";
-
-const SUGGESTIONS = [
-  "What needs my attention today?",
-  "Which properties are off market?",
-  "Who has a follow-up due?",
-  "Add a task to call my newest contact tomorrow",
-];
 
 function load(): Stored {
   try {
@@ -183,6 +177,8 @@ function ActionCard({
 
 export function AssistantWidget() {
   const router = useRouter();
+  const pathname = usePathname();
+  const onPage = suggestionsFor(pathname);
   const [open, setOpen] = React.useState(false);
   const [messages, setMessages] = React.useState<ChatMessage[]>([]);
   const [cards, setCards] = React.useState<Record<string, CardState>>({});
@@ -245,7 +241,10 @@ export function AssistantWidget() {
     setError(null);
     setMessages(next);
     try {
-      const r = await assistantTurn({ messages: next });
+      const r = await assistantTurn({
+        messages: next,
+        page: { path: pathname, record: recordFromPath(pathname) },
+      });
       if (!r.ok) {
         setError(r.error);
         return;
@@ -325,6 +324,22 @@ export function AssistantWidget() {
     }
   }
 
+  /** A suggestion either goes straight to the assistant, or starts a request to finish. */
+  function pickSuggestion(sug: Suggestion) {
+    if (sug.send) {
+      send(sug.send);
+      return;
+    }
+    const text = sug.prefill ?? sug.label;
+    setDraft(text);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.setSelectionRange(text.length, text.length);
+    });
+  }
+
   /** Chips go under the newest reply only; older ones would offer stale actions. */
   const lastAssistant = messages.reduce((last, m, i) => (m.role === "assistant" ? i : last), -1);
 
@@ -396,15 +411,18 @@ export function AssistantWidget() {
                   add, update or draft something. I will show you each change before it
                   happens.
                 </p>
-                <div className="flex flex-col gap-2 mt-4">
-                  {SUGGESTIONS.map((s) => (
+                <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium mt-5 mb-2">
+                  {onPage.area === "everything" ? "Try" : `For ${onPage.area}`}
+                </div>
+                <div className="flex flex-col gap-2">
+                  {onPage.items.map((sug) => (
                     <button
-                      key={s}
+                      key={sug.label}
                       type="button"
-                      onClick={() => send(s)}
+                      onClick={() => pickSuggestion(sug)}
                       className="text-left text-[13px] rounded-lg border px-3 py-2 hover:surface-3"
                     >
-                      {s}
+                      {sug.label}
                     </button>
                   ))}
                 </div>
@@ -479,6 +497,30 @@ export function AssistantWidget() {
               </div>
             )}
           </div>
+
+          {/*
+            Mid-conversation, the page's own suggestions stay one tap away. They follow
+            the page, so moving from Contacts to Tasks changes what is offered here.
+          */}
+          {messages.length > 0 && !busy && pending.length === 0 && (
+            <div className="border-t px-3 pt-2 shrink-0">
+              <div className="text-3 text-[10.5px] uppercase tracking-[0.06em] font-medium mb-1.5">
+                {onPage.area === "everything" ? "Suggestions" : `For ${onPage.area}`}
+              </div>
+              <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                {onPage.items.slice(0, 4).map((sug) => (
+                  <button
+                    key={sug.label}
+                    type="button"
+                    onClick={() => pickSuggestion(sug)}
+                    className="shrink-0 text-[12px] rounded-full border px-2.5 py-1 text-2 hover:surface-3 whitespace-nowrap"
+                  >
+                    {sug.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <form
             className="border-t p-3 flex items-end gap-2 shrink-0"
