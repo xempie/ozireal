@@ -431,6 +431,12 @@ Postgres onto the instance as well — that contradicts §2 and needs sign-off u
 enquiry-rate volume, not bulk-import volume. Revisit before any import work — dedupe
 across thousands of rows at once is a different problem.
 
+*Amended 2026-09-26:* a **small-batch property import** is approved — JSON, Markdown or
+PDF, at most 200 rows, preview then an explicit Import press. It creates properties
+(status off market), owners as landlords and tenants as tenants, through the ordinary
+identity resolver. Rent, arrears, leases and trust figures are ignored (D10, §14). Bulk
+contact import stays deferred. Format: [property-import.md](property-import.md).
+
 ### Why SES receiving (D3)
 
 Ranked against the alternatives for a one-user AU deployment:

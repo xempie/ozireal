@@ -17,6 +17,7 @@ import {
   EditPropertyButton,
 } from "@/components/forms/stock-forms";
 import { suburbOptions, contactOptions } from "@/server/queries/pickers";
+import { ImportPropertiesButton } from "@/components/forms/property-import";
 
 export default async function PropertiesPage() {
   const [suburbOpts, contactOpts] = await Promise.all([suburbOptions(), contactOptions()]);
@@ -27,7 +28,12 @@ export default async function PropertiesPage() {
       <PageHeader
         title="Properties"
         subtitle="The stock, whether or not it is currently advertised. A property outlives its listings."
-        actions={<NewPropertyButton suburbs={suburbOpts} contacts={contactOpts} />}
+        actions={
+          <div className="flex gap-2">
+            <ImportPropertiesButton />
+            <NewPropertyButton suburbs={suburbOpts} contacts={contactOpts} />
+          </div>
+        }
       />
 
       <Table minWidth={860}>

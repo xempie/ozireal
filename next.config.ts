@@ -66,6 +66,14 @@ const nextConfig: NextConfig = {
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],
+  /**
+   * The property import posts the uploaded file to a Server Action. The 1 MB default
+   * would refuse a small PDF; 5 MB of PDF is ~6.7 MB base64-encoded. Every action's own
+   * Zod schema still caps its fields, so this raises the ceiling, not the allowance.
+   */
+  experimental: {
+    serverActions: { bodySizeLimit: "8mb" },
+  },
 };
 
 export default nextConfig;

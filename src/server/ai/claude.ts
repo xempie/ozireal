@@ -37,6 +37,17 @@ export type SystemBlock = {
   cache?: boolean;
 };
 
+/**
+ * A message is plain text, or content blocks when a document rides along — a PDF is
+ * sent as a base64 document block, which is how Claude reads one directly.
+ */
+export type ContentBlock =
+  | { type: "text"; text: string }
+  | {
+      type: "document";
+      source: { type: "base64"; media_type: "application/pdf"; data: string };
+    };
+
 export type ClaudeCall = {
   /** Ledger label, e.g. 'summarise-interaction'. */
   task: string;
@@ -50,7 +61,7 @@ export type ClaudeCall = {
    */
   output: "structured" | "prose";
   system?: SystemBlock[];
-  messages: { role: "user" | "assistant"; content: string }[];
+  messages: { role: "user" | "assistant"; content: string | ContentBlock[] }[];
   maxTokens?: number;
   tenantId: string;
   /** What caused the spend. */

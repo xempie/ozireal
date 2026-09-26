@@ -266,11 +266,14 @@ export function Modal({
   onClose,
   title,
   children,
+  wide = false,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  /** For a dialog that holds a table (the import preview) rather than a form. */
+  wide?: boolean;
 }) {
   React.useEffect(() => {
     if (!open) return;
@@ -292,7 +295,10 @@ export function Modal({
       onClick={onClose}
     >
       <div
-        className="surface-2 border rounded-xl w-full max-w-[520px] shadow-xl mb-10"
+        className={cn(
+          "surface-2 border rounded-xl w-full shadow-xl mb-10",
+          wide ? "max-w-[980px]" : "max-w-[520px]",
+        )}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-3 border-b">
