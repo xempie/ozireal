@@ -22,6 +22,110 @@ import {
   updateContact,
   tombstoneContact,
 } from "@/server/actions/contacts";
+import { recordConsent } from "@/server/actions/consent";
+
+/* --------------------------------------------------------- record consent */
+
+/**
+ * Consent given outside a web form — a phone call, an email, in person. What the
+ * person agreed to is required for a grant; the row is permanent, and a withdrawal is
+ * recorded the same way as a new row.
+ */
+export function RecordConsentButton({ contactId }: { contactId: string }) {
+  const [open, setOpen] = React.useState(false);
+  const [status, setStatus] = React.useState<"granted" | "revoked">("granted");
+  const a = useAction(recordConsent, { onSuccess: () => setOpen(false) });
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          a.reset();
+          setStatus("granted");
+          setOpen(true);
+        }}
+        className="text-[12px] px-2.5 min-h-7 rounded-md surface-2 border hover:surface-3"
+      >
+        Record consent
+      </button>
+      <Modal open={open} onClose={() => setOpen(false)} title="Record consent">
+        <form
+          className="space-y-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const f = Object.fromEntries(new FormData(e.currentTarget).entries());
+            // datetime-local has no zone; convert in the browser, where "local" is Adelaide.
+            const when = f.occurredAt ? new Date(String(f.occurredAt)).toISOString() : undefined;
+            a.run({ ...f, contactId, occurredAt: when });
+          }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="Channel"
+              name="channel"
+              defaultValue="sms"
+              options={[
+                { value: "sms", label: "SMS" },
+                { value: "email", label: "Email" },
+                { value: "phone", label: "Phone calls" },
+              ]}
+              errors={a.fieldErrors.channel}
+            />
+            <Select
+              label="They"
+              name="status"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as "granted" | "revoked")}
+              options={[
+                { value: "granted", label: "Agreed" },
+                { value: "revoked", label: "Withdrew / said no" },
+              ]}
+              errors={a.fieldErrors.status}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              label="How"
+              name="method"
+              defaultValue="phone_call"
+              options={[
+                { value: "phone_call", label: "Phone call" },
+                { value: "email", label: "Email" },
+                { value: "sms", label: "SMS" },
+                { value: "in_person", label: "In person" },
+                { value: "in_writing", label: "In writing" },
+              ]}
+              errors={a.fieldErrors.method}
+            />
+            <Input label="When" name="occurredAt" type="datetime-local" errors={a.fieldErrors.occurredAt} />
+          </div>
+          <Textarea
+            label={status === "granted" ? "What they agreed to" : "Note (optional)"}
+            name="wording"
+            rows={3}
+            placeholder={
+              status === "granted"
+                ? "e.g. Happy to receive SMS about new listings and off-market opportunities"
+                : "e.g. Asked us to stop texting"
+            }
+            errors={a.fieldErrors.wording}
+          />
+          <p className="text-3 text-[11px] -mt-1">
+            This is the evidence the send check relies on, so it is kept permanently and
+            cannot be edited. Record only what the person actually agreed to. Leave When
+            blank for now.
+          </p>
+          <FormError message={a.error} />
+          <div className="flex gap-2 pt-1">
+            <SubmitButton pending={a.pending}>Save</SubmitButton>
+            <CancelButton onClick={() => setOpen(false)} />
+          </div>
+        </form>
+      </Modal>
+    </>
+  );
+}
 
 const ROLES = [
   "buyer",

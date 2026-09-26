@@ -8,6 +8,7 @@ import { createContact, updateContact, logInteraction, recordFollowupOutcome } f
 import { createTask, completeTask } from "@/server/actions/ops";
 import { createProperty, updateProperty, createListing, updateListing } from "@/server/actions/stock";
 import { createMessageDraft } from "@/server/actions/drafts";
+import { recordConsent } from "@/server/actions/consent";
 import { matchContactsForListing, matchListingsForContact } from "@/server/matching/engine";
 import { getContact, getProperties, getListing, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
@@ -106,6 +107,21 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
           : `Find matching listings for ${await contactName(input.contactId)}`,
         lines: ["Uses AI to rank the candidates and write a reason for each (a few cents)."],
       };
+    case "record_consent": {
+      const ch = input.channel === "sms" ? "SMS" : String(input.channel);
+      const how = String(input.method).replace("_", " ");
+      return {
+        title:
+          input.status === "granted"
+            ? `Record that ${await contactName(input.contactId)} agreed to ${ch}`
+            : `Record that ${await contactName(input.contactId)} withdrew from ${ch}`,
+        lines: [
+          `How: ${how}`,
+          ...(input.wording ? [`What they agreed to: ${input.wording}`] : []),
+          "Kept permanently as Spam Act evidence. Only confirm if this is what they said.",
+        ],
+      };
+    }
     case "draft_message": {
       const lines = [];
       if (input.subject) lines.push(`Subject: ${input.subject}`);
@@ -185,6 +201,15 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
         : ["Show the matching listings", "Draft an SMS about the best one"];
     case "draft_message":
       return ["Draft the same message to the next match", "Add a task to follow up in 3 days"];
+    case "record_consent": {
+      if (input.status !== "granted") return [];
+      const who = (await contactName(input.contactId)) ?? "them";
+      return input.channel === "email"
+        ? [`Draft an email to ${who}`]
+        : input.channel === "sms"
+          ? [`Draft an SMS to ${who}`]
+          : [`Add a task to call ${who}`];
+    }
     default:
       return [];
   }
@@ -342,6 +367,15 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
       } catch (e) {
         return { ok: false, message: `Matching failed: ${e instanceof Error ? e.message.slice(0, 160) : "unknown error"}` };
       }
+    }
+
+    case "record_consent": {
+      const r = await recordConsent(input);
+      return outcome(
+        r,
+        input.status === "granted" ? "Consent recorded." : "Withdrawal recorded.",
+        `/contacts/${input.contactId}`,
+      );
     }
 
     case "draft_message": {

@@ -35,6 +35,7 @@ import {
   RecordOutcomeButton,
   EditContactButton,
   RemoveContactButton,
+  RecordConsentButton,
 } from "@/components/forms/contact-forms";
 
 export default async function ContactDetail({
@@ -341,7 +342,10 @@ export default async function ContactDetail({
           )}
 
           <Card>
-            <CardTitle>Consent</CardTitle>
+            <div className="flex items-center justify-between gap-2">
+              <CardTitle>Consent</CardTitle>
+              {!c.mergedIntoId && <RecordConsentButton contactId={c.id} />}
+            </div>
             <div className="space-y-3">
               {c.consents.map((k) => (
                 <div

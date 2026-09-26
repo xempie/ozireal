@@ -7,10 +7,16 @@ import { TOOLS, TOOL_DEFINITIONS } from "@/server/assistant/tools";
  * tool that changes data is a `write`, which the turn loop never executes itself.
  */
 describe("assistant tools", () => {
-  it("has no tool that sends, publishes, deletes, merges or touches consent", () => {
+  it("has no tool that sends, publishes, deletes or merges", () => {
     for (const name of Object.keys(TOOLS)) {
-      expect(name).not.toMatch(/send|publish|delete|remove|merge|consent|unsubscribe|approve/);
+      expect(name).not.toMatch(/send|publish|delete|remove|merge|unsubscribe|approve/);
     }
+  });
+
+  it("touches consent only through record_consent, which always asks first", () => {
+    const consentTools = Object.keys(TOOLS).filter((n) => /consent/.test(n));
+    expect(consentTools).toEqual(["record_consent"]);
+    expect(TOOLS.record_consent.kind).toBe("write");
   });
 
   it("marks every tool that changes data as a write", () => {

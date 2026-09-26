@@ -27,11 +27,12 @@ describing the change.
 
 | Can (after Do it) | Cannot |
 |---|---|
-| Add or update contacts, log interactions, record follow-ups | Send any message (drafts go to **Approvals**, rule 1) |
+| Add or update contacts (including the **agent** role), log interactions, record follow-ups | Send any message (drafts go to **Approvals**, rule 1) |
 | Create and complete tasks | Publish or withdraw a listing |
 | Add or update properties; draft and edit listings | Delete, merge, or change consent |
 | Run matching for a listing or a contact | Invent listing price wording (it must be the agent's words) |
 | Draft an SMS or email to one contact, if they consented on that channel | |
+| Record consent the agent says a person gave (how, and what they agreed to) | Infer consent from a role or a published number |
 
 `tests/assistant-tools.test.ts` pins these properties.
 

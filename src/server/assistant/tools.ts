@@ -230,6 +230,18 @@ export const TOOLS = {
       "Run the matching engine for a listing (find contacts) or a contact (find listings). Uses AI, so it asks first. Then read the results with get_matches.",
     schema: z.object({ listingId: uuid().optional(), contactId: uuid().optional() }),
   },
+  record_consent: {
+    kind: "write",
+    description:
+      "Record that a contact agreed to (or withdrew from) SMS, email or phone contact, given outside a web form. ONLY when the agent tells you the person actually agreed — never infer it. For a grant, `wording` is what they agreed to and is required.",
+    schema: z.object({
+      contactId: uuid(),
+      channel: z.enum(["sms", "email", "phone"]),
+      status: z.enum(["granted", "revoked"]),
+      method: z.enum(["phone_call", "email", "sms", "in_person", "in_writing"]),
+      wording: z.string().max(1000).optional(),
+    }),
+  },
   draft_message: {
     kind: "write",
     description:
