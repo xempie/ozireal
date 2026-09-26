@@ -38,6 +38,8 @@ export default function Page() {
         facts={[AGENCY.licence, "No pressure", "One-on-one"]}
       />
 
+      <FormSection slug="contact" />
+
       <section className="sec">
         <div className="wrap">
           <PrincipalCard />
@@ -124,7 +126,6 @@ export default function Page() {
           </div>
         </div>
       </section>
-      <FormSection slug="contact" />
     </>
   );
 }

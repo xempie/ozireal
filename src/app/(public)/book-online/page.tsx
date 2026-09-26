@@ -52,6 +52,8 @@ export default function Page() {
         facts={["Free", "One-on-one", "No obligation"]}
       />
 
+      <FormSection slug="book-online" />
+
       <section className="sec">
         <div className="wrap">
           <PrincipalCard />
@@ -115,7 +117,6 @@ export default function Page() {
         </div>
       </section>
 
-      <FormSection slug="book-online" />
     </>
   );
 }

@@ -1748,6 +1748,106 @@
   color: var(--ink);
 }
 .form-done a { color: var(--accent-dp); text-decoration: underline; }
+.form-done:focus { outline: none; }
+
+/* ---- sending: the card dims under a status panel that follows the viewport ---- */
+.enq { position: relative; }
+.enq.is-sending > *:not(.enq-sending) { opacity: 0.35; pointer-events: none; }
+.enq-sending {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.35);
+  cursor: progress;
+}
+/* Sticky, so on a long form the message sits mid-screen rather than at the card's middle. */
+.enq-sending-in {
+  position: sticky;
+  top: 42vh;
+  margin: 18vh auto 0;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 26px;
+  background: var(--ink);
+  color: var(--paper-2);
+  font-size: 15.5px;
+  box-shadow: 0 18px 50px rgba(15, 30, 34, 0.28);
+}
+
+.enq-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+  vertical-align: -3px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: enq-spin 0.75s linear infinite;
+}
+.enq-spinner--lg { width: 22px; height: 22px; margin-right: 0; border-width: 2.5px; }
+@keyframes enq-spin { to { transform: rotate(360deg); } }
+.enq-submit .btn:disabled { cursor: progress; opacity: 0.85; }
+
+/* ---- the thank-you, centred where the eye is ---- */
+.thanks-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 30, 34, 0.55);
+  animation: thanks-fade 0.2s ease-out;
+}
+.thanks {
+  width: 100%;
+  max-width: 460px;
+  background: var(--white);
+  color: var(--ink);
+  border-top: 4px solid var(--accent);
+  padding: clamp(28px, 5vw, 44px);
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(15, 30, 34, 0.35);
+  animation: thanks-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.thanks-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--paper-2);
+}
+.thanks-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 4vw, 2.2rem);
+  line-height: 1.1;
+  margin: 0 0 10px;
+}
+.thanks-lede { margin: 0 0 18px; font-size: 16.5px; line-height: 1.6; }
+.thanks-next {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line);
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.thanks-next a { color: var(--accent-dp); text-decoration: underline; }
+.thanks-close { min-width: 150px; justify-content: center; }
+@keyframes thanks-fade { from { opacity: 0; } }
+@keyframes thanks-rise { from { opacity: 0; transform: translateY(14px) scale(0.98); } }
 
 @media (max-width: 640px) {
   .enq-grid { grid-template-columns: 1fr; }

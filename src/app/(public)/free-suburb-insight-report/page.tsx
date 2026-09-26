@@ -42,6 +42,8 @@ export default function Page() {
         facts={["Free", "No obligation", "South Australia"]}
       />
 
+      <FormSection slug="free-suburb-insight-report" />
+
       <section className="sec">
         <div className="wrap">
           <div className="sec-head">
@@ -101,7 +103,6 @@ export default function Page() {
         </div>
       </section>
 
-      <FormSection slug="free-suburb-insight-report" />
 
       <CtaBand
         heading="Unlock my"

@@ -36,6 +36,8 @@ export default function Page() {
         facts={["48 hour turnaround", "No obligation", "No listing pitch"]}
       />
 
+      <FormSection slug="free-property-appraisal-sa" />
+
       <section className="sec">
         <div className="wrap appraise">
           <figure className="appraise-fig">
@@ -77,7 +79,6 @@ export default function Page() {
         </div>
       </section>
 
-      <FormSection slug="free-property-appraisal-sa" />
     </>
   );
 }

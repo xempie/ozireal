@@ -254,6 +254,13 @@ export function ServicePageBody({
         facts={page.facts}
       />
 
+      {/*
+        The enquiry form sits straight after the hero. Someone who arrived ready to ask
+        should not have to scroll past the whole pitch to find where to do it; the
+        benefits, points and gallery below are for the visitor still deciding.
+      */}
+      {children}
+
       {extras && (
         <section className="sec sec--tight">
           <div className="wrap">
@@ -275,8 +282,6 @@ export function ServicePageBody({
 
       {extras && <Gallery extras={extras} />}
       {extras && <Pitch extras={extras} />}
-
-      {children}
 
       {/*
         No closing band when the page carries an enquiry form. The form IS the call to

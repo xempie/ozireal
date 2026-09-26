@@ -67,6 +67,24 @@ export function EnquiryForm({
   const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
+  const [thanksOpen, setThanksOpen] = React.useState(false);
+  const doneRef = React.useRef<HTMLDivElement>(null);
+  const errorRef = React.useRef<HTMLParagraphElement>(null);
+
+  /**
+   * The form is long and the confirmation is short, so swapping one for the other would
+   * leave the reader looking at whatever slid up underneath. The thank-you opens as a
+   * dialog in the middle of the screen, and the card left in the form's place is brought
+   * into view behind it, so closing the dialog does not strand anybody mid-page.
+   */
+  React.useEffect(() => {
+    if (done) doneRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [done]);
+
+  /** An error sits by the button, which may be below the fold on a phone. */
+  React.useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [error]);
 
   /** Timestamp of first render: the route enforces a minimum fill time. */
   const openedAt = React.useRef<number>(0);
@@ -168,6 +186,7 @@ export function EnquiryForm({
       const j = await r.json().catch(() => ({}));
       if (r.ok) {
         setDone(true);
+        setThanksOpen(true);
         return;
       }
       if (r.status === 422 && j.fieldErrors) setFieldErrors(j.fieldErrors);
@@ -181,17 +200,43 @@ export function EnquiryForm({
     }
   }
 
+  const firstName = ((values.firstName as string) ?? "").trim();
+
   if (done) {
     return (
-      <div className="form-done" role="status">
-        Thank you. Your enquiry has reached us and we will be in touch. If it is urgent,
-        phone <a href={phoneHref}>{phone}</a>.
-      </div>
+      <>
+        <div className="form-done" role="status" ref={doneRef} tabIndex={-1}>
+          <strong>Thank you{firstName ? `, ${firstName}` : ""}.</strong> Your enquiry has
+          reached us and we will be in touch, usually the same business day. If it is
+          urgent, phone <a href={phoneHref}>{phone}</a>.
+        </div>
+        {thanksOpen && (
+          <ThanksDialog
+            firstName={firstName}
+            phone={phone}
+            phoneHref={phoneHref}
+            onClose={() => setThanksOpen(false)}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <form className="enq" onSubmit={submit} noValidate>
+    <form
+      className={`enq${busy ? " is-sending" : ""}`}
+      onSubmit={submit}
+      noValidate
+      aria-busy={busy}
+    >
+      {busy && (
+        <div className="enq-sending" role="status" aria-live="polite">
+          <div className="enq-sending-in">
+            <span className="enq-spinner enq-spinner--lg" aria-hidden="true" />
+            <span>Sending your enquiry…</span>
+          </div>
+        </div>
+      )}
       <h2 className="enq-title">{definition.title}</h2>
       {definition.intro && <p className="enq-intro">{definition.intro}</p>}
 
@@ -260,14 +305,21 @@ export function EnquiryForm({
       </div>
 
       {error && (
-        <p className="enq-error" role="alert">
+        <p className="enq-error" role="alert" ref={errorRef}>
           {error}
         </p>
       )}
 
       <div className="enq-submit">
         <button className="btn" type="submit" disabled={busy || !meta}>
-          {busy ? "Sending…" : definition.submitLabel}
+          {busy ? (
+            <>
+              <span className="enq-spinner" aria-hidden="true" />
+              Sending…
+            </>
+          ) : (
+            definition.submitLabel
+          )}
         </button>
         <p className="enq-reassure">
           No obligation. We usually reply the same business day, and you can always phone{" "}
@@ -275,6 +327,68 @@ export function EnquiryForm({
         </p>
       </div>
     </form>
+  );
+}
+
+/**
+ * The confirmation, in the middle of the screen where the eye already is. A modal dialog:
+ * focus moves to its button, Escape and the backdrop close it, and the page behind does
+ * not scroll while it is open.
+ */
+function ThanksDialog({
+  firstName,
+  phone,
+  phoneHref,
+  onClose,
+}: {
+  firstName: string;
+  phone: string;
+  phoneHref: string;
+  onClose: () => void;
+}) {
+  const closeRef = React.useRef<HTMLButtonElement>(null);
+
+  React.useEffect(() => {
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [onClose]);
+
+  return (
+    <div className="thanks-backdrop" onClick={onClose}>
+      <div
+        className="thanks"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="thanks-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="thanks-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 12.5l4.5 4.5L19 7.5" />
+          </svg>
+        </div>
+        <h2 id="thanks-title" className="thanks-title">
+          Thank you{firstName ? `, ${firstName}` : ""}
+        </h2>
+        <p className="thanks-lede">Your enquiry has reached our team.</p>
+        <ul className="thanks-next">
+          <li>We usually reply the same business day.</li>
+          <li>
+            If it is urgent, phone <a href={phoneHref}>{phone}</a>.
+          </li>
+        </ul>
+        <button ref={closeRef} type="button" className="btn thanks-close" onClick={onClose}>
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 

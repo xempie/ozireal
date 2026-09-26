@@ -37,6 +37,8 @@ export default function Page() {
         facts={["Local and global", "Transparent fees", "RLA 350 628"]}
       />
 
+      <FormSection slug="property-services" />
+
       <section className="sec">
         <div className="wrap">
           <div className="sec-head">
@@ -125,7 +127,6 @@ export default function Page() {
           </div>
         </div>
       </section>
-      <FormSection slug="property-services" />
     </>
   );
 }

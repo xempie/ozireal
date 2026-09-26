@@ -41,6 +41,8 @@ export default function Page() {
         facts={["From 2.99%", "100 days risk-free", "No middle man"]}
       />
 
+      <FormSection slug="manage-property-adelaide" />
+
       <section className="sec">
         <div className="wrap page-cols">
           <Points
@@ -129,7 +131,6 @@ export default function Page() {
         </div>
       </section>
 
-      <FormSection slug="manage-property-adelaide" />
 
       <CtaBand
         heading="Get your"
