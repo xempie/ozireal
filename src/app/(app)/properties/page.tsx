@@ -19,15 +19,47 @@ import {
 import { suburbOptions, contactOptions } from "@/server/queries/pickers";
 import { ImportPropertiesButton } from "@/components/forms/property-import";
 
-export default async function PropertiesPage() {
+/**
+ * One page for all stock, filtered by tab. "Listed" is read from the listings (a live
+ * or under-offer campaign), not from the property's own status column, because a
+ * campaign is what makes something listed; the other tabs are the property's status.
+ */
+const TABS = [
+  { key: "all", label: "All" },
+  { key: "listed", label: "Listed" },
+  { key: "off_market", label: "Off market" },
+  { key: "prospect", label: "Prospect" },
+  { key: "appraised", label: "Appraised" },
+  { key: "sold", label: "Sold" },
+  { key: "archived", label: "Archived" },
+] as const;
+
+export default async function PropertiesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const { status } = await searchParams;
+  const tab = TABS.some((t) => t.key === status) ? status! : "all";
+
   const [suburbOpts, contactOpts] = await Promise.all([suburbOptions(), contactOptions()]);
-  const properties = await getProperties();
+  const all = await getProperties();
+
+  const isListed = (p: (typeof all)[number]) =>
+    p.listings.some((l) => l.status === "live" || l.status === "under_offer");
+  const inTab = (p: (typeof all)[number], key: string) =>
+    key === "all"
+      ? p.status !== "archived"
+      : key === "listed"
+        ? isListed(p)
+        : p.status === key;
+  const properties = all.filter((p) => inTab(p, tab));
 
   return (
     <>
       <PageHeader
         title="Properties"
-        subtitle="The stock, whether or not it is currently advertised. A property outlives its listings."
+        subtitle="All your stock in one place. Listed means a live campaign; the rest is the property's own status."
         actions={
           <div className="flex gap-2">
             <ImportPropertiesButton />
@@ -35,6 +67,35 @@ export default async function PropertiesPage() {
           </div>
         }
       />
+
+      <div className="flex flex-wrap items-center gap-1.5 mb-4" role="tablist">
+        {TABS.map((t) => {
+          const n = all.filter((p) => inTab(p, t.key)).length;
+          const active = t.key === tab;
+          return (
+            <Link
+              key={t.key}
+              href={t.key === "all" ? "/properties" : `/properties?status=${t.key}`}
+              role="tab"
+              aria-selected={active}
+              className={
+                active
+                  ? "rounded-full px-3 min-h-8 inline-flex items-center gap-1.5 text-[13px] font-medium bg-[var(--accent)] text-white"
+                  : "rounded-full px-3 min-h-8 inline-flex items-center gap-1.5 text-[13px] surface-2 border text-2 hover:surface-3"
+              }
+            >
+              {t.label}
+              <span className={active ? "opacity-80 tabular" : "text-3 tabular"}>{n}</span>
+            </Link>
+          );
+        })}
+        <Link
+          href="/listings"
+          className="ml-auto text-[13px] text-2 hover:underline underline-offset-2"
+        >
+          Manage listings →
+        </Link>
+      </div>
 
       <Table minWidth={860}>
         <THead>
@@ -146,7 +207,9 @@ export default async function PropertiesPage() {
       </Table>
 
       {properties.length === 0 && (
-        <div className="text-3 text-[13px] mt-3">No properties yet.</div>
+        <div className="text-3 text-[13px] mt-3">
+          {all.length === 0 ? "No properties yet." : "Nothing in this tab."}
+        </div>
       )}
 
       <ProtoNote>

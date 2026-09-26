@@ -32,6 +32,7 @@ import {
   CornerDownLeft,
   Menu,
   X,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,61 +58,46 @@ type Item = {
   badgeTone?: "queue" | "plain";
 };
 
-function buildGroups(counts: ShellData["counts"]): { label: string; items: Item[] }[] {
+/**
+ * Two groups: the five things used every day, always visible, and everything else under
+ * Advanced. `collapsible` groups start closed unless the current page is inside them.
+ */
+function buildGroups(
+  counts: ShellData["counts"],
+): { label: string; collapsible?: boolean; items: Item[] }[] {
   return [
-  {
-    label: "Today",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/reports", label: "Reports", icon: BarChart3 },
-    ],
-  },
-  {
-    label: "People",
-    items: [
-      { href: "/contacts", label: "Contacts", icon: Users },
-      { href: "/tasks", label: "Tasks", icon: ListTodo, badge: counts.tasksOpen, badgeTone: "plain" },
-      { href: "/calendar", label: "Calendar", icon: CalendarDays },
-      { href: "/voice", label: "Voice notes", icon: Mic },
-    ],
-  },
-  {
-    label: "Stock",
-    items: [
-      { href: "/properties", label: "Properties", icon: Home },
-      { href: "/listings", label: "Listings", icon: Tags },
-      { href: "/matching", label: "Matching", icon: GitCompareArrows },
-      { href: "/campaigns", label: "Campaigns", icon: Send },
-    ],
-  },
-  {
-    label: "Queues",
-    items: [
-      { href: "/approvals", label: "Approvals", icon: ShieldCheck, badge: counts.approvals, badgeTone: "queue" },
-      { href: "/confirm", label: "Confirm queue", icon: CheckCheck, badge: counts.confirms + counts.merges, badgeTone: "queue" },
-    ],
-  },
-  {
-    label: "Assist",
-    items: [
-      { href: "/compliance", label: "Compliance", icon: Scale },
-      { href: "/proposals", label: "Proposals", icon: FileText },
-      { href: "/content", label: "Content & social", icon: Newspaper },
-      { href: "/seo", label: "SEO agent", icon: TrendingUp },
-    ],
-  },
-  {
-    label: "Website",
-    items: [{ href: "/website", label: "Public site", icon: Globe }],
-  },
-  {
-    label: "Ops",
-    items: [
-      { href: "/costs", label: "AI cost & jobs", icon: Receipt },
-      { href: "/audit", label: "Audit log", icon: ScrollText },
-      { href: "/settings", label: "Settings", icon: Settings },
-    ],
-  },
+    {
+      label: "",
+      items: [
+        { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/contacts", label: "My contacts", icon: Users },
+        { href: "/properties", label: "My properties", icon: Home },
+        { href: "/matching", label: "Matching", icon: GitCompareArrows },
+        { href: "/tasks", label: "My tasks", icon: ListTodo, badge: counts.tasksOpen, badgeTone: "plain" },
+      ],
+    },
+    {
+      label: "Advanced",
+      collapsible: true,
+      items: [
+        { href: "/approvals", label: "Approvals", icon: ShieldCheck, badge: counts.approvals, badgeTone: "queue" },
+        { href: "/confirm", label: "Confirm queue", icon: CheckCheck, badge: counts.confirms + counts.merges, badgeTone: "queue" },
+        { href: "/listings", label: "Listings", icon: Tags },
+        { href: "/campaigns", label: "Campaigns", icon: Send },
+        { href: "/calendar", label: "Calendar", icon: CalendarDays },
+        { href: "/voice", label: "Voice notes", icon: Mic },
+        { href: "/insights", label: "Insights", icon: BarChart3 },
+        { href: "/reports", label: "Reports", icon: BarChart3 },
+        { href: "/compliance", label: "Compliance", icon: Scale },
+        { href: "/proposals", label: "Proposals", icon: FileText },
+        { href: "/content", label: "Content & social", icon: Newspaper },
+        { href: "/seo", label: "SEO agent", icon: TrendingUp },
+        { href: "/website", label: "Public site", icon: Globe },
+        { href: "/costs", label: "AI cost & jobs", icon: Receipt },
+        { href: "/audit", label: "Audit log", icon: ScrollText },
+        { href: "/settings", label: "Settings", icon: Settings },
+      ],
+    },
   ];
 }
 
@@ -128,16 +114,41 @@ function NavList({
 }) {
   const pathname = usePathname();
   const groups = buildGroups(counts);
+  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const [advancedOpen, setAdvancedOpen] = React.useState(false);
+
   return (
     <nav className="flex-1 overflow-y-auto py-3 px-2">
-      {groups.map((g) => (
-        <div key={g.label} className="mb-3.5">
-          {!collapsed && (
-            <div className="text-3 text-[10.5px] uppercase tracking-[0.09em] font-semibold px-2 mb-1.5">
-              {g.label}
-            </div>
+      {groups.map((g) => {
+        const containsActive = g.items.some((i) => isActive(i.href));
+        const open = !g.collapsible || advancedOpen || containsActive;
+        // Queue items waiting inside a closed group still show on its header.
+        const waiting = g.items
+          .filter((i) => i.badgeTone === "queue")
+          .reduce((s, i) => s + (i.badge ?? 0), 0);
+        return (
+        <div key={g.label || "main"} className="mb-3.5">
+          {g.collapsible && !collapsed && (
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen((o) => !o)}
+              aria-expanded={open}
+              className="w-full flex items-center gap-1.5 text-3 text-[10.5px] uppercase tracking-[0.09em] font-semibold px-2 min-h-8 mb-0.5 rounded-md hover:surface-3"
+            >
+              <ChevronRight
+                size={13}
+                className={cn("transition-transform", open && "rotate-90")}
+              />
+              <span className="flex-1 text-left">{g.label}</span>
+              {!open && waiting > 0 && (
+                <span className="tabular text-[11px] rounded px-1.5 py-[1px] font-semibold normal-case tracking-normal bg-[#eda100]/18 text-[#8a5f00] dark:text-[#e8b64a]">
+                  {waiting}
+                </span>
+              )}
+            </button>
           )}
-          {g.items.map((item) => {
+          {g.collapsible && collapsed && <div className="border-t mx-2 mb-2" />}
+          {(open || collapsed) && g.items.map((item) => {
             const active =
               pathname === item.href || pathname.startsWith(item.href + "/");
             const Icon = item.icon;
@@ -178,7 +189,8 @@ function NavList({
             );
           })}
         </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }
@@ -356,7 +368,7 @@ type Cmd = { label: string; sub: string; href: string };
 function useCommands(data: ShellData): Cmd[] {
   return React.useMemo(() => {
     const nav = buildGroups(data.counts).flatMap((g) =>
-      g.items.map((i) => ({ label: i.label, sub: g.label, href: i.href })),
+      g.items.map((i) => ({ label: i.label, sub: g.label || "Main", href: i.href })),
     );
     return [...nav, ...data.searchItems];
   }, [data]);

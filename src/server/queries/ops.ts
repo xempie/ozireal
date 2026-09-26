@@ -168,6 +168,57 @@ export async function getCounts() {
   });
 }
 
+/**
+ * The four home tiles' numbers, in one round trip. Each is a count the tile's page
+ * would show at the top, so the tile never promises something the page contradicts.
+ */
+export async function getHomeCounts() {
+  return query(async (tx) => {
+    const [row] = await tx.execute<{
+      contacts: number;
+      followups_due: number;
+      properties: number;
+      listed: number;
+      off_market: number;
+      tasks_open: number;
+      tasks_overdue: number;
+      approvals: number;
+      confirms: number;
+    }>(sql`
+      select
+        (select count(*)::int from ${contacts}
+           where ${contacts.tombstonedAt} is null) as contacts,
+        (select count(*)::int from ${contacts}
+           where ${contacts.tombstonedAt} is null
+             and ${contacts.followupDueAt} <= now()) as followups_due,
+        (select count(*)::int from ${properties}
+           where ${properties.status} <> 'archived') as properties,
+        (select count(distinct ${listings.propertyId})::int from ${listings}
+           where ${listings.status} in ('live', 'under_offer')) as listed,
+        (select count(*)::int from ${properties}
+           where ${properties.status} = 'off_market') as off_market,
+        (select count(*)::int from ${tasks} where ${tasks.status} = 'open') as tasks_open,
+        (select count(*)::int from ${tasks}
+           where ${tasks.status} = 'open' and ${tasks.dueAt} < now()) as tasks_overdue,
+        (select count(*)::int from ${approvalItems}
+           where ${approvalItems.status} = 'pending') as approvals,
+        (select count(*)::int from ${confirmItems}
+           where ${confirmItems.status} = 'pending') as confirms
+    `);
+    return {
+      contacts: row?.contacts ?? 0,
+      followupsDue: row?.followups_due ?? 0,
+      properties: row?.properties ?? 0,
+      listed: row?.listed ?? 0,
+      offMarket: row?.off_market ?? 0,
+      tasksOpen: row?.tasks_open ?? 0,
+      tasksOverdue: row?.tasks_overdue ?? 0,
+      approvals: row?.approvals ?? 0,
+      confirms: row?.confirms ?? 0,
+    };
+  });
+}
+
 /* ------------------------------------------------------------- campaigns */
 
 export async function getCampaigns() {
