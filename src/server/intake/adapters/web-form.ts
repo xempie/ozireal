@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ChannelAdapter, NormalisedInteraction } from "../types";
+import { rolesForSubmission } from "../form-roles";
 
 /**
  * The website enquiry form (B3.4) — the wire format half. The Route Handler owns
@@ -77,6 +78,7 @@ export const webFormAdapter: ChannelAdapter = {
       rawS3Key: null,
       listingRef: p.listingRef,
       consents,
+      roles: rolesForSubmission(p.formName, p.message),
     };
   },
 };

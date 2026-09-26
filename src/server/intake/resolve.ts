@@ -1,6 +1,6 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import type { Tx } from "@/db";
-import { contacts, contactRoles, mergeReviews } from "@/db/schema";
+import { contacts, mergeReviews } from "@/db/schema";
 import {
   toE164,
   normaliseEmail,
@@ -210,11 +210,7 @@ async function createRecord(
     })
     .returning({ id: contacts.id });
 
-  await tx
-    .insert(contactRoles)
-    .values({ tenantId, contactId: created.id, role: "buyer" })
-    .onConflictDoNothing();
-
+  // Roles are applied by the pipeline from what the message says, not assumed here.
   return created.id;
 }
 

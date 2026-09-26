@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { withTenant, type Tx } from "@/db";
-import { interactions, consents, channelAdapters } from "@/db/schema";
+import { interactions, consents, channelAdapters, contactRoles } from "@/db/schema";
 import { enqueue, type JobName, type JobPayload } from "@/server/jobs/queues";
 import { resolveContact, type Resolution } from "./resolve";
 import { getAdapter, type Channel, type NormalisedInteraction } from "./types";
@@ -121,6 +121,24 @@ export async function ingestInTx(
       ipAddress: c.ipAddress,
       occurredAt: n.occurredAt,
     });
+  }
+
+  /**
+   * Roles accumulate on the person (§4): a buyer who later sends a rental enquiry is
+   * now also a tenant. A role that had lapsed is made current again, since a fresh
+   * enquiry of that kind is the evidence. Channels that cannot tell leave `roles`
+   * unset, and only a brand-new record gets the historic buyer default.
+   */
+  const roles = n.roles ?? (resolution.outcome === "existing" ? [] : (["buyer"] as const));
+  for (const role of roles) {
+    await tx
+      .insert(contactRoles)
+      .values({ tenantId, contactId: resolution.contactId, role })
+      .onConflictDoUpdate({
+        target: [contactRoles.contactId, contactRoles.role],
+        set: { activeTo: null },
+        setWhere: sql`${contactRoles.activeTo} is not null`,
+      });
   }
 
   await touchAdapterHealth(tx, tenantId, n.channel);

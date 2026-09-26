@@ -1,4 +1,7 @@
 import { z } from "zod";
+import type { contactRole } from "@/db/schema";
+
+export type ContactRole = (typeof contactRole.enumValues)[number];
 
 /**
  * The channel adapter contract (CLAUDE.md §5).
@@ -74,6 +77,13 @@ export interface NormalisedInteraction {
   rawS3Key: string | null;
   listingRef: string | null;
   consents: ConsentCapture[];
+  /**
+   * What this message says the person IS — a rental enquiry makes them a tenant. Added
+   * to the resolved contact, new or existing, since one person accumulates roles (§4).
+   * Omitted by channels that cannot tell; a new contact from one of those falls back
+   * to buyer. An empty array means "this channel looked and found no role".
+   */
+  roles?: ContactRole[];
   /**
    * The signed-in user who typed it, when a human did (manual entry). Headless
    * channels leave it null. Set by the caller that owns the session, never by an

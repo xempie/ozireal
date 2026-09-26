@@ -29,6 +29,10 @@
  * structured columns is the natural follow-up and needs that decision made first.
  */
 
+import type { contactRole } from "@/db/schema";
+
+export type ContactRole = (typeof contactRole.enumValues)[number];
+
 export type FieldKind = "text" | "email" | "tel" | "textarea" | "date" | "radio" | "checkbox";
 
 export interface FormField {
@@ -57,7 +61,31 @@ export interface FormDefinition {
   intro?: string;
   submitLabel: string;
   fields: FormField[];
+  /**
+   * The role(s) a submission puts on the contact. Read by the intake SERVER-side, keyed
+   * on formName, so the browser cannot choose its own role. Empty when the form cannot
+   * tell (a newsletter sign-up is not evidence of buying or selling).
+   */
+  roles: ContactRole[];
+  /**
+   * For the general-purpose forms, where the role is an answer rather than the form:
+   * the field whose chosen option(s) decide it, and the option → role map. Options not
+   * in the map ("Something else") add nothing.
+   */
+  roleFrom?: { field: string; map: Record<string, ContactRole> };
 }
+
+/** Shared by the forms that ask "what is it about" with the same service options. */
+const SERVICE_ROLES: Record<string, ContactRole> = {
+  Selling: "vendor",
+  "Renting out": "landlord",
+  "Property management": "landlord",
+  Buying: "buyer",
+  Renting: "tenant",
+  Investing: "investor",
+  Land: "buyer",
+  "Selling a business": "business_vendor",
+};
 
 /** The name and contact block every form opens with. */
 const IDENTITY = (phoneRequired = true): FormField[] => [
@@ -71,6 +99,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "manage-property-adelaide",
     formName: "Property management enquiry",
+    roles: ["landlord"],
     title: "See if you are paying too much",
     intro: "Tell us about the property and we will come back with what management would cost and what it would earn.",
     submitLabel: "See if I am paying too much",
@@ -91,6 +120,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "sell-property-house-adelaide",
     formName: "Sell my property enquiry",
+    roles: ["vendor"],
     title: "Start with the appraisal",
     intro: "Free, no obligation, and it shows the comparable sales it came from.",
     submitLabel: "Submit",
@@ -109,6 +139,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "rent-out-my-property-adelaide",
     formName: "Rent out my property enquiry",
+    roles: ["landlord"],
     title: "Rent out your property",
     intro: "A rental appraisal, a pricing strategy, and a manager who answers the phone.",
     submitLabel: "Submit",
@@ -128,6 +159,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "buyer-agent-adelaide",
     formName: "Buyer agent enquiry",
+    roles: ["buyer"],
     title: "Tell us what you are looking for",
     intro: "The brief is where a buyer agent engagement starts. The more specific it is, the less of your Saturday it costs.",
     submitLabel: "Submit",
@@ -146,6 +178,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "property-investment",
     formName: "Property investment enquiry",
+    roles: ["investor"],
     title: "What are you investing for?",
     intro: "Yield, growth and tax position pull in different directions. Which one leads decides the shortlist.",
     submitLabel: "Submit",
@@ -163,6 +196,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "land-opportunities-sa-adelaide",
     formName: "Land opportunities enquiry",
+    roles: ["buyer"],
     title: "Looking for land",
     intro: "Tell us the area and what it is for, and we will send what is available and what is coming.",
     submitLabel: "Submit",
@@ -182,6 +216,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "rent-property-house-adelaide",
     formName: "Rental enquiry",
+    roles: ["tenant"],
     title: "Register your rental requirements",
     intro: "So we can tell you about the right properties before the open, rather than after.",
     submitLabel: "Submit",
@@ -201,6 +236,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "sell-my-business-australia",
     formName: "Sell my business enquiry",
+    roles: ["business_vendor"],
     title: "Selling a business",
     intro: "Confidential. Nothing is advertised or discussed with a buyer without your say-so.",
     submitLabel: "Submit",
@@ -217,6 +253,8 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "property-services",
     formName: "General enquiry",
+    roles: [],
+    roleFrom: { field: "need", map: SERVICE_ROLES },
     title: "Not sure which service you need?",
     intro:
       "Describe the situation and we will point you at the right one. It is a faster route than reading eight pages to work out which applies.",
@@ -242,6 +280,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "property-strategy-services",
     formName: "Property strategy enquiry",
+    roles: ["investor"],
     title: "Book a strategy conversation",
     intro:
       "Bring the portfolio or the decision you are weighing. We will tell you what the data says, including when the answer is to do nothing this year.",
@@ -267,6 +306,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "overseas-investment",
     formName: "Dubai investment register",
+    roles: ["investor"],
     title: "Register your interest",
     intro:
       "Tell us what you are investing for and when, and we will send the portfolio and the market comparison. Nothing is committed by registering.",
@@ -286,6 +326,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "realestate-gift-adelaide",
     formName: "Gift Party bundle",
+    roles: [],
     title: "Get on the list",
     intro: "We will send the bundle to your inbox.",
     submitLabel: "Send me the bundle",
@@ -299,6 +340,8 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "contact",
     formName: "Website enquiry",
+    roles: [],
+    roleFrom: { field: "about", map: SERVICE_ROLES },
     title: "Send us a message",
     intro:
       "The office answers the phone during business hours, and this reaches the same place if it is easier.",
@@ -313,6 +356,8 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "book-online",
     formName: "Free meeting request",
+    roles: [],
+    roleFrom: { field: "topic", map: SERVICE_ROLES },
     title: "Request your free consultation",
     intro:
       "Tell us what it is about and when suits, and we will come back to confirm a time. This is a request rather than a confirmed booking, so nothing is held in the diary until we reply.",
@@ -333,6 +378,11 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "free-property-appraisal-sa",
     formName: "Free property appraisal",
+    roles: [],
+    roleFrom: {
+      field: "purpose",
+      map: { "Considering selling": "vendor", "Buying and comparing value": "buyer" },
+    },
     title: "Request your free appraisal report",
     intro: "Valued at $399. No obligation, no pressure.",
     submitLabel: "Get my free report",
@@ -352,6 +402,7 @@ export const FORMS: FormDefinition[] = [
   {
     slug: "free-suburb-insight-report",
     formName: "Suburb insight report",
+    roles: [],
     title: "Unlock my suburb insights",
     intro: "Free, and written rather than generated from a postcode.",
     submitLabel: "Get my suburb report",
