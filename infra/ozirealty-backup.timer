@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly OziRealty backup
+
+[Timer]
+# 15:30 UTC = 01:00 Adelaide. Deliberately offset from the RDS snapshot window
+# (16:00-16:30 UTC) so the two never contend for the same I/O.
+OnCalendar=*-*-* 15:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

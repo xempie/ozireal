@@ -182,6 +182,10 @@ UNITEOF
 
 systemctl daemon-reload
 
+# The nightly backup (ozirealty-backup.service/.timer and backup.sh) is installed by
+# deploy.sh, not here, because it ships with the repo and must be refreshed on every
+# deploy. It lives in /usr/local/lib/ozirealty, outside the app directory the deploy wipes.
+
 log "Log rotation"
 cat > /etc/logrotate.d/ozirealty <<'LOGEOF'
 /var/log/ozirealty/*.log {

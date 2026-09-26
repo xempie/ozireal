@@ -1,0 +1,19 @@
+[Unit]
+Description=OziRealty nightly logical backup to S3
+After=network-online.target
+
+# Installed by infra/deploy.sh on every deploy, alongside the script it runs.
+#
+# The script lives in /usr/local/lib/ozirealty, NOT under /srv/ozirealty: deploy.sh
+# empties /srv/ozirealty and copies back only the app, so a backup script kept there was
+# deleted by the first deploy after it was installed. From then until 2026-09-27 every
+# nightly run exited 127 (command not found) and no dump reached S3.
+
+[Service]
+Type=oneshot
+User=ozirealty
+EnvironmentFile=/etc/ozirealty/env
+Environment=BACKUP_BUCKET=ozirealty-backups-606196119385
+ExecStart=/bin/bash /usr/local/lib/ozirealty/backup.sh
+StandardOutput=append:/var/log/ozirealty/backup.log
+StandardError=append:/var/log/ozirealty/backup.log

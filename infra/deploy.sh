@@ -143,6 +143,18 @@ sudo cp -rn /tmp/deps/node_modules/. "$APP_DIR"/node_modules/ 2>/dev/null || tru
 sudo chown -R ozirealty:ozirealty "$APP_DIR"/node_modules
 sudo test -d "$APP_DIR"/node_modules/drizzle-orm || { echo "worker dependencies missing"; exit 1; }
 sudo chown -R ozirealty:ozirealty "$APP_DIR"
+
+# The nightly backup, installed OUTSIDE $APP_DIR. It used to run from
+# $APP_DIR/infra/backup.sh, which the wipe above deletes, so every backup after the
+# first deploy failed with exit 127 and nobody saw it. Root-owned so the service user
+# can run the script but not rewrite it.
+sudo install -d -m 755 /usr/local/lib/ozirealty /var/log/ozirealty
+sudo chown ozirealty:ozirealty /var/log/ozirealty
+sudo install -m 755 -o root -g root /tmp/build/infra/backup.sh /usr/local/lib/ozirealty/backup.sh
+sudo install -m 644 -o root -g root /tmp/build/infra/ozirealty-backup.service /etc/systemd/system/ozirealty-backup.service
+sudo install -m 644 -o root -g root /tmp/build/infra/ozirealty-backup.timer /etc/systemd/system/ozirealty-backup.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now ozirealty-backup.timer
 REMOTE
 
 log "Restarting"

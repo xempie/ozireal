@@ -9,8 +9,9 @@
 # pg_dump is portable, inspectable, and restorable into a scratch database on
 # any box without touching production.
 #
-# Installed by provision.sh as a systemd timer. Run by hand with:
-#   sudo -u ozirealty /srv/ozirealty/infra/backup.sh
+# Installed by deploy.sh to /usr/local/lib/ozirealty/backup.sh, run nightly by
+# ozirealty-backup.timer (units in this directory). Run by hand with:
+#   sudo systemctl start ozirealty-backup.service && tail /var/log/ozirealty/backup.log
 set -euo pipefail
 
 BUCKET="${BACKUP_BUCKET:-ozirealty-backups-606196119385}"
