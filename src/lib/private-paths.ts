@@ -22,6 +22,7 @@
  */
 export const PRIVATE_PREFIXES = [
   "/dashboard",
+  "/insights",
   "/reports",
   "/contacts",
   "/tasks",
