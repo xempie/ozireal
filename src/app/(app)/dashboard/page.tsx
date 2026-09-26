@@ -82,7 +82,7 @@ export default async function DashboardPage() {
         {greeting}, {firstName}
       </h1>
       <p className="text-2 text-[14px] mt-1 mb-6">
-        Where to next?
+        Where to next? Or ask the assistant, bottom right.
       </p>
 
       {waiting > 0 && (

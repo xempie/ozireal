@@ -35,6 +35,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AssistantWidget } from "@/components/assistant/assistant-widget";
 
 /**
  * Everything the shell renders arrives as props from the layout. A "use client"
@@ -579,6 +580,7 @@ export function ConsoleShell({
           {children}
         </main>
       </div>
+      <AssistantWidget />
     </div>
   );
 }

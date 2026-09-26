@@ -46,7 +46,16 @@ export type ContentBlock =
   | {
       type: "document";
       source: { type: "base64"; media_type: "application/pdf"; data: string };
-    };
+    }
+  | { type: "tool_use"; id: string; name: string; input: unknown }
+  | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
+
+/** A tool the model may call (the assistant). `input_schema` is JSON Schema. */
+export type ToolDefinition = {
+  name: string;
+  description: string;
+  input_schema: Record<string, unknown>;
+};
 
 export type ClaudeCall = {
   /** Ledger label, e.g. 'summarise-interaction'. */
@@ -62,6 +71,7 @@ export type ClaudeCall = {
   output: "structured" | "prose";
   system?: SystemBlock[];
   messages: { role: "user" | "assistant"; content: string | ContentBlock[] }[];
+  tools?: ToolDefinition[];
   maxTokens?: number;
   tenantId: string;
   /** What caused the spend. */
@@ -72,6 +82,9 @@ export type ClaudeCall = {
 
 export type ClaudeResult = {
   text: string;
+  /** Every block, including tool_use — the assistant loop needs more than the text. */
+  content: ContentBlock[];
+  stopReason: string | null;
   generationId: string;
   usage: {
     inputTokens: number;
@@ -139,6 +152,7 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
     max_tokens: call.maxTokens ?? 1500,
     temperature,
     ...(system?.length ? { system } : {}),
+    ...(call.tools?.length ? { tools: call.tools } : {}),
     messages: call.messages,
   };
 
@@ -174,7 +188,7 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
   }
 
   const data = (await res.json()) as {
-    content: { type: string; text?: string }[];
+    content: { type: string; text?: string; id?: string; name?: string; input?: unknown }[];
     stop_reason?: string;
     usage: {
       input_tokens: number;
@@ -224,7 +238,15 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
     succeeded: true,
   });
 
-  return { text, generationId, usage };
+  const content: ContentBlock[] = data.content.flatMap((c): ContentBlock[] =>
+    c.type === "text" && c.text
+      ? [{ type: "text", text: c.text }]
+      : c.type === "tool_use" && c.id && c.name
+        ? [{ type: "tool_use", id: c.id, name: c.name, input: c.input ?? {} }]
+        : [],
+  );
+
+  return { text, content, stopReason: data.stop_reason ?? null, generationId, usage };
 }
 
 /**
