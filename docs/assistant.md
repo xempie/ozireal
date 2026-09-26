@@ -17,6 +17,11 @@ describing the change.
    the screen's own button uses* (`applyWrite` in `src/server/assistant/writes.ts`). Every
    validation, refusal and audit row applies. **Cancel** runs nothing.
 5. The outcomes go back to the model, which says what happened.
+6. **What next?** chips appear under the newest reply. Two sources, merged: fixed follow-ups
+   for the change just confirmed (`nextSteps` in writes.ts, e.g. after a new contact: find
+   matching properties, add a follow-up task, draft an SMS), and the model's own
+   suggestions, which `assistant.v2` asks for on a final `Next: a | b | c` line that the
+   widget lifts out of the text. Tapping a chip sends it as the next message.
 
 ## What it can and cannot do
 

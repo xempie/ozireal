@@ -21,7 +21,13 @@ import { TOOLS, type ToolName } from "./tools";
  */
 
 export type WriteCard = { title: string; lines: string[] };
-export type WriteOutcome = { ok: boolean; message: string; href?: string };
+export type WriteOutcome = {
+  ok: boolean;
+  message: string;
+  href?: string;
+  /** Suggested next steps, phrased as the agent would ask for them. Shown as chips. */
+  next?: string[];
+};
 
 const label = (s: string) =>
   s.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
@@ -127,8 +133,73 @@ function outcome<T>(r: ActionResult<T>, success: string, href?: string): WriteOu
 
 const opt = <T,>(v: T | null | undefined) => (v === null ? undefined : v);
 
-/** Runs a confirmed change through the screen's own Server Action. */
+/**
+ * What an agent usually does next, after each kind of change. Fixed rather than
+ * generated, so the obvious follow-up is always offered even if the model's own
+ * suggestions wander. Phrased as sentences the assistant can act on directly.
+ */
+async function nextSteps(name: ToolName, input: Record<string, unknown>): Promise<string[]> {
+  switch (name) {
+    case "create_contact":
+    case "update_contact": {
+      const who =
+        name === "create_contact"
+          ? `${input.firstName} ${input.lastName}`
+          : ((await contactName(input.contactId)) ?? "them");
+      return [
+        `Find properties that match ${who}`,
+        `Add a follow-up task for ${who} tomorrow`,
+        `Draft an SMS to ${who}`,
+      ];
+    }
+    case "log_interaction":
+    case "record_followup": {
+      const who = (await contactName(input.contactId)) ?? "them";
+      return [`Add a task to follow up ${who} next week`, `Find properties that match ${who}`];
+    }
+    case "create_task":
+    case "complete_task":
+      return ["Show my open tasks", "What is overdue?"];
+    case "create_property":
+    case "update_property": {
+      const addr =
+        name === "create_property"
+          ? [input.unit ? `${input.unit}/` : "", input.streetNumber, input.street].filter(Boolean).join(" ").replace("/ ", "/")
+          : ((await propertyAddress(input.propertyId)) ?? "it");
+      return [
+        `Create a sale listing for ${addr}`,
+        `Create a rental listing for ${addr}`,
+        `Add a task about ${addr}`,
+      ];
+    }
+    case "create_listing":
+    case "update_listing":
+      return [
+        "Find matching contacts for this listing",
+        "Write the listing headline and copy",
+        "Add a task to book the photographer",
+      ];
+    case "run_matching":
+      return input.listingId
+        ? ["Show the matches with their reasons", "Draft an SMS to the top match"]
+        : ["Show the matching listings", "Draft an SMS about the best one"];
+    case "draft_message":
+      return ["Draft the same message to the next match", "Add a task to follow up in 3 days"];
+    default:
+      return [];
+  }
+}
+
+/** Runs a confirmed change, and on success attaches the usual next steps. */
 export async function applyWrite(name: ToolName, rawInput: unknown): Promise<WriteOutcome> {
+  const result = await applyWriteInner(name, rawInput);
+  if (!result.ok) return result;
+  const input = (TOOLS[name].schema as ZodTypeAny).safeParse(rawInput ?? {});
+  const next = input.success ? await nextSteps(name, input.data as Record<string, unknown>).catch(() => []) : [];
+  return { ...result, next };
+}
+
+async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<WriteOutcome> {
   const parsed = (TOOLS[name].schema as ZodTypeAny).safeParse(rawInput ?? {});
   if (!parsed.success) return { ok: false, message: "That request was not in a usable shape." };
   const input = parsed.data as Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- validated just above against the tool's own schema

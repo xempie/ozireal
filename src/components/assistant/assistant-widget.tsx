@@ -62,6 +62,23 @@ function save(s: Stored) {
   }
 }
 
+/**
+ * The prompt asks the model to end each reply with "Next: a | b | c". That line is
+ * lifted out of the text and shown as chips instead.
+ */
+function splitNext(text: string): { body: string; next: string[] } {
+  const m = text.match(/\n?\s*Next:\s*(.+?)\s*$/i);
+  if (!m) return { body: text, next: [] };
+  return {
+    body: text.slice(0, m.index).trimEnd(),
+    next: m[1]
+      .split("|")
+      .map((s) => s.trim().replace(/^["'“]|["'”.]$/g, ""))
+      .filter((s) => s.length > 2 && s.length <= 90)
+      .slice(0, 3),
+  };
+}
+
 /** Just enough formatting for the model's replies: paragraphs, bullet lists, **bold**. */
 function Formatted({ text }: { text: string }) {
   const blocks = text.trim().split(/\n{2,}/);
@@ -174,10 +191,14 @@ export function AssistantWidget() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState("");
+  /** Fixed next steps from the changes just confirmed (see nextSteps on the server). */
+  const [actionNext, setActionNext] = React.useState<string[]>([]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
   /** Outcomes of the current batch of cards, collected until every one is decided. */
-  const decisions = React.useRef<Record<string, { ok: boolean; message: string; declined: boolean }>>({});
+  const decisions = React.useRef<
+    Record<string, { ok: boolean; message: string; declined: boolean; next?: string[] }>
+  >({});
 
   React.useEffect(() => {
     const s = load();
@@ -252,6 +273,7 @@ export function AssistantWidget() {
     const t = text.trim();
     if (!t || busy || pending.length) return;
     setDraft("");
+    setActionNext([]);
     void runTurn([...messages, { role: "user", content: t }]);
   }
 
@@ -260,7 +282,7 @@ export function AssistantWidget() {
     const p = pending.find((x) => x.id === id);
     if (!p) return;
 
-    let result: { ok: boolean; message: string; href?: string };
+    let result: { ok: boolean; message: string; href?: string; next?: string[] };
     if (doIt) {
       setCards((prev) => ({ ...prev, [id]: { ...prev[id], status: "applying" } }));
       try {
@@ -282,6 +304,9 @@ export function AssistantWidget() {
     const decided = { ...decisions.current, [id]: { ...result, declined: !doIt } };
     decisions.current = decided;
     if (pending.every((x) => decided[x.id])) {
+      setActionNext(
+        [...new Set(pending.flatMap((x) => (decided[x.id].ok ? (decided[x.id].next ?? []) : [])))].slice(0, 3),
+      );
       const toolResults = pending.map((x) => ({
         type: "tool_result" as const,
         tool_use_id: x.id,
@@ -300,12 +325,16 @@ export function AssistantWidget() {
     }
   }
 
+  /** Chips go under the newest reply only; older ones would offer stale actions. */
+  const lastAssistant = messages.reduce((last, m, i) => (m.role === "assistant" ? i : last), -1);
+
   function reset() {
     setMessages([]);
     setCards({});
     setPending([]);
     setPendingResults([]);
     setError(null);
+    setActionNext([]);
     decisions.current = {};
   }
 
@@ -315,11 +344,12 @@ export function AssistantWidget() {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[55] h-14 w-14 rounded-full bg-[var(--accent)] text-white shadow-lg grid place-items-center hover:opacity-90 transition-opacity"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[55] h-14 min-w-14 sm:px-5 rounded-full bg-[var(--accent)] text-white shadow-lg inline-flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
           aria-label="Open the assistant"
           title="Ask the assistant"
         >
-          <Sparkles size={24} />
+          <Sparkles size={22} />
+          <span className="hidden sm:inline text-[14px] font-medium">Ask AI</span>
         </button>
       )}
 
@@ -393,11 +423,16 @@ export function AssistantWidget() {
                 );
               }
               const blocks = typeof m.content === "string" ? [{ type: "text" as const, text: m.content }] : m.content;
+              const isLatest = i === lastAssistant;
+              const modelNext = blocks.flatMap((b) => (b.type === "text" ? splitNext(b.text).next : []));
+              const chips = isLatest && !busy && pending.length === 0
+                ? [...new Set([...actionNext, ...modelNext])].slice(0, 5)
+                : [];
               return (
                 <div key={i} className="text-[13.5px] leading-relaxed">
                   {blocks.map((b, j) =>
                     b.type === "text" ? (
-                      <Formatted key={j} text={b.text} />
+                      <Formatted key={j} text={splitNext(b.text).body} />
                     ) : b.type === "tool_use" && cards[b.id] ? (
                       <ActionCard
                         key={j}
@@ -409,6 +444,25 @@ export function AssistantWidget() {
                         }
                       />
                     ) : null,
+                  )}
+                  {chips.length > 0 && (
+                    <div className="mt-2.5">
+                      <div className="text-3 text-[11px] uppercase tracking-[0.06em] font-medium mb-1.5">
+                        What next?
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {chips.map((c) => (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => send(c)}
+                            className="text-left text-[12.5px] rounded-full border border-[var(--accent)]/40 text-[var(--accent)] px-3 py-1.5 hover:accent-soft"
+                          >
+                            {c}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               );
