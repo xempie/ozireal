@@ -34,21 +34,26 @@ const METHODS = {
 } as const;
 
 export const recordConsent = defineAction({
-  input: z
-    .object({
-      contactId: z.string().uuid(),
-      channel: z.enum(["sms", "email", "phone"]),
-      status: z.enum(["granted", "revoked"]),
-      method: z.enum(Object.keys(METHODS) as [keyof typeof METHODS, ...(keyof typeof METHODS)[]]),
-      /** When they gave it. Defaults to now; never in the future. */
-      occurredAt: z.coerce.date().optional(),
-      wording: z.string().trim().max(1000).optional(),
-    })
-    .refine((v) => v.status === "revoked" || (v.wording?.length ?? 0) >= 10, {
-      path: ["wording"],
-      message: "Say what they agreed to, e.g. 'SMS updates about new listings in the eastern suburbs'.",
-    }),
+  input: z.object({
+    contactId: z.string().uuid(),
+    channel: z.enum(["sms", "email", "phone"]),
+    status: z.enum(["granted", "revoked"]),
+    method: z.enum(["phone_call", "email", "sms", "in_person", "in_writing"]),
+    /** When they gave it. Defaults to now; never in the future. */
+    occurredAt: z.coerce.date().optional(),
+    wording: z.string().trim().max(1000).optional(),
+  }),
   async handler(input, ctx) {
+    /*
+      Checked here rather than as a .refine() on the schema: Next.js treats a plain
+      function at the top level of a "use server" file as a would-be Server Action and
+      refuses the build.
+    */
+    if (input.status === "granted" && (input.wording?.length ?? 0) < 10) {
+      throw new ActionError(
+        "Say what they agreed to, e.g. 'SMS updates about new listings in the eastern suburbs'.",
+      );
+    }
     const occurredAt = input.occurredAt ?? new Date();
     if (occurredAt.getTime() > Date.now() + 5 * 60_000) {
       throw new ActionError("Consent cannot be dated in the future.");

@@ -348,7 +348,7 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
           channel: i.channel,
           direction: i.direction,
           subject: i.subject,
-          body: i.body.slice(0, 400),
+          body: (i.body ?? "").slice(0, 400),
         })),
         openTasks: tasks
           .filter((t) => t.contactId === id && !t.done)
