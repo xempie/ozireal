@@ -129,9 +129,20 @@ function Row({ status }: { status: SecretStatus }) {
           {meta.where && (
             <p className="text-3 text-[11px]">Find it at {meta.where}</p>
           )}
-          <FormError message={save.error} />
+          {/* The field's own reason ("too short to be a key") rather than only the
+              generic "Some fields need attention", which left no clue what to fix. */}
+          <FormError
+            message={
+              save.fieldErrors.value?.[0] ??
+              save.fieldErrors.name?.[0] ??
+              save.error
+            }
+          />
+          {value.trim() && (
+            <p className="text-3 text-[11px] tabular">{value.trim().length} characters pasted</p>
+          )}
           <div className="flex gap-2">
-            <SubmitButton pending={save.pending} size="sm">
+            <SubmitButton pending={save.pending} size="sm" disabled={value.trim().length < 8}>
               Save
             </SubmitButton>
             <button
