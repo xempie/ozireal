@@ -184,6 +184,9 @@ export async function getHomeCounts() {
       tasks_overdue: number;
       approvals: number;
       confirms: number;
+      live_listings: number;
+      with_prefs: number;
+      matches: number;
     }>(sql`
       select
         (select count(*)::int from ${contacts}
@@ -203,7 +206,13 @@ export async function getHomeCounts() {
         (select count(*)::int from ${approvalItems}
            where ${approvalItems.status} = 'pending') as approvals,
         (select count(*)::int from ${confirmItems}
-           where ${confirmItems.status} = 'pending') as confirms
+           where ${confirmItems.status} = 'pending') as confirms,
+        (select count(*)::int from ${listings}
+           where ${listings.status} in ('live', 'under_offer')) as live_listings,
+        (select count(*)::int from contact_preferences p
+           join ${contacts} c on c.id = p.contact_id
+           where c.tombstoned_at is null) as with_prefs,
+        (select count(*)::int from matches) as matches
     `);
     return {
       contacts: row?.contacts ?? 0,
@@ -215,6 +224,9 @@ export async function getHomeCounts() {
       tasksOverdue: row?.tasks_overdue ?? 0,
       approvals: row?.approvals ?? 0,
       confirms: row?.confirms ?? 0,
+      liveListings: row?.live_listings ?? 0,
+      withPrefs: row?.with_prefs ?? 0,
+      matches: row?.matches ?? 0,
     };
   });
 }

@@ -4,6 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { suggestionsFor, recordFromPath, type Suggestion } from "./page-suggestions";
+import { ASK_EVENT, type AskDetail } from "./ask-button";
 import { Sparkles, X, Send, RotateCcw, Check, Ban, Loader2, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -339,13 +340,30 @@ export function AssistantWidget() {
     }
     const text = sug.prefill ?? sug.label;
     setDraft(text);
-    requestAnimationFrame(() => {
+    // A short delay rather than one frame: when this opens the panel, the input
+    // does not exist until the panel has rendered.
+    window.setTimeout(() => {
       const el = inputRef.current;
       if (!el) return;
       el.focus();
       el.setSelectionRange(text.length, text.length);
-    });
+    }, 60);
   }
+
+  /** Other parts of the page (the dashboard's quick actions) open the chat by event. */
+  const pickRef = React.useRef(pickSuggestion);
+  pickRef.current = pickSuggestion;
+  React.useEffect(() => {
+    const onAsk = (e: Event) => {
+      const d = (e as CustomEvent<AskDetail>).detail ?? {};
+      setOpen(true);
+      if (d.send || d.prefill) {
+        pickRef.current({ label: d.send ?? d.prefill ?? "", send: d.send, prefill: d.prefill });
+      }
+    };
+    window.addEventListener(ASK_EVENT, onAsk);
+    return () => window.removeEventListener(ASK_EVENT, onAsk);
+  }, []);
 
   /** Chips go under the newest reply only; older ones would offer stale actions. */
   const lastAssistant = messages.reduce((last, m, i) => (m.role === "assistant" ? i : last), -1);
