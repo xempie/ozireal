@@ -27,6 +27,9 @@ export type ModelTier = "haiku" | "sonnet";
  * Cache multipliers are ratios of the input price, published as such, so they
  * are derived rather than being four more numbers for someone to keep in sync.
  */
+/** Models that have refused `temperature` in this process. See `send` in callClaude. */
+const NO_TEMPERATURE = new Set<string>();
+
 const CACHE_WRITE_MULTIPLIER = 1.25;
 const CACHE_READ_MULTIPLIER = 0.1;
 
@@ -147,27 +150,44 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
       : { type: "text" as const, text: b.text },
   );
 
-  const body = {
-    model,
-    max_tokens: call.maxTokens ?? 1500,
-    temperature,
-    ...(system?.length ? { system } : {}),
-    ...(call.tools?.length ? { tools: call.tools } : {}),
-    messages: call.messages,
-  };
-
-  const started = Date.now();
-  let res: Response;
-  try {
-    res = await fetch("https://api.anthropic.com/v1/messages", {
+  /**
+   * Newer models refuse `temperature` outright ("`temperature` is deprecated for this
+   * model"), claude-sonnet-5 among them. Rather than hardcode a list that goes stale
+   * with every release, a model that refuses it once is remembered for the life of the
+   * process and the call is retried without it. The refusal costs nothing: a 400 is
+   * not billed.
+   */
+  const send = (withTemperature: boolean) =>
+    fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
         "content-type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        model,
+        max_tokens: call.maxTokens ?? 1500,
+        ...(withTemperature ? { temperature } : {}),
+        ...(system?.length ? { system } : {}),
+        ...(call.tools?.length ? { tools: call.tools } : {}),
+        messages: call.messages,
+      }),
     });
+
+  const started = Date.now();
+  let res: Response;
+  let detail = "";
+  try {
+    res = await send(!NO_TEMPERATURE.has(model));
+    if (res.status === 400 && !NO_TEMPERATURE.has(model)) {
+      detail = await res.text().catch(() => "");
+      if (/temperature/i.test(detail) && /deprecated|not supported|unsupported/i.test(detail)) {
+        NO_TEMPERATURE.add(model);
+        res = await send(false);
+        detail = "";
+      }
+    }
   } catch (e) {
     // Network failure: no ledger row — nothing was spent, and the job will retry.
     throw new ClaudeError(
@@ -177,7 +197,7 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
   const latencyMs = Date.now() - started;
 
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
+    detail = detail || (await res.text().catch(() => ""));
     const retryable = res.status === 429 || res.status >= 500;
     // A refused call still cost nothing worth ledgering (no tokens billed on 4xx/5xx).
     throw new ClaudeError(
