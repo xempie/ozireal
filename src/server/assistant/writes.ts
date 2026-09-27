@@ -9,8 +9,9 @@ import { createTask, completeTask } from "@/server/actions/ops";
 import { createProperty, updateProperty, createListing, updateListing } from "@/server/actions/stock";
 import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
+import { setContactPreferences } from "@/server/actions/preferences";
 import { matchContactsForListing, matchListingsForContact } from "@/server/matching/engine";
-import { getContact, getProperties, getListing, getTasks } from "@/server/queries";
+import { getContact, getProperties, getListing, getListings, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
 
 /**
@@ -63,6 +64,27 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
       return { title: `Add contact ${input.firstName} ${input.lastName}`, lines: fieldLines(["firstName", "lastName"]) };
     case "update_contact":
       return { title: `Update ${await contactName(input.contactId)}`, lines: fieldLines(["contactId"]) };
+    case "set_preferences": {
+      const money = (n: unknown) => (typeof n === "number" ? `$${n.toLocaleString("en-AU")}` : "");
+      const lines: string[] = [];
+      if (input.priceMin !== undefined || input.priceMax !== undefined)
+        lines.push(`Budget: ${money(input.priceMin) || "any"} – ${money(input.priceMax) || "any"}`);
+      if (input.rentPwMax !== undefined) lines.push(`Rent up to: ${money(input.rentPwMax)} a week`);
+      const mins = [
+        input.bedsMin !== undefined ? `${input.bedsMin}+ bed` : "",
+        input.bathsMin !== undefined ? `${input.bathsMin}+ bath` : "",
+        input.parkingMin !== undefined ? `${input.parkingMin}+ car` : "",
+      ].filter(Boolean);
+      if (mins.length) lines.push(`At least: ${mins.join(", ")}`);
+      if (Array.isArray(input.propertyTypes) && input.propertyTypes.length)
+        lines.push(`Types: ${input.propertyTypes.join(", ")}`);
+      if (Array.isArray(input.suburbs) && input.suburbs.length)
+        lines.push(`${input.replaceSuburbs ? "Suburbs (replacing)" : "Suburbs (adding)"}: ${input.suburbs.join(", ")}`);
+      for (const k of ["timeline", "financeStatus", "softRequirements"] as const) {
+        if (input[k]) lines.push(`${label(k)}: ${input[k]}`);
+      }
+      return { title: `Set what ${await contactName(input.contactId)} is looking for`, lines };
+    }
     case "log_interaction":
       return {
         title: `Log ${input.direction === "out" ? "outgoing" : "incoming"} ${input.channel} with ${await contactName(input.contactId)}`,
@@ -168,6 +190,10 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
         `Draft an SMS to ${who}`,
       ];
     }
+    case "set_preferences": {
+      const who = (await contactName(input.contactId)) ?? "them";
+      return [`Find properties that match ${who}`, `Add a follow-up task for ${who} tomorrow`];
+    }
     case "log_interaction":
     case "record_followup": {
       const who = (await contactName(input.contactId)) ?? "them";
@@ -257,6 +283,11 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
         doNotContact: c.doNotContact,
       });
       return outcome(r, `Updated ${c.firstName} ${c.lastName}.`, `/contacts/${c.id}`);
+    }
+
+    case "set_preferences": {
+      const r = await setContactPreferences(input);
+      return outcome(r, "Preferences saved.", `/contacts/${input.contactId}`);
     }
 
     case "log_interaction": {
@@ -351,6 +382,43 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
       const session = await auth();
       const tenantId = session?.user?.tenantId;
       if (!tenantId) return { ok: false, message: "You are signed out." };
+      /*
+        The engine answers "gone" for several different situations. Check the usual ones
+        first, so the agent is told what to fix rather than that something vanished.
+      */
+      const liveListings = (await getListings()).filter(
+        (l) => l.status === "live" || l.status === "under_offer",
+      );
+      if (input.listingId) {
+        const l = await getListing(input.listingId);
+        if (!l) {
+          const p = (await getProperties()).find((x) => x.id === input.listingId);
+          return {
+            ok: false,
+            message: p
+              ? `That is a property, not a listing. Matching runs on a live listing (a sale or rental campaign), and ${p.address} has none yet. Create a listing for it first.`
+              : "That listing no longer exists.",
+          };
+        }
+        if (l.status !== "live" && l.status !== "under_offer") {
+          return {
+            ok: false,
+            message: `That listing is ${l.status.replace("_", " ")}. Matching only runs on live or under-offer listings. Publish it first.`,
+          };
+        }
+      } else if (input.contactId) {
+        const c = await getContact(input.contactId);
+        if (!c) return { ok: false, message: "That contact no longer exists." };
+        if (!c.preferences) {
+          return {
+            ok: false,
+            message: `${c.firstName} ${c.lastName} has no preferences recorded yet (budget, suburbs, beds), so there is nothing to match on. Tell me what they are looking for and I will set them.`,
+          };
+        }
+        if (liveListings.length === 0) {
+          return { ok: false, message: "There are no live listings to match against yet." };
+        }
+      }
       try {
         const m = input.listingId
           ? await matchContactsForListing(tenantId, input.listingId)
@@ -358,7 +426,16 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
             ? await matchListingsForContact(tenantId, input.contactId)
             : null;
         if (!m) return { ok: false, message: "Give a listing or a contact to match." };
-        if (m.skipped) return { ok: false, message: `Matching did not run: ${m.skipped}` };
+        if (m.skipped) {
+          const why: Record<string, string> = {
+            "no-api-key": "No Anthropic API key is set. Add one in Advanced → Settings → Credentials.",
+            "not-live": "That listing is not live. Matching only runs on live or under-offer listings.",
+            gone: input.contactId
+              ? "That contact cannot be matched: they have no preferences, have asked not to be contacted, or were merged or removed."
+              : "That listing could not be found.",
+          };
+          return { ok: false, message: why[m.skipped] ?? `Matching did not run (${m.skipped}).` };
+        }
         return {
           ok: true,
           message: `Matching found ${m.written} match${m.written === 1 ? "" : "es"} (${m.stage1} passed the filters).`,

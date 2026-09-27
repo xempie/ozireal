@@ -20,7 +20,7 @@ describe("assistant tools", () => {
   });
 
   it("marks every tool that changes data as a write", () => {
-    const changing = /^(create|update|log|record|complete|run|draft)_/;
+    const changing = /^(create|update|set|log|record|complete|run|draft)_/;
     for (const [name, spec] of Object.entries(TOOLS)) {
       expect(spec.kind, name).toBe(changing.test(name) ? "write" : "read");
     }

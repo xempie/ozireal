@@ -123,6 +123,26 @@ export const TOOLS = {
       roles: z.array(z.enum(ROLES)).min(1).optional(),
     }),
   },
+  set_preferences: {
+    kind: "write",
+    description:
+      "Set what a contact is looking for: budget (priceMin/priceMax, or rentPwMax for renters), minimum beds/baths/parking, property types, suburbs (names from the suburb list), timeline, finance status, and soft requirements in their words. Only the fields given change; suburbs are added unless replaceSuburbs is true. Matching needs these: a contact with none cannot be matched.",
+    schema: z.object({
+      contactId: uuid(),
+      priceMin: z.number().int().min(0).max(50_000_000).optional(),
+      priceMax: z.number().int().min(0).max(50_000_000).optional(),
+      rentPwMax: z.number().int().min(0).max(100_000).optional(),
+      bedsMin: z.number().int().min(0).max(12).optional(),
+      bathsMin: z.number().int().min(0).max(12).optional(),
+      parkingMin: z.number().int().min(0).max(12).optional(),
+      propertyTypes: z.array(z.enum(PROPERTY_TYPES)).max(6).optional(),
+      suburbs: z.array(z.string().min(1).max(80)).max(30).optional(),
+      replaceSuburbs: z.boolean().optional(),
+      timeline: z.string().max(200).optional(),
+      financeStatus: z.string().max(200).optional(),
+      softRequirements: z.string().max(1000).optional(),
+    }),
+  },
   log_interaction: {
     kind: "write",
     description: "Record something that happened with a contact (a call, a meeting, an SMS conversation).",
@@ -227,7 +247,7 @@ export const TOOLS = {
   run_matching: {
     kind: "write",
     description:
-      "Run the matching engine for a listing (find contacts) or a contact (find listings). Uses AI, so it asks first. Then read the results with get_matches.",
+      "Run the matching engine for a LISTING (find contacts) or a CONTACT (find listings). A property is not a listing: use the listing id from list_listings or get_property, and if the property has no live listing, say so instead of calling this. A contact needs preferences first (set_preferences). Uses AI, so it asks first. Then read the results with get_matches.",
     schema: z.object({ listingId: uuid().optional(), contactId: uuid().optional() }),
   },
   record_consent: {
