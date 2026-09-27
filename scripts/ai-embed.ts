@@ -1,4 +1,3 @@
-import "dotenv/config";
 import { systemTenantId } from "@/db";
 import { pendingEmbeddings } from "@/server/ai/embed";
 import { enqueue, getQueue } from "@/server/jobs/queues";
