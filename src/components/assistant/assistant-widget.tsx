@@ -261,8 +261,15 @@ export function AssistantWidget() {
           return copy;
         });
       }
-    } catch {
-      setError("The assistant could not be reached. Check your connection and try again.");
+    } catch (e) {
+      // After a deploy, a tab opened earlier calls Server Actions the new build no
+      // longer has. Only a reload fixes that, so say so rather than "try again".
+      const stale = e instanceof Error && /Server Action|older or newer deployment/i.test(e.message);
+      setError(
+        stale
+          ? "The app has just been updated. Reload the page (Ctrl+F5), then ask again. Your chat is kept."
+          : "The assistant could not be reached. Check your connection and try again.",
+      );
     } finally {
       setBusy(false);
     }
