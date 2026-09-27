@@ -67,7 +67,7 @@ function Tile({
         className="absolute -right-4 -bottom-6 pointer-events-none opacity-[0.07] transition-transform duration-300 group-hover:scale-105"
       />
 
-      <div className="relative flex items-center gap-2.5 sm:gap-3">
+      <div className="relative pointer-events-none flex items-center gap-2.5 sm:gap-3">
         <span
           className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg grid place-items-center shrink-0 text-white shadow-sm"
           style={{ background: color }}
@@ -85,14 +85,14 @@ function Tile({
         />
       </div>
 
-      <div className="relative mt-3 flex items-baseline gap-1.5 sm:gap-2">
+      <div className="relative pointer-events-none mt-3 flex items-baseline gap-1.5 sm:gap-2">
         <span className="text-[28px] sm:text-[34px] font-semibold tabular leading-none tracking-[-0.02em]">
           {big}
         </span>
         <span className="text-2 text-[11.5px] sm:text-[13px]">{bigLabel}</span>
       </div>
 
-      <div className="relative mt-auto pt-3 flex items-end justify-between gap-2 flex-wrap">
+      <div className="relative pointer-events-none mt-auto pt-3 flex items-end justify-between gap-2 flex-wrap">
         <div className="flex flex-wrap gap-1.5 pointer-events-none">
           {stats.map((s, i) =>
             s.href ? (
@@ -127,7 +127,7 @@ function Tile({
         <AskButton
           prefill={action.prefill}
           send={action.send}
-          className="relative z-10 inline-flex items-center gap-1 rounded-md px-2.5 min-h-8 text-[12px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+          className="relative z-10 pointer-events-auto inline-flex items-center gap-1 rounded-md px-2.5 min-h-8 text-[12px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
           style={{ background: color }}
         >
           {action.icon === "spark" ? <Sparkles size={13} /> : <Plus size={14} />}
