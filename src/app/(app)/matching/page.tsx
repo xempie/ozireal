@@ -132,7 +132,10 @@ export default async function MatchingPage() {
                 budget,
                 b.bedsMin !== null ? `${b.bedsMin}+ bed` : null,
                 b.propertyTypes?.length ? b.propertyTypes.join("/") : null,
-                b.suburbs.length ? b.suburbs.slice(0, 3).join(", ") + (b.suburbs.length > 3 ? "…" : "") : null,
+                (() => {
+                  const areas = [...b.suburbs, ...(b.postcodes ?? [])];
+                  return areas.length ? areas.slice(0, 3).join(", ") + (areas.length > 3 ? "…" : "") : null;
+                })(),
               ]
                 .filter(Boolean)
                 .join(" · ");

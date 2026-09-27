@@ -78,8 +78,8 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
       if (mins.length) lines.push(`At least: ${mins.join(", ")}`);
       if (Array.isArray(input.propertyTypes) && input.propertyTypes.length)
         lines.push(`Types: ${input.propertyTypes.join(", ")}`);
-      if (Array.isArray(input.suburbs) && input.suburbs.length)
-        lines.push(`${input.replaceSuburbs ? "Suburbs (replacing)" : "Suburbs (adding)"}: ${input.suburbs.join(", ")}`);
+      if (Array.isArray(input.areas) && input.areas.length)
+        lines.push(`${input.replaceAreas ? "Areas (replacing)" : "Areas (adding)"}: ${input.areas.join(", ")}`);
       for (const k of ["timeline", "financeStatus", "softRequirements"] as const) {
         if (input[k]) lines.push(`${label(k)}: ${input[k]}`);
       }

@@ -37,6 +37,7 @@ import {
   RemoveContactButton,
   RecordConsentButton,
 } from "@/components/forms/contact-forms";
+import { EditPreferencesButton } from "@/components/forms/preferences-form";
 
 export default async function ContactDetail({
   params,
@@ -290,23 +291,60 @@ export default async function ContactDetail({
             </ProtoNote>
           </Card>
 
+          {/*
+            Always shown, with Edit/Add: matching needs these, and before this card had
+            a button a contact added by hand had no way to get any.
+          */}
+          {!c.preferences && !c.mergedIntoId && (
+            <Card>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>Looking for</CardTitle>
+                <EditPreferencesButton contactId={c.id} current={null} />
+              </div>
+              <p className="text-2 text-[12.5px]">
+                Nothing recorded yet. Add their budget, suburbs or postcodes and must-haves
+                so matching can find them properties.
+              </p>
+            </Card>
+          )}
           {c.preferences && (
             <Card>
-              <CardTitle>Preferences</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>Looking for</CardTitle>
+                {!c.mergedIntoId && (
+                  <EditPreferencesButton
+                    contactId={c.id}
+                    current={{
+                      suburbs: c.preferences.suburbs,
+                      postcodes: c.preferences.postcodes,
+                      priceMin: c.preferences.priceMin,
+                      priceMax: c.preferences.priceMax,
+                      rentPwMax: c.preferences.rentPwMax,
+                      bedsMin: c.preferences.bedsMin,
+                      bathsMin: c.preferences.bathsMin,
+                      parkingMin: c.preferences.parkingMin,
+                      propertyTypes: c.preferences.propertyTypes,
+                      timeline: c.preferences.timeline,
+                      financeStatus: c.preferences.financeStatus,
+                      softRequirements: c.preferences.softRequirements,
+                    }}
+                  />
+                )}
+              </div>
               <KeyValue
                 cols={1}
                 items={[
                   [
-                    "Suburbs",
-                    c.preferences.suburbs.length
-                      ? c.preferences.suburbs.join(", ")
-                      : "—",
+                    "Suburbs / postcodes",
+                    [...c.preferences.suburbs, ...c.preferences.postcodes].join(", ") || "Any area",
                   ],
                   [
-                    "Price",
-                    c.preferences.priceMax && c.preferences.priceMax > 0
-                      ? `${money(c.preferences.priceMin ?? 0)} – ${money(c.preferences.priceMax)}`
-                      : "n/a — rental",
+                    "Budget",
+                    c.preferences.priceMin || c.preferences.priceMax
+                      ? `${c.preferences.priceMin ? money(c.preferences.priceMin) : "any"} – ${c.preferences.priceMax ? money(c.preferences.priceMax) : "any"}`
+                      : c.preferences.rentPwMax
+                        ? `rent up to $${c.preferences.rentPwMax} a week`
+                        : "—",
                   ],
                   [
                     "Minimums",

@@ -21,7 +21,9 @@ import { enqueue } from "@/server/jobs/queues";
  */
 
 const PROPERTY_TYPES = ["house", "unit", "townhouse", "land", "acreage", "commercial"] as const;
-const int = (max: number) => z.number().int().min(0).max(max).optional();
+/** Absent = leave as is. null = clear it. A number = set it. */
+const int = (max: number) => z.number().int().min(0).max(max).nullable().optional();
+const text = (max: number) => z.string().trim().max(max).nullable().optional();
 
 export const setContactPreferences = defineAction({
   input: z.object({
@@ -33,14 +35,18 @@ export const setContactPreferences = defineAction({
     bathsMin: int(12),
     parkingMin: int(12),
     propertyTypes: z.array(z.enum(PROPERTY_TYPES)).max(6).optional(),
-    suburbs: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
-    replaceSuburbs: z.boolean().optional(),
-    timeline: z.string().trim().max(200).optional(),
-    financeStatus: z.string().trim().max(200).optional(),
-    softRequirements: z.string().trim().max(1000).optional(),
+    /**
+     * Where they are looking, suburbs and postcodes mixed: "Norwood", "5067",
+     * "Norwood 5067". See resolveAreas. Added to what is there, unless replaceAreas.
+     */
+    areas: z.array(z.string().trim().min(1).max(80)).max(40).optional(),
+    replaceAreas: z.boolean().optional(),
+    timeline: text(200),
+    financeStatus: text(200),
+    softRequirements: text(1000),
   }),
   async handler(input, ctx) {
-    if (input.priceMin !== undefined && input.priceMax !== undefined && input.priceMin > input.priceMax) {
+    if (input.priceMin != null && input.priceMax != null && input.priceMin > input.priceMax) {
       throw new ActionError("The minimum price is above the maximum.");
     }
 
@@ -58,22 +64,45 @@ export const setContactPreferences = defineAction({
     if (c.mergedIntoId) throw new ActionError("That record was merged. Set preferences on the surviving record.");
     if (c.tombstonedAt) throw new ActionError("That contact asked to be removed.");
 
-    // Resolve suburbs first, so an unknown one refuses before anything is written.
+    /**
+     * Resolve the areas first, so anything unrecognised refuses before a write.
+     *
+     *   "5067"          a postcode, used as is.
+     *   "Norwood"       a suburb from the suburb list (every suburb of that name).
+     *   "Norwood 5067"  the suburb if the list has it, otherwise the postcode, so a
+     *                   suburb that was never loaded still works.
+     *
+     * A bare name the list does not know is refused rather than dropped: a silently
+     * missing area is a buyer who silently never matches there.
+     */
     const suburbIds: string[] = [];
-    if (input.suburbs?.length) {
+    const postcodes: string[] = [];
+    if (input.areas?.length) {
       const unknown: string[] = [];
-      for (const name of input.suburbs) {
-        const [s] = await ctx.tx
+      for (const raw of input.areas) {
+        const t = raw.replace(/\s+/g, " ").trim();
+        if (/^\d{4}$/.test(t)) {
+          postcodes.push(t);
+          continue;
+        }
+        const m = /^(.+?)[\s,]+(\d{4})$/.exec(t);
+        const name = m ? m[1].trim() : t;
+        const pc = m ? m[2] : null;
+        const found = await ctx.tx
           .select({ id: suburbs.id })
           .from(suburbs)
-          .where(sql`lower(${suburbs.name}) = lower(${name})`)
-          .limit(1);
-        if (s) suburbIds.push(s.id);
+          .where(
+            pc
+              ? sql`lower(${suburbs.name}) = lower(${name}) and ${suburbs.postcode} = ${pc}`
+              : sql`lower(${suburbs.name}) = lower(${name})`,
+          );
+        if (found.length) suburbIds.push(...found.map((s) => s.id));
+        else if (pc) postcodes.push(pc);
         else unknown.push(name);
       }
       if (unknown.length) {
         throw new ActionError(
-          `Not in the suburb list: ${unknown.join(", ")}. Check the spelling. Nothing was changed.`,
+          `Not recognised: ${unknown.join(", ")}. Add the postcode (e.g. "${unknown[0]} 5000") or use the postcode on its own. Nothing was changed.`,
         );
       }
     }
@@ -109,8 +138,8 @@ export const setContactPreferences = defineAction({
       await ctx.tx.update(contactPreferences).set(set).where(eq(contactPreferences.id, prefs.id));
     }
 
-    if (input.suburbs) {
-      if (input.replaceSuburbs) {
+    if (input.areas) {
+      if (input.replaceAreas) {
         await ctx.tx.delete(contactPreferenceSuburbs).where(eq(contactPreferenceSuburbs.preferenceId, prefs.id));
       }
       for (const id of suburbIds) {
@@ -119,6 +148,15 @@ export const setContactPreferences = defineAction({
           .values({ preferenceId: prefs.id, suburbId: id })
           .onConflictDoNothing();
       }
+      const [current] = await ctx.tx
+        .select({ postcodes: contactPreferences.postcodes })
+        .from(contactPreferences)
+        .where(eq(contactPreferences.id, prefs.id));
+      const next = [...new Set([...(input.replaceAreas ? [] : (current?.postcodes ?? [])), ...postcodes])].sort();
+      await ctx.tx
+        .update(contactPreferences)
+        .set({ postcodes: next.length ? next : null })
+        .where(eq(contactPreferences.id, prefs.id));
     }
 
     // The similarity stage reads an embedding of these; refresh it after commit.
@@ -132,7 +170,7 @@ export const setContactPreferences = defineAction({
       target: `${c.firstName} ${c.lastName}`,
       entityType: "contact",
       entityId: input.contactId,
-      metadata: { fields: [...Object.keys(set), ...(input.suburbs ? ["suburbs"] : [])] },
+      metadata: { fields: [...Object.keys(set), ...(input.areas ? ["areas"] : [])] },
     });
 
     revalidatePath(`/contacts/${input.contactId}`);

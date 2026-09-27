@@ -182,6 +182,8 @@ export async function getContact(id: string) {
       preferences: prefs
         ? {
             suburbs: prefSuburbs.map((s) => s.name),
+            postcodes: prefs.postcodes ?? [],
+            rentPwMax: prefs.rentPwMax,
             priceMin: prefs.priceMin,
             priceMax: prefs.priceMax,
             bedsMin: prefs.bedsMin,
@@ -283,6 +285,7 @@ export async function getBuyersWithPreferences() {
         rentPwMax: contactPreferences.rentPwMax,
         bedsMin: contactPreferences.bedsMin,
         propertyTypes: contactPreferences.propertyTypes,
+        postcodes: contactPreferences.postcodes,
         softRequirements: contactPreferences.softRequirements,
         suburbs: sql<string[]>`coalesce((
           select array_agg(${suburbs.name} order by ${suburbs.name})

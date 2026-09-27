@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import { withTenant } from "@/db";
 import {
   contacts,
@@ -113,6 +113,7 @@ export async function matchContactsForListing(
         parking: properties.parking,
         features: properties.features,
         suburbId: properties.suburbId,
+        postcode: properties.postcode,
         suburbName: suburbs.name,
       })
       .from(listings)
@@ -179,13 +180,21 @@ export async function matchContactsForListing(
           l.listingType === "rent"
             ? sql`(${contactPreferences.rentPwMax} is null or ${l.rentPw ?? null}::int is null or ${contactPreferences.rentPwMax} >= ${l.rentPw ?? null}::int)`
             : sql`true`,
-          // Suburb: a stated suburb list must include this one; no list means open.
+          /**
+           * Area: in one of their suburbs OR one of their postcodes (0015). With
+           * neither stated, any area. The ::uuid / ::text casts are the 42P08 rule
+           * above: a bare placeholder in these positions has no inferable type.
+           */
           sql`(
-            not exists (select 1 from contact_preference_suburbs s where s.preference_id = ${contactPreferences.id})
+            (
+              not exists (select 1 from contact_preference_suburbs s where s.preference_id = ${contactPreferences.id})
+              and coalesce(cardinality(${contactPreferences.postcodes}), 0) = 0
+            )
             or exists (
               select 1 from contact_preference_suburbs s
-              where s.preference_id = ${contactPreferences.id} and s.suburb_id = ${l.suburbId}
+              where s.preference_id = ${contactPreferences.id} and s.suburb_id = ${l.suburbId ?? null}::uuid
             )
+            or (${l.postcode ?? null}::text is not null and ${l.postcode ?? null}::text = any(${contactPreferences.postcodes}))
           )`,
         ),
       )
@@ -353,6 +362,7 @@ export async function matchListingsForContact(
         bathsMin: contactPreferences.bathsMin,
         rentPwMax: contactPreferences.rentPwMax,
         propertyTypes: contactPreferences.propertyTypes,
+        postcodes: contactPreferences.postcodes,
         softRequirements: contactPreferences.softRequirements,
         embeddedText: contactPreferences.embeddedText,
         brief: contactIntent.rollingBrief,
@@ -419,8 +429,14 @@ export async function matchListingsForContact(
           c.propertyTypes?.length
             ? inArray(properties.propertyType, c.propertyTypes)
             : sql`true`,
-          subs.length
-            ? sql`${properties.suburbId} in (${idList(subs.map((x) => x.id))})`
+          // Area: one of their suburbs OR one of their postcodes (0015); neither = open.
+          subs.length || c.postcodes?.length
+            ? or(
+                subs.length
+                  ? sql`${properties.suburbId} in (${idList(subs.map((x) => x.id))})`
+                  : sql`false`,
+                c.postcodes?.length ? inArray(properties.postcode, c.postcodes) : sql`false`,
+              )
             : sql`true`,
         ),
       )

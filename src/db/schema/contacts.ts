@@ -199,6 +199,13 @@ export const contactPreferences = pgTable(
     financeStatus: text("finance_status"),
 
     /**
+     * Postcodes the contact is looking in (migration 0015). Alongside the suburb list,
+     * not instead of it: a property is in their area if its suburb OR its postcode is
+     * listed. Needs no reference data, so any SA postcode works.
+     */
+    postcodes: text("postcodes").array(),
+
+    /**
      * The free text the similarity search actually reads - "quiet street, no main
      * road". This is what a filter cannot express, and the reason the matching engine
      * has a vector stage at all (§4, §6).

@@ -126,7 +126,7 @@ export const TOOLS = {
   set_preferences: {
     kind: "write",
     description:
-      "Set what a contact is looking for: budget (priceMin/priceMax, or rentPwMax for renters), minimum beds/baths/parking, property types, suburbs (names from the suburb list), timeline, finance status, and soft requirements in their words. Only the fields given change; suburbs are added unless replaceSuburbs is true. Matching needs these: a contact with none cannot be matched.",
+      "Set what a contact is looking for: budget (priceMin/priceMax, or rentPwMax for renters), minimum beds/baths/parking, property types, areas (suburb names and/or 4-digit postcodes, e.g. 'Norwood', '5067', 'Salisbury 5108'), timeline, finance status, and soft requirements in their words. Only the fields given change; areas are added unless replaceAreas is true. Matching needs these: a contact with none cannot be matched.",
     schema: z.object({
       contactId: uuid(),
       priceMin: z.number().int().min(0).max(50_000_000).optional(),
@@ -136,8 +136,8 @@ export const TOOLS = {
       bathsMin: z.number().int().min(0).max(12).optional(),
       parkingMin: z.number().int().min(0).max(12).optional(),
       propertyTypes: z.array(z.enum(PROPERTY_TYPES)).max(6).optional(),
-      suburbs: z.array(z.string().min(1).max(80)).max(30).optional(),
-      replaceSuburbs: z.boolean().optional(),
+      areas: z.array(z.string().min(1).max(80)).max(40).optional(),
+      replaceAreas: z.boolean().optional(),
       timeline: z.string().max(200).optional(),
       financeStatus: z.string().max(200).optional(),
       softRequirements: z.string().max(1000).optional(),
