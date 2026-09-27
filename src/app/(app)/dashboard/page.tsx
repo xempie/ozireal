@@ -51,7 +51,7 @@ function Tile({
 
   return (
     <div
-      className="group relative rounded-2xl border p-5 sm:p-6 flex flex-col min-h-[230px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      className="group relative rounded-xl sm:rounded-2xl border p-3.5 sm:p-4 flex flex-col min-h-[148px] sm:min-h-[172px] overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
       style={{
         background: `linear-gradient(150deg, ${tint(11)} 0%, var(--surface-2) 58%)`,
         borderColor: tint(28),
@@ -62,44 +62,44 @@ function Tile({
 
       {/* A large, faint mark in the corner: identity at a glance, without noise. */}
       <Icon
-        size={132}
+        size={96}
         strokeWidth={1.25}
-        className="absolute -right-6 -bottom-8 pointer-events-none opacity-[0.07] transition-transform duration-300 group-hover:scale-105"
+        className="absolute -right-4 -bottom-6 pointer-events-none opacity-[0.07] transition-transform duration-300 group-hover:scale-105"
       />
 
-      <div className="relative flex items-start gap-3.5">
+      <div className="relative flex items-center gap-2.5 sm:gap-3">
         <span
-          className="h-12 w-12 rounded-xl grid place-items-center shrink-0 text-white shadow-sm"
+          className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg grid place-items-center shrink-0 text-white shadow-sm"
           style={{ background: color }}
         >
-          <Icon size={23} />
+          <Icon size={18} />
         </span>
         <div className="min-w-0 flex-1">
-          <h2 className="text-[17px] font-semibold leading-tight">{title}</h2>
-          <p className="text-2 text-[12.5px] mt-0.5 leading-snug">{blurb}</p>
+          <h2 className="text-[14px] sm:text-[16px] font-semibold leading-tight">{title}</h2>
+          <p className="hidden sm:block text-2 text-[12px] mt-0.5 leading-snug truncate">{blurb}</p>
         </div>
         <ArrowRight
-          size={18}
-          className="text-3 shrink-0 mt-1 transition-transform group-hover:translate-x-1"
+          size={16}
+          className="text-3 shrink-0 transition-transform group-hover:translate-x-1"
           style={{ color }}
         />
       </div>
 
-      <div className="relative mt-5 flex items-baseline gap-2">
-        <span className="text-[44px] font-semibold tabular leading-none tracking-[-0.02em]">
+      <div className="relative mt-3 flex items-baseline gap-1.5 sm:gap-2">
+        <span className="text-[28px] sm:text-[34px] font-semibold tabular leading-none tracking-[-0.02em]">
           {big}
         </span>
-        <span className="text-2 text-[13px]">{bigLabel}</span>
+        <span className="text-2 text-[11.5px] sm:text-[13px]">{bigLabel}</span>
       </div>
 
-      <div className="relative mt-auto pt-5 flex items-end justify-between gap-3 flex-wrap">
+      <div className="relative mt-auto pt-3 flex items-end justify-between gap-2 flex-wrap">
         <div className="flex flex-wrap gap-1.5 pointer-events-none">
-          {stats.map((s) =>
+          {stats.map((s, i) =>
             s.href ? (
               <Link
                 key={s.text}
                 href={s.href}
-                className="pointer-events-auto relative z-10 text-[12px] rounded-full px-2.5 py-1 border hover:underline underline-offset-2"
+                className={`pointer-events-auto relative z-10 text-[11.5px] rounded-full px-2 py-0.5 border hover:underline underline-offset-2 ${i > 0 ? "hidden sm:inline-block" : ""}`}
                 style={
                   s.warn
                     ? { color: "#b02f2f", borderColor: "rgba(208,59,59,.4)", background: "rgba(208,59,59,.07)" }
@@ -111,7 +111,7 @@ function Tile({
             ) : (
               <span
                 key={s.text}
-                className="text-[12px] rounded-full px-2.5 py-1 border"
+                className={`text-[11.5px] rounded-full px-2 py-0.5 border ${i > 0 ? "hidden sm:inline-block" : ""}`}
                 style={
                   s.warn
                     ? { color: "#b02f2f", borderColor: "rgba(208,59,59,.4)", background: "rgba(208,59,59,.07)" }
@@ -127,10 +127,10 @@ function Tile({
         <AskButton
           prefill={action.prefill}
           send={action.send}
-          className="relative z-10 inline-flex items-center gap-1.5 rounded-lg px-3.5 min-h-10 text-[13px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+          className="relative z-10 inline-flex items-center gap-1 rounded-md px-2.5 min-h-8 text-[12px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
           style={{ background: color }}
         >
-          {action.icon === "spark" ? <Sparkles size={15} /> : <Plus size={16} />}
+          {action.icon === "spark" ? <Sparkles size={13} /> : <Plus size={14} />}
           {action.label}
         </AskButton>
       </div>
@@ -157,26 +157,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="max-w-[1120px]">
-      <div className="flex items-end justify-between gap-4 flex-wrap mt-1 mb-6">
+      <div className="flex items-end justify-between gap-3 flex-wrap mb-4">
         <div>
-          <p className="text-3 text-[12.5px] uppercase tracking-[0.08em] font-medium">{today}</p>
-          <h1 className="text-[26px] sm:text-[30px] font-semibold tracking-[-0.02em] mt-1">
+          <p className="text-3 text-[11.5px] uppercase tracking-[0.08em] font-medium">{today}</p>
+          <h1 className="text-[21px] sm:text-[25px] font-semibold tracking-[-0.02em] mt-0.5">
             {greeting}, {firstName}
           </h1>
         </div>
         <AskButton
           send="What needs my attention today?"
-          className="inline-flex items-center gap-2 rounded-full border px-4 min-h-10 text-[13px] font-medium surface-2 hover:surface-3 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-full border px-3 min-h-8 text-[12.5px] font-medium surface-2 hover:surface-3 transition-colors"
         >
-          <Sparkles size={15} className="text-[var(--accent)]" />
-          What needs my attention today?
+          <Sparkles size={14} className="text-[var(--accent)]" />
+          <span className="sm:hidden">What&apos;s on today?</span>
+          <span className="hidden sm:inline">What needs my attention today?</span>
         </AskButton>
       </div>
 
       {waiting > 0 && (
         <Link
           href={c.approvals > 0 ? "/approvals" : "/confirm"}
-          className="flex items-center gap-3 rounded-xl border border-[#eda100]/50 bg-[#eda100]/8 px-4 py-3 mb-5 hover:bg-[#eda100]/14 transition-colors"
+          className="flex items-center gap-3 rounded-xl border border-[#eda100]/50 bg-[#eda100]/8 px-3.5 py-2.5 mb-3 hover:bg-[#eda100]/14 transition-colors"
         >
           <ShieldCheck size={18} className="text-[#8a5f00] dark:text-[#e8b64a] shrink-0" />
           <span className="text-[14px]">
@@ -192,7 +193,7 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      <div className="grid sm:grid-cols-2 gap-4 sm:gap-5">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <Tile
           href="/contacts"
           icon={Users}
