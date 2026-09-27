@@ -6,6 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { defineAction, ActionError } from "./action";
 import { contacts, contactPreferences, contactPreferenceSuburbs, suburbs } from "@/db/schema";
 import { enqueue } from "@/server/jobs/queues";
+import { didYouMean } from "@/server/suburbs/suggest";
 
 /**
  * Set what a contact is looking for, directly.
@@ -101,8 +102,10 @@ export const setContactPreferences = defineAction({
         else unknown.push(name);
       }
       if (unknown.length) {
+        // With the full SA list loaded (0016), an unknown name is almost always a typo.
+        const hints = await Promise.all(unknown.map(async (u) => `${u}${await didYouMean(ctx.tx, u)}`));
         throw new ActionError(
-          `Not recognised: ${unknown.join(", ")}. Add the postcode (e.g. "${unknown[0]} 5000") or use the postcode on its own. Nothing was changed.`,
+          `Not recognised: ${hints.join(", ")}. Check the spelling, or add the postcode (e.g. "${unknown[0]} 5000"). Nothing was changed.`,
         );
       }
     }

@@ -10,6 +10,7 @@ import { createProperty, updateProperty, createListing, updateListing } from "@/
 import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
+import { didYouMean } from "@/server/suburbs/suggest";
 import { matchContactsForListing, matchListingsForContact, MATCHABLE_STATUSES } from "@/server/matching/engine";
 import { getContact, getProperties, getListing, getListings, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
@@ -321,7 +322,11 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
         ? matchesFound.filter((s) => s.postcode === input.postcode)
         : matchesFound;
       if (narrowed.length === 0) {
-        return { ok: false, message: `"${input.suburb}" is not in the suburb list. Add it from the property import, or check the spelling.` };
+        const hint = await query((tx) => didYouMean(tx, String(input.suburb)));
+        return {
+          ok: false,
+          message: `"${input.suburb}" is not a suburb I recognise${hint || ""}. Check the spelling${input.postcode ? " and postcode" : ""}.`,
+        };
       }
       if (narrowed.length > 1) {
         return { ok: false, message: `"${input.suburb}" exists with several postcodes (${narrowed.map((s) => s.postcode).join(", ")}). Say which.` };

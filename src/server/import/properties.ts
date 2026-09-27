@@ -8,6 +8,7 @@ import { loadPrompt } from "@/server/ai/prompts";
 import { resolveContact, _internals } from "@/server/intake/resolve";
 import { normaliseEmail, toE164 } from "@/lib/normalise";
 import { streetKey } from "@/lib/address";
+import { didYouMean } from "@/server/suburbs/suggest";
 import { ActionError } from "@/server/actions/action";
 import {
   importProperty,
@@ -172,7 +173,7 @@ export async function resolveRow(
     if (row.postcode && row.state) {
       newSuburb = { name: titleCase(row.suburb), state: row.state.toUpperCase(), postcode: row.postcode };
     } else {
-      problem = `"${row.suburb}" is not in the suburb list, and the file does not give its postcode and state to add it.`;
+      problem = `"${row.suburb}" is not a suburb we recognise${await didYouMean(tx, row.suburb)}, and the file does not give its postcode and state to add it.`;
     }
   }
 
