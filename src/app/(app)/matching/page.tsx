@@ -3,6 +3,7 @@ import { Home, Users } from "lucide-react";
 import { PageHeader, Section, Card, Badge, ScoreBar } from "@/components/ui";
 import { getAllMatches, getBuyersWithPreferences, getListings, getContacts } from "@/server/queries";
 import { RunMatchingButton } from "@/components/forms/run-matching";
+import { MATCHABLE_STATUSES } from "@/server/matching/engine";
 import { AskButton } from "@/components/assistant/ask-button";
 
 /**
@@ -25,8 +26,8 @@ export default async function MatchingPage() {
     getContacts(),
   ]);
 
-  const live = allListings.filter((l) => l.status === "live" || l.status === "under_offer");
-  const drafts = allListings.filter((l) => l.status === "draft").length;
+  // Drafts included: off-market deals are matched without being published.
+  const live = allListings.filter((l) => MATCHABLE_STATUSES.includes(l.status));
   const withoutPrefs = contactRows.length - buyers.length;
 
   return (
@@ -37,14 +38,14 @@ export default async function MatchingPage() {
       />
 
       <div className="grid xl:grid-cols-2 gap-6">
-        <Section title="Listings → buyers" hint={`${live.length} live`}>
+        <Section title="Listings → buyers" hint={`${live.length} to match, drafts included`}>
           <div className="space-y-3">
             {live.length === 0 && (
               <Card>
-                <p className="text-[13px]">No live listings yet.</p>
+                <p className="text-[13px]">No listings yet.</p>
                 <p className="text-2 text-[12.5px] mt-1">
-                  Matching runs on live sale or rental listings.
-                  {drafts > 0 ? ` You have ${drafts} draft${drafts === 1 ? "" : "s"}: publish one from its listing page.` : ""}
+                  Create a sale or rental listing for a property and it appears here. It can
+                  stay a draft: matching does not need it published.
                 </p>
               </Card>
             )}
@@ -62,6 +63,7 @@ export default async function MatchingPage() {
                         {l.address}
                       </Link>
                       <div className="text-3 text-[12px] mt-0.5">
+                        <Badge tone={l.status === "draft" ? "neutral" : "stock"}>{l.status === "under_offer" ? "Under offer" : l.status === "draft" ? "Draft" : "Live"}</Badge>{" "}
                         {l.type === "rent" ? "Rental" : "Sale"} · {l.priceDisplay || "no price wording"}
                       </div>
                     </div>

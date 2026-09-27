@@ -10,7 +10,7 @@ import { createProperty, updateProperty, createListing, updateListing } from "@/
 import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
-import { matchContactsForListing, matchListingsForContact } from "@/server/matching/engine";
+import { matchContactsForListing, matchListingsForContact, MATCHABLE_STATUSES } from "@/server/matching/engine";
 import { getContact, getProperties, getListing, getListings, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
 
@@ -386,9 +386,8 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
         The engine answers "gone" for several different situations. Check the usual ones
         first, so the agent is told what to fix rather than that something vanished.
       */
-      const liveListings = (await getListings()).filter(
-        (l) => l.status === "live" || l.status === "under_offer",
-      );
+      // Drafts count: off-market deals are matched without being published.
+      const liveListings = (await getListings()).filter((l) => MATCHABLE_STATUSES.includes(l.status));
       if (input.listingId) {
         const l = await getListing(input.listingId);
         if (!l) {
@@ -396,14 +395,14 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
           return {
             ok: false,
             message: p
-              ? `That is a property, not a listing. Matching runs on a live listing (a sale or rental campaign), and ${p.address} has none yet. Create a listing for it first.`
+              ? `That is a property, not a listing. Matching runs on a listing (a sale or rental campaign, draft or live), and ${p.address} has none yet. Create one for it first; it does not need to be published.`
               : "That listing no longer exists.",
           };
         }
-        if (l.status !== "live" && l.status !== "under_offer") {
+        if (!MATCHABLE_STATUSES.includes(l.status)) {
           return {
             ok: false,
-            message: `That listing is ${l.status.replace("_", " ")}. Matching only runs on live or under-offer listings. Publish it first.`,
+            message: `That listing is ${l.status.replace("_", " ")}, so the campaign is over. Matching runs on draft, live and under-offer listings.`,
           };
         }
       } else if (input.contactId) {
@@ -416,7 +415,7 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
           };
         }
         if (liveListings.length === 0) {
-          return { ok: false, message: "There are no live listings to match against yet." };
+          return { ok: false, message: "There are no listings to match against yet. Create one (it can stay a draft) for a property first." };
         }
       }
       try {
@@ -429,7 +428,7 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
         if (m.skipped) {
           const why: Record<string, string> = {
             "no-api-key": "No Anthropic API key is set. Add one in Advanced → Settings → Credentials.",
-            "not-live": "That listing is not live. Matching only runs on live or under-offer listings.",
+            "not-live": "That campaign is over (sold, leased or withdrawn). Matching runs on draft, live and under-offer listings.",
             gone: input.contactId
               ? "That contact cannot be matched: they have no preferences, have asked not to be contacted, or were merged or removed."
               : "That listing could not be found.",

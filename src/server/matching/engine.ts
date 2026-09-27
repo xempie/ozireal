@@ -56,6 +56,9 @@ function idList(ids: string[]) {
   );
 }
 
+/** Listing states matching works on. Drafts included: off-market deals are matched unpublished. */
+export const MATCHABLE_STATUSES: string[] = ["draft", "live", "under_offer"];
+
 export type MatchOutcome = {
   written: number;
   stage1: number;
@@ -195,7 +198,13 @@ export async function matchContactsForListing(
   });
 
   if (!ctx) return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "gone" };
-  if (!["live", "under_offer"].includes(ctx.l.status)) {
+  /**
+   * Draft listings match too (decided 2026-09-27): off-market deals are often matched
+   * and placed without ever being published. Matching sends nothing and a draft is
+   * never public, so publication is no precondition. Only finished campaigns (sold,
+   * leased, withdrawn) are refused.
+   */
+  if (!MATCHABLE_STATUSES.includes(ctx.l.status)) {
     return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "not-live" };
   }
 
@@ -385,7 +394,8 @@ export async function matchListingsForContact(
       .orderBy(listings.listedAt, listings.id)
       .where(
         and(
-          sql`${listings.status} in ('live','under_offer')`,
+          // Drafts included: see MATCHABLE_STATUSES.
+          sql`${listings.status} in ('draft','live','under_offer')`,
           /**
            * Sale and rental are different markets with different money columns.
            * Comparing a rental listing against a sale budget compared a number to

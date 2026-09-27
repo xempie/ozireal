@@ -208,7 +208,7 @@ export async function getHomeCounts() {
         (select count(*)::int from ${confirmItems}
            where ${confirmItems.status} = 'pending') as confirms,
         (select count(*)::int from ${listings}
-           where ${listings.status} in ('live', 'under_offer')) as live_listings,
+           where ${listings.status} in ('draft', 'live', 'under_offer')) as live_listings,
         (select count(*)::int from contact_preferences p
            join ${contacts} c on c.id = p.contact_id
            where c.tombstoned_at is null) as with_prefs,

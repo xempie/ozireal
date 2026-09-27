@@ -247,7 +247,7 @@ export const TOOLS = {
   run_matching: {
     kind: "write",
     description:
-      "Run the matching engine for a LISTING (find contacts) or a CONTACT (find listings). A property is not a listing: use the listing id from list_listings or get_property, and if the property has no live listing, say so instead of calling this. A contact needs preferences first (set_preferences). Uses AI, so it asks first. Then read the results with get_matches.",
+      "Run the matching engine for a LISTING (find contacts) or a CONTACT (find listings). Draft listings match too, no publishing needed. A property is not a listing: use the listing id from list_listings or get_property, and if the property has no listing, offer to create one (it can stay a draft). A contact needs preferences first (set_preferences). Uses AI, so it asks first. Then read the results with get_matches.",
     schema: z.object({ listingId: uuid().optional(), contactId: uuid().optional() }),
   },
   record_consent: {
