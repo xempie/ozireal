@@ -39,7 +39,10 @@ export default async function LoginPage({
   const noPasswordSet = !(await anyUserHasPassword());
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-[1.1fr_1fr]">
+    // min-h-dvh, not min-h-screen: 100vh on a phone includes the area under the
+    // browser's address bar, so a 100vh page always scrolled by that much. dvh is the
+    // visible height, so the card sits centred with nothing to scroll.
+    <div className="min-h-dvh grid lg:grid-cols-[1.1fr_1fr]">
       <div className="hidden lg:flex flex-col justify-between p-10 border-r surface-2">
         <div className="flex items-center gap-2.5">
           <span className="h-8 w-8 rounded-md bg-[var(--accent)] text-white grid place-items-center text-[15px] font-bold">
