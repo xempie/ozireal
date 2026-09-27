@@ -198,13 +198,26 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
     return { ok: true, data: { messages: history, pending: [], pendingResults: [] } };
   } catch (e) {
     if (e instanceof ClaudeError) {
+      // Logged: a refusal from the provider is otherwise invisible (no tokens were
+      // billed, so there is no ledger row). The message carries the status and the
+      // provider's reason, never the key.
+      console.error("[assistant] Claude refused:", e.status ?? "-", e.message.slice(0, 500));
+      const m = e.message;
       return {
         ok: false,
-        error: /API key/i.test(e.message)
+        error: /No Anthropic API key/i.test(m)
           ? "The assistant needs an Anthropic API key. Add one in Advanced → Settings → Credentials."
-          : /budget|spend/i.test(e.message)
-            ? e.message
-            : "The assistant could not answer just now. Try again in a moment.",
+          : e.status === 401 || /authentication|invalid x-api-key/i.test(m)
+            ? "Anthropic refused the API key. Check it at console.anthropic.com → API Keys, then replace it in Advanced → Settings → Credentials."
+            : /credit balance|billing|payment/i.test(m)
+              ? "Your Anthropic account has no credit left. Add credit at console.anthropic.com → Plans & Billing, then ask again."
+              : e.status === 404 || /model/i.test(m)
+                ? `The configured AI model is not available to this key (${m.slice(0, 160)}). Check the model names in Advanced → Settings.`
+                : e.status === 429
+                  ? "Anthropic is rate-limiting this key. Wait a minute and ask again."
+                  : /budget|spend/i.test(m)
+                    ? m
+                    : `The assistant could not answer (${m.slice(0, 200)}).`,
       };
     }
     console.error("[assistant] turn failed:", e instanceof Error ? e.message : e);
