@@ -56,6 +56,14 @@ function idList(ids: string[]) {
   );
 }
 
+/**
+ * v2 (2026-09-27): a candidate that meets what the person asked for is always returned,
+ * with a reason that says what matches and what is not yet known. v1 dropped anything
+ * it could not justify beyond the filters, so sparse records (no brief, no listing copy)
+ * produced "no matches" even for a house in the one suburb the buyer named.
+ */
+const RANK_PROMPT = "rank-matches.v2";
+
 /** Listing states matching works on. Drafts included: off-market deals are matched unpublished. */
 export const MATCHABLE_STATUSES: string[] = ["draft", "live", "under_offer"];
 
@@ -140,7 +148,16 @@ export async function matchContactsForListing(
         softRequirements: contactPreferences.softRequirements,
         priceMin: contactPreferences.priceMin,
         priceMax: contactPreferences.priceMax,
+        rentPwMax: contactPreferences.rentPwMax,
         bedsMin: contactPreferences.bedsMin,
+        bathsMin: contactPreferences.bathsMin,
+        propertyTypes: contactPreferences.propertyTypes,
+        postcodes: contactPreferences.postcodes,
+        suburbNames: sql<string[] | null>`(
+          select array_agg(sb.name order by sb.name)
+          from contact_preference_suburbs ps join suburbs sb on sb.id = ps.suburb_id
+          where ps.preference_id = ${contactPreferences.id}
+        )`,
         embeddedText: contactPreferences.embeddedText,
         brief: contactIntent.rollingBrief,
         intentType: contactIntent.intentType,
@@ -276,7 +293,7 @@ export async function matchContactsForListing(
 
   /** Stage 3: Claude ranks and writes the sentence. */
   const config = await getLlmConfig(tenantId);
-  const prompt = loadPrompt("rank-matches.v1");
+  const prompt = loadPrompt(RANK_PROMPT);
   const { data, generationId } = await runTask(rankOutput, {
     task: "rank-matches:listing",
     model: "sonnet",
@@ -296,16 +313,34 @@ export async function matchContactsForListing(
             description: ctx.l.embeddedText ?? ctx.l.copy,
             propertyType: ctx.l.propertyType,
             suburb: ctx.l.suburbName,
+            postcode: ctx.l.postcode,
             beds: ctx.l.beds,
             baths: ctx.l.baths,
             parking: ctx.l.parking,
             features: ctx.l.features ?? [],
             priceDisplay: ctx.l.priceDisplay,
+            listingType: ctx.l.listingType,
           },
+          /**
+           * `stated` is what each person asked for. It used to be missing: the ranker saw
+           * only a brief and soft requirements, so a buyer with neither looked like
+           * someone with no wants at all and was dropped, even when the listing was in
+           * the very suburb they named.
+           */
           candidates: shortlist.map((c) => ({
             id: c.contactId,
             name: `${c.firstName} ${c.lastName}`,
-            summary: c.embeddedText ?? c.brief ?? c.softRequirements ?? "No stated preferences.",
+            stated: {
+              suburbs: c.suburbNames ?? [],
+              postcodes: c.postcodes ?? [],
+              priceMin: c.priceMin,
+              priceMax: c.priceMax,
+              rentPerWeekMax: c.rentPwMax,
+              bedsMin: c.bedsMin,
+              bathsMin: c.bathsMin,
+              propertyTypes: c.propertyTypes ?? [],
+            },
+            summary: c.embeddedText ?? c.brief ?? null,
             softRequirements: c.softRequirements,
             intentType: c.intentType,
             similarity: c.similarity,
@@ -397,6 +432,8 @@ export async function matchListingsForContact(
         parking: properties.parking,
         features: properties.features,
         suburbName: suburbs.name,
+        postcode: properties.postcode,
+        listingType: listings.listingType,
       })
       .from(listings)
       .innerJoin(properties, eq(properties.id, listings.propertyId))
@@ -442,7 +479,7 @@ export async function matchListingsForContact(
       )
       .limit(STAGE1_LIMIT);
 
-    return { c, candidates, vectorReady };
+    return { c, subs, candidates, vectorReady };
   });
 
   if (!ctx) return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "gone" };
@@ -486,7 +523,7 @@ export async function matchListingsForContact(
   shortlist = shortlist.slice(0, STAGE2_LIMIT);
 
   const config = await getLlmConfig(tenantId);
-  const prompt = loadPrompt("rank-matches.v1");
+  const prompt = loadPrompt(RANK_PROMPT);
   const { data, generationId } = await runTask(rankOutput, {
     task: "rank-matches:contact",
     model: "sonnet",
@@ -503,14 +540,27 @@ export async function matchListingsForContact(
           subject: {
             kind: "contact",
             name: `${ctx.c.firstName} ${ctx.c.lastName}`,
-            summary: ctx.c.embeddedText ?? ctx.c.brief ?? "No brief yet.",
+            // What they asked for. Previously absent; see the listing direction above.
+            stated: {
+              suburbs: ctx.subs.map((s) => s.name),
+              postcodes: ctx.c.postcodes ?? [],
+              priceMin: ctx.c.priceMin,
+              priceMax: ctx.c.priceMax,
+              rentPerWeekMax: ctx.c.rentPwMax,
+              bedsMin: ctx.c.bedsMin,
+              bathsMin: ctx.c.bathsMin,
+              propertyTypes: ctx.c.propertyTypes ?? [],
+            },
+            summary: ctx.c.embeddedText ?? ctx.c.brief ?? null,
             softRequirements: ctx.c.softRequirements,
           },
           candidates: shortlist.map((l) => ({
             id: l.listingId,
-            summary: l.embeddedText ?? l.copy ?? l.headline ?? "No description.",
+            summary: l.embeddedText ?? l.copy ?? l.headline ?? null,
+            listingType: l.listingType,
             propertyType: l.propertyType,
             suburb: l.suburbName,
+            postcode: l.postcode,
             beds: l.beds,
             baths: l.baths,
             parking: l.parking,
