@@ -1,144 +1,79 @@
 import Link from "next/link";
-import { ArrowLeftRight, Filter, Sparkles, Braces } from "lucide-react";
-import {
-  PageHeader,
-  Section,
-  Card,
-  CardTitle,
-  Badge,
-  ScoreBar,
-  ProtoNote,
-  Callout,
-} from "@/components/ui";
-import { getAllMatches, getContact, getContacts, getListings } from "@/server/queries";
+import { Home, Users } from "lucide-react";
+import { PageHeader, Section, Card, Badge, ScoreBar } from "@/components/ui";
+import { getAllMatches, getBuyersWithPreferences, getListings, getContacts } from "@/server/queries";
+import { RunMatchingButton } from "@/components/forms/run-matching";
+import { AskButton } from "@/components/assistant/ask-button";
 
-const stages = [
-  {
-    n: 1,
-    name: "Hard filters",
-    icon: Filter,
-    detail: "price · beds · suburb · availability, in SQL",
-    from: "thousands",
-    to: "dozens",
-    tone: "stock" as const,
-  },
-  {
-    n: 2,
-    name: "Vector similarity",
-    icon: Braces,
-    detail: "the soft wants a filter cannot express",
-    from: "dozens",
-    to: "about 20",
-    tone: "brand" as const,
-  },
-  {
-    n: 3,
-    name: "Claude ranks",
-    icon: Sparkles,
-    detail: "orders the shortlist, writes one sentence per match",
-    from: "about 20",
-    to: "ranked, explained",
-    tone: "ai" as const,
-  },
-];
+/**
+ * Matching, in both directions, with a button on every row that can be matched.
+ *
+ * It used to show only listings and contacts that ALREADY had matches, with no way to
+ * start a run, so on a fresh system it looked empty and inert. Now every live listing
+ * and every contact with preferences is listed, with its results or "no matches yet".
+ * The run goes through the same checks as the assistant (actions/matching.ts).
+ */
+
+const money = (n: number | null) =>
+  n === null ? null : n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(n % 1_000_000 ? 2 : 0)}m` : `$${Math.round(n / 1000)}k`;
 
 export default async function MatchingPage() {
-  /**
-   * One read of every match, grouped in memory for both directions. A query per
-   * listing and a query per contact would be the N+1 the prototype's synchronous
-   * helpers hid.
-   */
-  const [allListings, allMatches, contactRows] = await Promise.all([
+  const [allListings, allMatches, buyers, contactRows] = await Promise.all([
     getListings(),
     getAllMatches(),
+    getBuyersWithPreferences(),
     getContacts(),
   ]);
 
-  // getAllMatches is ordered by score descending, so each group keeps that order.
-  const matchesForListing = (listingId: string) =>
-    allMatches.filter((m) => m.listingId === listingId);
-  const matchesForContact = (contactId: string) =>
-    allMatches.filter((m) => m.contactId === contactId);
-
-  const liveListings = allListings.filter(
-    (l) => l.status === "live" || l.status === "draft",
-  );
-
-  // Soft requirements and the budget band only come back on the detail read.
-  const matched = new Set(allMatches.map((m) => m.contactId));
-  const activeBuyers = (
-    await Promise.all(
-      contactRows.filter((c) => matched.has(c.id)).map((c) => getContact(c.id)),
-    )
-  ).flatMap((c) => (c && c.preferences ? [c] : []));
+  const live = allListings.filter((l) => l.status === "live" || l.status === "under_offer");
+  const drafts = allListings.filter((l) => l.status === "draft").length;
+  const withoutPrefs = contactRows.length - buyers.length;
 
   return (
     <>
       <PageHeader
         title="Matching"
-        subtitle="Runs in both directions — property to the people who should hear about it, and person to the properties that suit them."
+        subtitle="Find the buyers who suit a listing, or the listings that suit a buyer. Each match comes with a one-line reason."
       />
 
-      <Section title="How a match is produced">
-        <div className="grid md:grid-cols-3 gap-3">
-          {stages.map((s) => {
-            const Icon = s.icon;
-            return (
-              <Card key={s.n}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Icon size={14} className="text-3" />
-                  <span className="font-semibold text-[13px]">
-                    {s.n} · {s.name}
-                  </span>
-                </div>
-                <p className="text-2 text-[12.5px] leading-relaxed">{s.detail}</p>
-                <div className="mt-2">
-                  <Badge tone={s.tone}>
-                    {s.from} → {s.to}
-                  </Badge>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-        <div className="mt-3">
-          <Callout tone="ai" title="The reason is not optional">
-            An agent will not pick up the phone on the strength of a similarity score.
-            The one-sentence reason is what makes this get used daily rather than ignored
-            after a week.
-          </Callout>
-        </div>
-      </Section>
-
       <div className="grid xl:grid-cols-2 gap-6">
-        <Section
-          title="Property → contacts"
-          hint="who should hear about this listing"
-        >
-          <div className="space-y-4">
-            {liveListings.map((l) => {
-              const ms = matchesForListing(l.id);
-              if (ms.length === 0) return null;
+        <Section title="Listings → buyers" hint={`${live.length} live`}>
+          <div className="space-y-3">
+            {live.length === 0 && (
+              <Card>
+                <p className="text-[13px]">No live listings yet.</p>
+                <p className="text-2 text-[12.5px] mt-1">
+                  Matching runs on live sale or rental listings.
+                  {drafts > 0 ? ` You have ${drafts} draft${drafts === 1 ? "" : "s"}: publish one from its listing page.` : ""}
+                </p>
+              </Card>
+            )}
+            {live.map((l) => {
+              const ms = allMatches.filter((m) => m.listingId === l.id);
               return (
                 <Card key={l.id}>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <ArrowLeftRight size={13} className="text-3" />
-                    <Link
-                      href={`/listings/${l.id}`}
-                      className="font-medium text-[13px] hover:underline underline-offset-2"
-                    >
-                      {l.address}
-                    </Link>
-                    <span className="text-3 text-[12px] ml-auto">
-                      {l.priceDisplay || "no price"}
-                    </span>
-                  </div>
-                  <div className="space-y-2.5">
-                    {ms.map((m) => (
-                      <div
-                        key={m.contactId}
-                        className="border-l-2 pl-3 border-[var(--line-strong)]"
+                  <div className="flex items-start gap-3">
+                    <Home size={15} className="text-3 mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/listings/${l.id}`}
+                        className="font-medium text-[13.5px] hover:underline underline-offset-2"
                       >
+                        {l.address}
+                      </Link>
+                      <div className="text-3 text-[12px] mt-0.5">
+                        {l.type === "rent" ? "Rental" : "Sale"} · {l.priceDisplay || "no price wording"}
+                      </div>
+                    </div>
+                    <RunMatchingButton
+                      listingId={l.id}
+                      label={ms.length ? "Match again" : "Find buyers"}
+                    />
+                  </div>
+                  <div className="mt-3 space-y-2.5">
+                    {ms.length === 0 && <p className="text-3 text-[12px]">No matches yet.</p>}
+                    {ms.map((m) => (
+                      <div key={m.contactId} className="border-l-2 pl-3 border-[var(--line-strong)]">
                         <div className="flex items-center justify-between gap-3">
                           <Link
                             href={`/contacts/${m.contactId}`}
@@ -148,9 +83,7 @@ export default async function MatchingPage() {
                           </Link>
                           <ScoreBar value={m.score} />
                         </div>
-                        <p className="text-2 text-[12px] mt-1 leading-relaxed">
-                          {m.reason}
-                        </p>
+                        <p className="text-2 text-[12px] mt-1 leading-relaxed">{m.reason}</p>
                       </div>
                     ))}
                   </div>
@@ -160,37 +93,79 @@ export default async function MatchingPage() {
           </div>
         </Section>
 
-        <Section title="Contact → properties" hint="what suits this person">
-          <div className="space-y-4">
-            {activeBuyers.map((c) => {
-              const ms = matchesForContact(c.id);
+        <Section title="Buyers → listings" hint={`${buyers.length} with preferences`}>
+          <div className="space-y-3">
+            {withoutPrefs > 0 && (
+              <div className="flex items-center gap-3 rounded-lg border border-dashed p-3 text-[12.5px]">
+                <span className="text-2 flex-1">
+                  {withoutPrefs} contact{withoutPrefs === 1 ? " has" : "s have"} no preferences, so
+                  {withoutPrefs === 1 ? " it" : " they"} can&apos;t be matched yet.
+                </span>
+                <AskButton
+                  prefill="Set preferences for "
+                  className="shrink-0 text-[12px] rounded-md border px-2.5 min-h-8 surface-2 hover:surface-3"
+                >
+                  Set preferences
+                </AskButton>
+              </div>
+            )}
+            {buyers.length === 0 && (
+              <Card>
+                <p className="text-[13px]">No contacts with preferences yet.</p>
+                <p className="text-2 text-[12.5px] mt-1">
+                  Tell the assistant what someone is looking for, e.g. &ldquo;Esi wants a 3 bed
+                  house in Norwood, $700k–$850k&rdquo;.
+                </p>
+              </Card>
+            )}
+            {buyers.map((b) => {
+              const ms = allMatches.filter((m) => m.contactId === b.id);
+              const budget =
+                b.priceMin !== null || b.priceMax !== null
+                  ? `${money(b.priceMin) ?? "any"}–${money(b.priceMax) ?? "any"}`
+                  : b.rentPwMax !== null
+                    ? `up to $${b.rentPwMax}/wk`
+                    : null;
+              const summary = [
+                budget,
+                b.bedsMin !== null ? `${b.bedsMin}+ bed` : null,
+                b.propertyTypes?.length ? b.propertyTypes.join("/") : null,
+                b.suburbs.length ? b.suburbs.slice(0, 3).join(", ") + (b.suburbs.length > 3 ? "…" : "") : null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
               return (
-                <Card key={c.id}>
-                  <div className="flex items-center gap-2 mb-2.5">
-                    <ArrowLeftRight size={13} className="text-3" />
-                    <Link
-                      href={`/contacts/${c.id}`}
-                      className="font-medium text-[13px] hover:underline underline-offset-2"
-                    >
-                      {c.firstName} {c.lastName}
-                    </Link>
-                    {c.intent?.budgetBand && (
-                      <span className="text-3 text-[12px] ml-auto">
-                        {c.intent.budgetBand}
-                      </span>
+                <Card key={b.id}>
+                  <div className="flex items-start gap-3">
+                    <Users size={15} className="text-3 mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          href={`/contacts/${b.id}`}
+                          className="font-medium text-[13.5px] hover:underline underline-offset-2"
+                        >
+                          {b.firstName} {b.lastName}
+                        </Link>
+                        {b.doNotContact && <Badge tone="blocked">do not contact</Badge>}
+                      </div>
+                      <div className="text-3 text-[12px] mt-0.5">{summary || "preferences set"}</div>
+                    </div>
+                    {!b.doNotContact && (
+                      <RunMatchingButton
+                        contactId={b.id}
+                        label={ms.length ? "Match again" : "Find properties"}
+                      />
                     )}
                   </div>
-                  {c.preferences?.softRequirements && (
-                    <p className="text-3 text-[11.5px] italic mb-2.5 leading-relaxed">
-                      “{c.preferences.softRequirements}”
+                  {b.softRequirements && (
+                    <p className="text-3 text-[11.5px] italic mt-2 leading-relaxed">
+                      &ldquo;{b.softRequirements}&rdquo;
                     </p>
                   )}
-                  <div className="space-y-2.5">
+                  <div className="mt-3 space-y-2.5">
+                    {ms.length === 0 && <p className="text-3 text-[12px]">No matches yet.</p>}
                     {ms.map((m) => (
-                      <div
-                        key={m.listingId}
-                        className="border-l-2 pl-3 border-[var(--line-strong)]"
-                      >
+                      <div key={m.listingId} className="border-l-2 pl-3 border-[var(--line-strong)]">
                         <div className="flex items-center justify-between gap-3">
                           <Link
                             href={`/listings/${m.listingId}`}
@@ -200,9 +175,7 @@ export default async function MatchingPage() {
                           </Link>
                           <ScoreBar value={m.score} />
                         </div>
-                        <p className="text-2 text-[12px] mt-1 leading-relaxed">
-                          {m.reason}
-                        </p>
+                        <p className="text-2 text-[12px] mt-1 leading-relaxed">{m.reason}</p>
                       </div>
                     ))}
                   </div>
@@ -212,11 +185,6 @@ export default async function MatchingPage() {
           </div>
         </Section>
       </div>
-
-      <ProtoNote>
-        Scores here are authored sample values. In Phase 2 they come from pgvector
-        cosine distance, and the reason text comes from Sonnet ranking the shortlist.
-      </ProtoNote>
     </>
   );
 }

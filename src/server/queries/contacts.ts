@@ -265,6 +265,40 @@ export async function getInteractionsFor(contactId: string) {
   });
 }
 
+/**
+ * Everyone matching can work for: live contacts with a preferences row, and a short
+ * summary of what they want. The matcher joins on preferences, so a contact without
+ * them cannot be matched and is not listed here.
+ */
+export async function getBuyersWithPreferences() {
+  return query(async (tx) => {
+    const rows = await tx
+      .select({
+        id: contacts.id,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        doNotContact: contacts.doNotContact,
+        priceMin: contactPreferences.priceMin,
+        priceMax: contactPreferences.priceMax,
+        rentPwMax: contactPreferences.rentPwMax,
+        bedsMin: contactPreferences.bedsMin,
+        propertyTypes: contactPreferences.propertyTypes,
+        softRequirements: contactPreferences.softRequirements,
+        suburbs: sql<string[]>`coalesce((
+          select array_agg(${suburbs.name} order by ${suburbs.name})
+          from ${contactPreferenceSuburbs}
+          join ${suburbs} on ${suburbs.id} = ${contactPreferenceSuburbs.suburbId}
+          where ${contactPreferenceSuburbs.preferenceId} = ${contactPreferences.id}
+        ), '{}')`,
+      })
+      .from(contacts)
+      .innerJoin(contactPreferences, eq(contactPreferences.contactId, contacts.id))
+      .where(and(isNull(contacts.tombstonedAt), isNull(contacts.mergedIntoId)))
+      .orderBy(contacts.firstName, contacts.lastName);
+    return rows;
+  });
+}
+
 /** Contacts whose follow-up is due, most overdue first. */
 export async function getFollowupsDue() {
   return query((tx) =>
