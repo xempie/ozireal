@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, MapPinOff } from "lucide-react";
+import { Plus } from "lucide-react";
 import {
   PageHeader,
   Badge,
@@ -8,7 +8,6 @@ import {
   TH,
   TD,
   TR,
-  ProtoNote,
 } from "@/components/ui";
 import { getProperties } from "@/server/queries";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
@@ -106,7 +105,6 @@ export default async function PropertiesPage({
             <TH>Land</TH>
             <TH>Owner</TH>
             <TH>Listings</TH>
-            <TH>Geocode</TH>
             <TH className="text-right">Actions</TH>
           </TR>
         </THead>
@@ -164,16 +162,6 @@ export default async function PropertiesPage({
                     {ls.length === 0 && <span className="text-3">never listed</span>}
                   </div>
                 </TD>
-                <TD>
-                  {p.lat === null ? (
-                    <Badge tone="queue">
-                      <MapPinOff size={10} />
-                      pending
-                    </Badge>
-                  ) : (
-                    <Badge tone="sent">set</Badge>
-                  )}
-                </TD>
                 <TD className="text-right">
                   {/* Editing from the list rather than only from the detail page:
                       most corrections are a bedroom count or an owner link, and
@@ -211,12 +199,6 @@ export default async function PropertiesPage({
           {all.length === 0 ? "No properties yet." : "Nothing in this tab."}
         </div>
       )}
-
-      <ProtoNote>
-        Coordinates are empty across the board because no geocoding provider is
-        connected yet (D11). The columns and the backfill job exist so switching it on
-        later is credentials plus a run — not a migration.
-      </ProtoNote>
     </>
   );
 }

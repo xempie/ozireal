@@ -137,7 +137,8 @@ export default async function PropertyDetail({
                         href={`/listings/${l.id}`}
                         className="font-medium hover:underline underline-offset-2"
                       >
-                        {l.headline || "Untitled draft"}
+                        {/* The status column says whether it is a draft; this is only the name. */}
+                        {l.headline || "Untitled listing"}
                       </Link>
                     </TD>
                     <TD className="text-2">{l.type === "rent" ? "Rental" : "Sale"}</TD>

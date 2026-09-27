@@ -7,6 +7,7 @@ import { ClaudeError } from "@/server/ai/claude";
 import { loadPrompt } from "@/server/ai/prompts";
 import { resolveContact, _internals } from "@/server/intake/resolve";
 import { normaliseEmail, toE164 } from "@/lib/normalise";
+import { streetKey } from "@/lib/address";
 import { ActionError } from "@/server/actions/action";
 import {
   importProperty,
@@ -175,26 +176,26 @@ export async function resolveRow(
     }
   }
 
-  const key = [row.unit ?? "", row.streetNumber ?? "", row.street, row.suburb, row.postcode ?? ""]
+  const key = [row.unit ?? "", row.streetNumber ?? "", streetKey(row.street), row.suburb, row.postcode ?? ""]
     .join("|")
     .toLowerCase();
   if (!problem && seen.has(key)) problem = "This address appears twice in the file.";
   seen.add(key);
 
   if (!problem && suburb) {
-    const [existing] = await tx
-      .select({ id: properties.id })
+    const sameSpot = await tx
+      .select({ street: properties.street })
       .from(properties)
       .where(
         and(
-          eq(properties.street, row.street),
           eq(properties.suburbId, suburb.id),
           row.streetNumber ? eq(properties.streetNumber, row.streetNumber) : sql`true`,
           row.unit ? eq(properties.unit, row.unit) : sql`${properties.unit} is null`,
         ),
-      )
-      .limit(1);
-    if (existing) problem = "Already in your properties.";
+      );
+    if (sameSpot.some((p) => streetKey(p.street) === streetKey(row.street))) {
+      problem = "Already in your properties.";
+    }
   }
 
   if (!problem && row.propertyType === "land" && (row.beds || row.baths)) {

@@ -7,6 +7,7 @@ import { defineAction, ActionError } from "./action";
 import { optionalInt } from "./fields";
 import { properties, listings, inspections, suburbs, contacts } from "@/db/schema";
 import { enqueue } from "@/server/jobs/queues";
+import { streetKey } from "@/lib/address";
 
 /**
  * Creating stock — the physical asset, and the campaign to sell or let it.
@@ -79,20 +80,21 @@ export const createProperty = defineAction({
      * in order to preserve. The unit number is part of the comparison, so six
      * flats at one street address remain six properties.
      */
-    const [existing] = await ctx.tx
-      .select({ id: properties.id })
+    // Same suburb, number and unit, then the street compared by streetKey, so
+    // "Omer St" and "Omer Street" are recognised as one address.
+    const sameSpot = await ctx.tx
+      .select({ id: properties.id, street: properties.street })
       .from(properties)
       .where(
         and(
-          eq(properties.street, input.street),
           eq(properties.suburbId, input.suburbId),
           input.streetNumber
             ? eq(properties.streetNumber, input.streetNumber)
             : sql`true`,
           input.unit ? eq(properties.unit, input.unit) : sql`${properties.unit} is null`,
         ),
-      )
-      .limit(1);
+      );
+    const existing = sameSpot.find((p) => streetKey(p.street) === streetKey(input.street));
     if (existing) {
       throw new ActionError(
         "That address is already in your stock. Open the existing record rather than creating a second one — a property cannot be merged later.",
