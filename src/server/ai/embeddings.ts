@@ -66,6 +66,14 @@ export function _setBedrockClient(c: BedrockRuntimeClient | null) {
  */
 export function embeddingsAvailable(): boolean {
   return !!(
+    /**
+     * Explicit switch for an EC2 instance role. The role's credentials come from the
+     * instance metadata service, which sets none of the variables below, so without
+     * this every embedding in production was skipped as "no credentials" while the
+     * job still reported done, and the similarity stage never ran. The SDK's default
+     * credential chain finds the role on its own; this only says to try.
+     */
+    process.env.EMBEDDINGS === "bedrock" ||
     process.env.AWS_ACCESS_KEY_ID ||
     process.env.AWS_PROFILE ||
     process.env.AWS_ROLE_ARN ||
