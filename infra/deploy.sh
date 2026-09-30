@@ -40,6 +40,41 @@ ls -lh /tmp/ozirealty-src.tgz | awk '{print "  " $5}'
 log "Uploading"
 scp -i "$KEY" -o StrictHostKeyChecking=no /tmp/ozirealty-src.tgz ubuntu@"$IP":/tmp/
 
+log "Applying database migrations"
+# Deploys used to ship code without its migrations, which relied on someone running
+# them by hand. 0013 was missed for weeks: the Settings page and every AI call selected
+# a column production did not have. Same rules as scripts/db-apply.sh: each file once,
+# recorded by sha256 in drizzle.__drizzle_migrations, each in ONE transaction with
+# ON_ERROR_STOP. This runs BEFORE the services stop, so a failed migration aborts the
+# deploy with the old version still serving.
+#
+# And BEFORE the build: the build pre-renders public pages from the database, so a
+# page reading a new column fails to build unless the column already exists. Every
+# migration here is additive and backward compatible, so the running version is
+# unaffected if the build then fails.
+$SSH bash -s <<'REMOTE'
+set -euo pipefail
+rm -rf /tmp/migrate && mkdir -p /tmp/migrate
+tar -xzf /tmp/ozirealty-src.tgz -C /tmp/migrate ./drizzle
+sudo bash -c '
+  set -euo pipefail
+  set -a; . /etc/ozirealty/env; set +a
+  q() { psql "$DATABASE_URL" -tAc "$1"; }
+  applied=0
+  for f in /tmp/migrate/drizzle/*.sql; do
+    h=$(sha256sum "$f" | cut -d" " -f1)
+    if [ "$(q "select count(*) from drizzle.__drizzle_migrations where hash = '"'"'$h'"'"'")" != "0" ]; then
+      continue
+    fi
+    echo "  apply  $(basename "$f")"
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1 -q -f "$f"
+    q "insert into drizzle.__drizzle_migrations (hash, created_at) values ('"'"'$h'"'"', extract(epoch from now())::bigint*1000)" >/dev/null
+    applied=$((applied+1))
+  done
+  echo "  $applied applied"
+'
+REMOTE
+
 log "Building on the instance"
 $SSH bash -s <<'REMOTE'
 set -euo pipefail
@@ -64,34 +99,6 @@ chmod 600 /tmp/build/.env.production
 # STANDALONE=1 is what next.config.ts gates the standalone output behind.
 STANDALONE=1 pnpm build
 shred -u /tmp/build/.env.production 2>/dev/null || rm -f /tmp/build/.env.production
-REMOTE
-
-log "Applying database migrations"
-# Deploys used to ship code without its migrations, which relied on someone running
-# them by hand. 0013 was missed for weeks: the Settings page and every AI call selected
-# a column production did not have. Same rules as scripts/db-apply.sh: each file once,
-# recorded by sha256 in drizzle.__drizzle_migrations, each in ONE transaction with
-# ON_ERROR_STOP. This runs BEFORE the services stop, so a failed migration aborts the
-# deploy with the old version still serving.
-$SSH bash -s <<'REMOTE'
-set -euo pipefail
-sudo bash -c '
-  set -euo pipefail
-  set -a; . /etc/ozirealty/env; set +a
-  q() { psql "$DATABASE_URL" -tAc "$1"; }
-  applied=0
-  for f in /tmp/build/drizzle/*.sql; do
-    h=$(sha256sum "$f" | cut -d" " -f1)
-    if [ "$(q "select count(*) from drizzle.__drizzle_migrations where hash = '"'"'$h'"'"'")" != "0" ]; then
-      continue
-    fi
-    echo "  apply  $(basename "$f")"
-    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1 -q -f "$f"
-    q "insert into drizzle.__drizzle_migrations (hash, created_at) values ('"'"'$h'"'"', extract(epoch from now())::bigint*1000)" >/dev/null
-    applied=$((applied+1))
-  done
-  echo "  $applied applied"
-'
 REMOTE
 
 log "Installing the build"

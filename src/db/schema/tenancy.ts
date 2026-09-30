@@ -9,7 +9,14 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
+
+/** Keys are optional: an absent key means the site's default behaviour. */
+export type SiteSettings = {
+  /** Filter tabs above "Currently advertised" on the home page. Default: shown. */
+  homeListingFilters?: boolean;
+};
 
 /**
  * Tenancy and identity.
@@ -42,6 +49,12 @@ export const tenants = pgTable("tenants", {
    * instead, and rotating it is writing a new value rather than re-keying the tenant.
    */
   formKey: uuid("form_key").notNull().defaultRandom().unique(),
+  /**
+   * Website options the agency sets in the console's Website section (migration 0018).
+   * One document, a key per option; validated in actions/website.ts, and the public
+   * site reads only the keys server/public/site.ts names.
+   */
+  siteSettings: jsonb("site_settings").$type<SiteSettings>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

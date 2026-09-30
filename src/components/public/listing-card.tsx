@@ -1,18 +1,44 @@
 import Image from "next/image";
 import { photo } from "./agency";
-import { type DemoListing } from "./demo-data";
 
 /**
  * One listing card.
  *
  * No "use client" directive, deliberately. On a server page it renders on the server;
  * imported by the client filter island it compiles into that bundle. One definition
- * either way, which is what stops the grid on /for-sale drifting from the grid on the
- * home page.
+ * either way, which is what stops the grids on different pages drifting apart.
  *
- * The cards do not link anywhere yet. `/for-sale/[slug]` does not exist, and a card that
+ * `img` is optional. Real listings have no photos until the media pipeline lands, and a
+ * stock photo standing in for a specific house would misrepresent it, so a real card
+ * without one shows a neutral placeholder instead.
+ *
+ * The cards do not link anywhere yet: there is no listing detail page, and a card that
  * looks clickable and 404s reads as a broken site rather than an unfinished one.
  */
+
+export type ListingCategory = "sale" | "auction" | "lease" | "offer";
+
+export interface CardListing {
+  id: string;
+  cat: ListingCategory;
+  /** Corner flag on the card. */
+  tag: string;
+  /** "", "tag--accent" or "tag--ink" — the card styles that already exist. */
+  tagClass: string;
+  /** Authored wording, printed verbatim, never composed from a number (underquoting). */
+  price: string;
+  addr: string;
+  sub: string;
+  bed: number | null;
+  bath: number | null;
+  car: number | null;
+  land: string;
+  agent: string;
+  open: string;
+  /** Unsplash photo id (allow-listed host), or null for the placeholder. */
+  img: string | null;
+  alt: string;
+}
 
 const Bed = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -29,19 +55,31 @@ const Car = () => (
     <path d="M4 16v2M20 16v2M3 16v-4l2-5h14l2 5v4H3zM6.5 13h.01M17.5 13h.01" />
   </svg>
 );
+const House = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" width="44" height="44" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M10 20v-6h4v6" />
+  </svg>
+);
 
-export function ListingCard({ l }: { l: DemoListing }) {
+export function ListingCard({ l }: { l: CardListing }) {
   return (
     <article className="card">
       <div className="card-media">
         <span className={`tag ${l.tagClass}`}>{l.tag}</span>
-        <Image
-          src={photo(l.img, 800)}
-          alt={l.alt}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
-          style={{ objectFit: "cover" }}
-        />
+        {l.img ? (
+          <Image
+            src={photo(l.img, 800)}
+            alt={l.alt}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"
+            style={{ objectFit: "cover" }}
+          />
+        ) : (
+          <div className="card-noimg" role="img" aria-label={`${l.addr}: photos coming soon`}>
+            <House />
+            <span>Photos coming soon</span>
+          </div>
+        )}
       </div>
       <div className="card-body">
         {/* The authored string, printed exactly. Never composed from a number. */}
@@ -52,17 +90,17 @@ export function ListingCard({ l }: { l: DemoListing }) {
           <span className="s">
             <Bed />
             <span className="sr-only">bedrooms</span>
-            {l.bed}
+            {l.bed ?? "—"}
           </span>
           <span className="s">
             <Bath />
             <span className="sr-only">bathrooms</span>
-            {l.bath}
+            {l.bath ?? "—"}
           </span>
           <span className="s">
             <Car />
             <span className="sr-only">car spaces</span>
-            {l.car}
+            {l.car ?? "—"}
           </span>
           <span className="land">{l.land}</span>
         </div>

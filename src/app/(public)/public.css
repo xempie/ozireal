@@ -390,6 +390,22 @@
 .card-media { position: relative; overflow: hidden; aspect-ratio: 4/3; background: var(--ink-2); }
 .card-media img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.9s cubic-bezier(.2,.7,.2,1); }
 .card:hover .card-media img { transform: scale(1.06); }
+/* A real listing with no photos yet: never a stock image standing in for the house. */
+.card-noimg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: rgba(234, 231, 222, 0.55);
+  background: linear-gradient(160deg, var(--ink-3), var(--ink-2));
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
 /*
   No stock photograph stands in for a specific house. Until the media pipeline
   lands, a listing without photographs says so.

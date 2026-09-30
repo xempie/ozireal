@@ -610,6 +610,7 @@ export const updateListing = defineAction({
 
     revalidatePath("/listings");
     revalidatePath(`/listings/${input.id}`);
+    revalidatePublicListings();
     revalidatePath("/dashboard");
     return { id: input.id, reembedding: copyChanged };
   },
@@ -742,6 +743,7 @@ export const setListingStatus = defineAction({
     revalidatePath(`/properties/${l.propertyId}`);
     revalidatePath("/dashboard");
     revalidatePath("/website");
+    revalidatePublicListings();
     return { status: input.status };
   },
 });
@@ -805,6 +807,7 @@ export const deleteListing = defineAction({
     }
 
     revalidatePath("/listings");
+    revalidatePublicListings();
     revalidatePath("/properties");
     revalidatePath("/dashboard");
     return { deleted: true };
@@ -912,3 +915,14 @@ export const cancelInspection = defineAction({
     return { cancelled: true };
   },
 });
+
+/**
+ * The public pages that show listings are pre-rendered, so a listing going live,
+ * changing or being withdrawn must refresh them, or the home page keeps showing
+ * yesterday's stock until the next deploy.
+ */
+function revalidatePublicListings() {
+  revalidatePath("/");
+  revalidatePath("/for-sale");
+  revalidatePath("/sold");
+}

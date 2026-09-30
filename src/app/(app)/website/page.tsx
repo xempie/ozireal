@@ -21,7 +21,8 @@ import {
   Empty,
   ProtoNote,
 } from "@/components/ui";
-import { getRedirects, getSuburbPages, getListings } from "@/server/queries";
+import { getRedirects, getSuburbPages, getListings, getSiteSettings } from "@/server/queries";
+import { SiteToggle } from "@/components/forms/website-forms";
 import {
   NewRedirectButton,
   EditRedirectButton,
@@ -36,10 +37,11 @@ const redirectTone = {
 } as const;
 
 export default async function WebsitePage() {
-  const [redirects, suburbPages, listings] = await Promise.all([
+  const [redirects, suburbPages, listings, site] = await Promise.all([
     getRedirects(),
     getSuburbPages(),
     getListings(),
+    getSiteSettings(),
   ]);
   const mapped = redirects.filter((r) => r.status === "mapped").length;
   const live = listings.filter((l) => l.status === "live");
@@ -47,8 +49,8 @@ export default async function WebsitePage() {
   return (
     <>
       <PageHeader
-        title="Public site"
-        subtitle="www.ozirealty.com.au — currently served by Wix. This is the migration console for taking it over."
+        title="Website"
+        subtitle="What the public site shows, and the migration from Wix. www.ozirealty.com.au is still served by Wix until cutover."
         actions={
           <a
             href="https://www.ozirealty.com.au"
@@ -61,6 +63,21 @@ export default async function WebsitePage() {
           </a>
         }
       />
+
+      {/*
+        Website management starts here. Adding and removing blocks and pages (with the
+        assistant) will live in this section; for now, the one switch the agency asked for.
+      */}
+      <Section title="Homepage">
+        <Card>
+          <SiteToggle
+            setting="homeListingFilters"
+            value={site.homeListingFilters}
+            label="Filter tabs on “Currently advertised”"
+            hint="The For sale / Auction / For lease / Under offer tabs above the listings. With only a few listings they add little, so they can be hidden. Even when shown, they only appear once there are two or more kinds of listing."
+          />
+        </Card>
+      </Section>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 [&>*:last-child:nth-child(odd)]:sm:col-span-2">
         <Card>

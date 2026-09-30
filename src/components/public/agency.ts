@@ -13,8 +13,8 @@
  * (2.99%, 100 days risk-free, the $399 report), it is reproduced rather than invented,
  * and it is still the agency's job to confirm those are current before cutover.
  *
- * `demo-data.ts` is what remains genuinely invented: the listing cards, because there is
- * no stock in the database yet. It is labelled as such and is the only such file left.
+ * Nothing on the site is invented any more: the demo listing and sold cards were
+ * replaced by real stock on 2026-09-30 and demo-data.ts was deleted.
  */
 
 export const AGENCY = {

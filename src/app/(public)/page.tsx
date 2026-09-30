@@ -1,6 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { DemoListings } from "@/components/public/demo-listings";
+import { ListingsGrid } from "@/components/public/listings-grid";
+import { toCard } from "@/components/public/listing-cards";
+import { onMarket } from "@/server/public/listings";
+import { publicSiteSettings } from "@/server/public/site";
 import { PrincipalCard } from "@/components/public/principal";
 import { ServiceGrid } from "@/components/public/service-grid";
 import {
@@ -39,11 +42,14 @@ import {
  *   - the testimonial is the one real quote on the live site, without the invented star
  *     average and review count beside it.
  *
- * The listing cards in `demo-data.ts` are the only invented content left, and they exist
- * because there is no stock in the database yet.
+ * The listing cards were the last invented content. Since 2026-09-30 they are the real
+ * stock, read through src/server/public (rule 8).
  */
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [listed, site] = await Promise.all([onMarket(6), publicSiteSettings()]);
+  const advertised = listed.map(toCard);
+
   return (
     <>
       {/* ============================================================ hero */}
@@ -120,7 +126,20 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <DemoListings />
+          {/*
+            Real stock (it was the template's invented cards until 2026-09-30). The filter
+            chips are the agency's choice, set in the console's Website section.
+          */}
+          <ListingsGrid
+            items={advertised}
+            showFilters={site.homeListingFilters}
+            empty={
+              <p className="lede">
+                Nothing is advertised right now. New listings appear here as soon as they go
+                live, and the office usually knows what is coming.
+              </p>
+            }
+          />
         </div>
       </section>
 

@@ -93,7 +93,7 @@ function buildGroups(
         { href: "/proposals", label: "Proposals", icon: FileText },
         { href: "/content", label: "Content & social", icon: Newspaper },
         { href: "/seo", label: "SEO agent", icon: TrendingUp },
-        { href: "/website", label: "Public site", icon: Globe },
+        { href: "/website", label: "Website", icon: Globe },
         { href: "/costs", label: "AI cost & jobs", icon: Receipt },
         { href: "/audit", label: "Audit log", icon: ScrollText },
         { href: "/settings", label: "Settings", icon: Settings },

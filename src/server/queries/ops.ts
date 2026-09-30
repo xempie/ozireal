@@ -593,3 +593,12 @@ export async function getJobQueue() {
     dead: number;
   }[];
 }
+
+/** The agency's website options, with defaults filled in (see SiteSettings). */
+export async function getSiteSettings() {
+  return query(async (tx) => {
+    const [t] = await tx.select({ s: tenants.siteSettings }).from(tenants).limit(1);
+    const s = t?.s ?? {};
+    return { homeListingFilters: s.homeListingFilters ?? true };
+  });
+}
