@@ -14,8 +14,11 @@ import {
   TD,
   TR,
   ProtoNote,
+  ScoreBar,
 } from "@/components/ui";
-import { getProperty, getListingsForProperty, getContact } from "@/server/queries";
+import { getProperty, getListingsForProperty, getContact, getMatchesForProperty } from "@/server/queries";
+import { RunMatchingButton } from "@/components/forms/run-matching";
+import { MATCHABLE_PROPERTY_STATUSES } from "@/server/matching/engine";
 import { suburbOptions, contactOptions } from "@/server/queries/pickers";
 import {
   EditPropertyButton,
@@ -32,11 +35,12 @@ export default async function PropertyDetail({
   const { id } = await params;
   const p = await getProperty(id);
   if (!p) notFound();
-  const [history, owner, suburbOpts, contactOpts] = await Promise.all([
+  const [history, owner, suburbOpts, contactOpts, propertyMatches] = await Promise.all([
     getListingsForProperty(p.id),
     p.ownerContactId ? getContact(p.ownerContactId) : Promise.resolve(null),
     suburbOptions(),
     contactOptions(),
+    getMatchesForProperty(p.id),
   ]);
 
   const locality = [p.suburb, p.state, p.postcode].filter(Boolean).join(" ");
@@ -175,6 +179,43 @@ export default async function PropertyDetail({
               renovation and is on the market again now — the same property, two
               listings.
             </ProtoNote>
+          </Section>
+
+          {/* Matched on the property, listed or not (0017). */}
+          <Section title="Buyers who suit it" hint="matched whether or not it is listed">
+            <Card>
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-2 text-[12.5px]">
+                  {propertyMatches.length
+                    ? `${propertyMatches.length} match${propertyMatches.length === 1 ? "" : "es"}, best first.`
+                    : "No matches yet."}
+                </p>
+                {(MATCHABLE_PROPERTY_STATUSES as readonly string[]).includes(p.status) && (
+                  <RunMatchingButton
+                    propertyId={p.id}
+                    label={propertyMatches.length ? "Match again" : "Find buyers"}
+                  />
+                )}
+              </div>
+              {propertyMatches.length > 0 && (
+                <div className="mt-3 space-y-2.5">
+                  {propertyMatches.map((m) => (
+                    <div key={m.contactId} className="border-l-2 pl-3 border-[var(--line-strong)]">
+                      <div className="flex items-center justify-between gap-3">
+                        <Link
+                          href={`/contacts/${m.contactId}`}
+                          className="text-[12.5px] font-medium hover:underline underline-offset-2"
+                        >
+                          {m.contactFirstName} {m.contactLastName}
+                        </Link>
+                        <ScoreBar value={m.score} />
+                      </div>
+                      <p className="text-2 text-[12px] mt-1 leading-relaxed">{m.reason}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </Section>
         </div>
 

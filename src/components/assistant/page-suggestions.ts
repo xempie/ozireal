@@ -94,9 +94,9 @@ export function suggestionsFor(pathname: string): { area: string; items: Suggest
     return {
       area: "matching",
       items: [
-        s("Run matching for my newest listing"),
+        s("Run matching for my newest property"),
         p("Find properties for a buyer…", "Find properties that match "),
-        p("Find buyers for a listing…", "Find matching contacts for the listing at "),
+        p("Find buyers for a property…", "Find buyers for the property at "),
         s("Show the strongest matches"),
       ],
     };
@@ -132,7 +132,7 @@ export function suggestionsFor(pathname: string): { area: string; items: Suggest
       s("What needs my attention today?"),
       p("Add a new contact…", "Add a new contact: "),
       p("Add a new property…", "Add a new property: "),
-      s("Run matching for my newest listing"),
+      s("Run matching for my newest property"),
       s("What tasks are overdue?"),
       p("Add a task…", "Add a task: "),
     ],

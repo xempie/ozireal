@@ -171,7 +171,12 @@ export async function getListingsNeedingAttention() {
 
 /* ---------------------------------------------------------------- matching */
 
+/**
+ * Matches are (property, contact) since 0017: a property can be matched with no
+ * listing at all. listingId, priceDisplay and listingStatus are null for those.
+ */
 const matchSelect = {
+  propertyId: matches.propertyId,
   listingId: matches.listingId,
   contactId: matches.contactId,
   score: matches.score,
@@ -179,6 +184,22 @@ const matchSelect = {
   stage: matches.stage,
 };
 
+export async function getMatchesForProperty(propertyId: string) {
+  return query((tx) =>
+    tx
+      .select({
+        ...matchSelect,
+        contactFirstName: contacts.firstName,
+        contactLastName: contacts.lastName,
+      })
+      .from(matches)
+      .innerJoin(contacts, eq(contacts.id, matches.contactId))
+      .where(eq(matches.propertyId, propertyId))
+      .orderBy(desc(matches.score)),
+  );
+}
+
+/** The matches for a listing's property (a listing is one campaign over it). */
 export async function getMatchesForListing(listingId: string) {
   return query((tx) =>
     tx
@@ -189,7 +210,7 @@ export async function getMatchesForListing(listingId: string) {
       })
       .from(matches)
       .innerJoin(contacts, eq(contacts.id, matches.contactId))
-      .where(eq(matches.listingId, listingId))
+      .where(sql`${matches.propertyId} = (select property_id from listings where id = ${listingId}::uuid)`)
       .orderBy(desc(matches.score)),
   );
 }
@@ -204,9 +225,9 @@ export async function getMatchesForContact(contactId: string) {
         listingStatus: listings.status,
       })
       .from(matches)
-      .innerJoin(listings, eq(listings.id, matches.listingId))
-      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .innerJoin(properties, eq(properties.id, matches.propertyId))
       .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
+      .leftJoin(listings, eq(listings.id, matches.listingId))
       .where(eq(matches.contactId, contactId))
       .orderBy(desc(matches.score)),
   );
@@ -222,8 +243,7 @@ export async function getAllMatches() {
         contactLastName: contacts.lastName,
       })
       .from(matches)
-      .innerJoin(listings, eq(listings.id, matches.listingId))
-      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .innerJoin(properties, eq(properties.id, matches.propertyId))
       .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
       .innerJoin(contacts, eq(contacts.id, matches.contactId))
       .orderBy(desc(matches.score)),

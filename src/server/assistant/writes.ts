@@ -11,8 +11,8 @@ import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
 import { didYouMean } from "@/server/suburbs/suggest";
-import { matchContactsForListing, matchListingsForContact, MATCHABLE_STATUSES } from "@/server/matching/engine";
-import { getContact, getProperties, getListing, getListings, getTasks } from "@/server/queries";
+import { matchContactsForProperty, matchPropertiesForContact, MATCHABLE_STATUSES } from "@/server/matching/engine";
+import { getContact, getProperties, getListing, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
 
 /**
@@ -125,9 +125,11 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
       return { title: `Update listing ${await listingAddress(input.listingId)}`, lines: fieldLines(["listingId"]) };
     case "run_matching":
       return {
-        title: input.listingId
-          ? `Find matching contacts for ${await listingAddress(input.listingId)}`
-          : `Find matching listings for ${await contactName(input.contactId)}`,
+        title: input.propertyId
+          ? `Find buyers for ${await propertyAddress(input.propertyId)}`
+          : input.listingId
+            ? `Find buyers for ${await listingAddress(input.listingId)}`
+            : `Find properties for ${await contactName(input.contactId)}`,
         lines: ["Uses AI to rank the candidates and write a reason for each (a few cents)."],
       };
     case "record_consent": {
@@ -223,9 +225,9 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
         "Add a task to book the photographer",
       ];
     case "run_matching":
-      return input.listingId
+      return input.propertyId || input.listingId
         ? ["Show the matches with their reasons", "Draft an SMS to the top match"]
-        : ["Show the matching listings", "Draft an SMS about the best one"];
+        : ["Show the matching properties", "Draft an SMS about the best one"];
     case "draft_message":
       return ["Draft the same message to the next match", "Add a task to follow up in 3 days"];
     case "record_consent": {
@@ -388,62 +390,67 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
       const tenantId = session?.user?.tenantId;
       if (!tenantId) return { ok: false, message: "You are signed out." };
       /*
-        The engine answers "gone" for several different situations. Check the usual ones
-        first, so the agent is told what to fix rather than that something vanished.
+        Matching is on the PROPERTY, listed or not (0017). A listing id resolves to its
+        property. An id the model passes as a "listing" that is really a property is
+        simply matched as the property. The engine's skip codes are turned into what
+        the agent should do next.
       */
-      // Drafts count: off-market deals are matched without being published.
-      const liveListings = (await getListings()).filter((l) => MATCHABLE_STATUSES.includes(l.status));
-      if (input.listingId) {
+      let propertyId: string | undefined = input.propertyId;
+      let preferListing: string | undefined;
+      if (!propertyId && input.listingId) {
         const l = await getListing(input.listingId);
-        if (!l) {
-          const p = (await getProperties()).find((x) => x.id === input.listingId);
-          return {
-            ok: false,
-            message: p
-              ? `That is a property, not a listing. Matching runs on a listing (a sale or rental campaign, draft or live), and ${p.address} has none yet. Create one for it first; it does not need to be published.`
-              : "That listing no longer exists.",
-          };
+        if (l) {
+          if (!MATCHABLE_STATUSES.includes(l.status)) {
+            return {
+              ok: false,
+              message: `That listing is ${l.status.replace("_", " ")}, so the campaign is over. Match the property instead, or start a new listing.`,
+            };
+          }
+          propertyId = l.propertyId;
+          preferListing = l.id;
+        } else if ((await getProperties()).some((x) => x.id === input.listingId)) {
+          propertyId = input.listingId;
+        } else {
+          return { ok: false, message: "That listing no longer exists." };
         }
-        if (!MATCHABLE_STATUSES.includes(l.status)) {
-          return {
-            ok: false,
-            message: `That listing is ${l.status.replace("_", " ")}, so the campaign is over. Matching runs on draft, live and under-offer listings.`,
-          };
-        }
-      } else if (input.contactId) {
+      }
+      if (!propertyId && input.contactId) {
         const c = await getContact(input.contactId);
         if (!c) return { ok: false, message: "That contact no longer exists." };
         if (!c.preferences) {
           return {
             ok: false,
-            message: `${c.firstName} ${c.lastName} has no preferences recorded yet (budget, suburbs, beds), so there is nothing to match on. Tell me what they are looking for and I will set them.`,
+            message: `${c.firstName} ${c.lastName} has no preferences recorded yet (budget, suburbs or postcodes, beds), so there is nothing to match on. Tell me what they are looking for and I will set them.`,
           };
-        }
-        if (liveListings.length === 0) {
-          return { ok: false, message: "There are no listings to match against yet. Create one (it can stay a draft) for a property first." };
         }
       }
       try {
-        const m = input.listingId
-          ? await matchContactsForListing(tenantId, input.listingId)
+        const m = propertyId
+          ? await matchContactsForProperty(tenantId, propertyId, preferListing)
           : input.contactId
-            ? await matchListingsForContact(tenantId, input.contactId)
+            ? await matchPropertiesForContact(tenantId, input.contactId)
             : null;
-        if (!m) return { ok: false, message: "Give a listing or a contact to match." };
+        if (!m) return { ok: false, message: "Give a property, a listing or a contact to match." };
         if (m.skipped) {
           const why: Record<string, string> = {
             "no-api-key": "No Anthropic API key is set. Add one in Advanced → Settings → Credentials.",
-            "not-live": "That campaign is over (sold, leased or withdrawn). Matching runs on draft, live and under-offer listings.",
-            gone: input.contactId
+            "not-live": "That campaign is over (sold, leased or withdrawn). Match the property instead.",
+            closed: "That property is sold or archived, so it is not matched.",
+            gone: input.contactId && !propertyId
               ? "That contact cannot be matched: they have no preferences, have asked not to be contacted, or were merged or removed."
-              : "That listing could not be found.",
+              : "That property could not be found.",
           };
           return { ok: false, message: why[m.skipped] ?? `Matching did not run (${m.skipped}).` };
         }
         return {
           ok: true,
-          message: `Matching found ${m.written} match${m.written === 1 ? "" : "es"} (${m.stage1} passed the filters).`,
-          href: input.listingId ? `/listings/${input.listingId}` : `/contacts/${input.contactId}`,
+          message:
+            m.stage1 === 0
+              ? propertyId
+                ? "No contacts' preferences fit this property (area, type, beds and price where listed)."
+                : "No properties fit their preferences (area, type, beds and price where listed)."
+              : `Matching found ${m.written} match${m.written === 1 ? "" : "es"} (${m.stage1} passed the filters).`,
+          href: propertyId ? `/properties/${propertyId}` : `/contacts/${input.contactId}`,
         };
       } catch (e) {
         return { ok: false, message: `Matching failed: ${e instanceof Error ? e.message.slice(0, 160) : "unknown error"}` };

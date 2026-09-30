@@ -220,22 +220,27 @@ export default async function ContactDetail({
 
           <Section title="Matched properties" hint="with the reason, never a bare score">
             {contactMatches.length === 0 ? (
-              <Empty>No matches — this contact has no stored preferences yet.</Empty>
+              <Empty>
+                No matches yet. Set what they are looking for, then use Find properties on
+                the Matching page.
+              </Empty>
             ) : (
               <div className="space-y-2">
                 {contactMatches.map((m) => (
-                  <Card key={m.listingId} className="p-3">
+                  <Card key={m.propertyId} className="p-3">
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
+                        {/* A match is on the property; link to its listing when it has one. */}
                         <Link
-                          href={`/listings/${m.listingId}`}
+                          href={m.listingId ? `/listings/${m.listingId}` : `/properties/${m.propertyId}`}
                           className="font-medium text-[13px] hover:underline underline-offset-2"
                         >
                           {m.address}
                         </Link>
                         <div className="text-3 text-[12px] mt-0.5">
-                          {m.priceDisplay || "Price not set"} ·{" "}
-                          {statusLabel[m.listingStatus] ?? m.listingStatus}
+                          {m.listingStatus
+                            ? `${m.priceDisplay || "Price not set"} · ${statusLabel[m.listingStatus] ?? m.listingStatus}`
+                            : "Not listed"}
                         </div>
                       </div>
                       <ScoreBar value={m.score} />

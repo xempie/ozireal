@@ -303,8 +303,10 @@ async function main() {
   /* --------------------------------------------------------------- matches */
   for (const m of S.matches) {
     await sql`
-      insert into matches (tenant_id, listing_id, contact_id, score, reason, stage)
-      values (${TENANT}, ${id.listing.get(m.listingId)!},
+      insert into matches (tenant_id, property_id, listing_id, contact_id, score, reason, stage)
+      values (${TENANT},
+        (select property_id from listings where id = ${id.listing.get(m.listingId)!}),
+        ${id.listing.get(m.listingId)!},
         ${id.contact.get(m.contactId)!}, ${m.score}, ${m.reason}, ${m.stage})`;
   }
 

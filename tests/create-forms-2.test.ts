@@ -113,8 +113,9 @@ describe("new campaign", () => {
       values (${tenantId}, 'Removed', ${`Person${Date.now() % 100000}`}, 'manual', now())
       returning id`;
     await sql`
-      insert into matches (tenant_id, listing_id, contact_id, score, reason, stage)
-      values (${tenantId}, ${listingId}, ${gone.id}, 0.9, 'test row', 'filter')`;
+      insert into matches (tenant_id, property_id, listing_id, contact_id, score, reason, stage)
+      values (${tenantId}, (select property_id from listings where id = ${listingId}),
+        ${listingId}, ${gone.id}, 0.9, 'test row', 'filter')`;
     const r = await createCampaign({
       name: "Tombstone check", channel: "email", listingId, seedFromMatches: true,
     });

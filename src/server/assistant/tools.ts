@@ -9,6 +9,7 @@ import {
   getListings,
   getTasks,
   getMatchesForListing,
+  getMatchesForProperty,
   getMatchesForContact,
 } from "@/server/queries";
 
@@ -93,8 +94,12 @@ export const TOOLS = {
   get_matches: {
     kind: "read",
     description:
-      "Existing match results: contacts matched to a listing, or listings matched to a contact, each with its one-line reason. Use run_matching first if none exist.",
-    schema: z.object({ listingId: uuid().optional(), contactId: uuid().optional() }),
+      "Existing match results: contacts matched to a property (or to a listing's property), or properties matched to a contact, each with its one-line reason. Use run_matching first if none exist.",
+    schema: z.object({
+      propertyId: uuid().optional(),
+      listingId: uuid().optional(),
+      contactId: uuid().optional(),
+    }),
   },
 
   /* ----------------------------------------------------------------- writes */
@@ -247,8 +252,12 @@ export const TOOLS = {
   run_matching: {
     kind: "write",
     description:
-      "Run the matching engine for a LISTING (find contacts) or a CONTACT (find listings). Draft listings match too, no publishing needed. A property is not a listing: use the listing id from list_listings or get_property, and if the property has no listing, offer to create one (it can stay a draft). A contact needs preferences first (set_preferences). Uses AI, so it asks first. Then read the results with get_matches.",
-    schema: z.object({ listingId: uuid().optional(), contactId: uuid().optional() }),
+      "Run the matching engine for a PROPERTY (find buyers), a LISTING (the same, for its property) or a CONTACT (find properties). Properties match whether or not they are listed; an unlisted one simply has no price to filter on. A contact needs preferences first (set_preferences). Uses AI, so it asks first. Then read the results with get_matches.",
+    schema: z.object({
+      propertyId: uuid().optional(),
+      listingId: uuid().optional(),
+      contactId: uuid().optional(),
+    }),
   },
   record_consent: {
     kind: "write",
@@ -469,8 +478,10 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
     }
 
     case "get_matches": {
-      if (input.listingId) {
-        const rows = await getMatchesForListing(input.listingId as string);
+      if (input.propertyId || input.listingId) {
+        const rows = input.propertyId
+          ? await getMatchesForProperty(input.propertyId as string)
+          : await getMatchesForListing(input.listingId as string);
         return rows.slice(0, 20).map((m) => ({
           contactId: m.contactId,
           contact: `${m.contactFirstName} ${m.contactLastName}`,
@@ -481,14 +492,16 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
       if (input.contactId) {
         const rows = await getMatchesForContact(input.contactId as string);
         return rows.slice(0, 20).map((m) => ({
+          propertyId: m.propertyId,
           listingId: m.listingId,
           address: m.address,
+          listed: m.listingStatus ?? "not listed",
           priceDisplay: m.priceDisplay,
           score: m.score,
           reason: m.reason,
         }));
       }
-      return { error: "Give a listingId or a contactId." };
+      return { error: "Give a propertyId, listingId or contactId." };
     }
 
     default:

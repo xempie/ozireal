@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { and, eq, isNull, isNotNull, or, desc } from "drizzle-orm";
+import { and, eq, isNull, isNotNull, or, desc, sql } from "drizzle-orm";
 import { defineAction, ActionError } from "./action";
 import {
   campaigns,
@@ -86,7 +86,8 @@ export const createCampaign = defineAction({
         .innerJoin(contacts, eq(contacts.id, matches.contactId))
         .where(
           and(
-            eq(matches.listingId, listingId),
+            // Matches belong to the property (0017); this listing is one campaign over it.
+            sql`${matches.propertyId} = (select property_id from listings where id = ${listingId}::uuid)`,
             // A tombstoned or merged-away record is not a person to reach.
             isNull(contacts.tombstonedAt),
             isNull(contacts.mergedIntoId),

@@ -23,14 +23,17 @@ export async function runMatching(raw: unknown): Promise<ActionResult<WriteOutco
 
   const parsed = z
     .union([
+      z.object({ propertyId: z.string().uuid() }),
       z.object({ listingId: z.string().uuid() }),
       z.object({ contactId: z.string().uuid() }),
     ])
     .safeParse(raw);
-  if (!parsed.success) return { ok: false, error: "Choose a listing or a contact to match." };
+  if (!parsed.success) return { ok: false, error: "Choose a property or a contact to match." };
 
   const result = await applyWrite("run_matching", parsed.data);
   revalidatePath("/matching");
   revalidatePath("/dashboard");
+  if ("propertyId" in parsed.data) revalidatePath(`/properties/${parsed.data.propertyId}`);
+  if ("contactId" in parsed.data) revalidatePath(`/contacts/${parsed.data.contactId}`);
   return { ok: true, data: result };
 }

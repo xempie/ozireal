@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { withTenant } from "@/db";
+import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import { withTenant, type Tx } from "@/db";
 import {
   contacts,
   contactPreferences,
@@ -21,34 +21,28 @@ import { hasPgvector } from "@/server/ai/embed";
 /**
  * The matching engine (B5.3, §6). Bidirectional and three-staged:
  *
- *   1. HARD FILTERS in SQL — price band, beds, suburb, availability. Cheap, and
- *      it is what stops stage 3 costing money on candidates that were never
- *      eligible.
- *   2. VECTOR SIMILARITY on the embedded preference summary against the embedded
- *      property description. This is the stage that earns the feature: it catches
- *      "quiet at school pick-up" and "somewhere the dog can run", which no WHERE
- *      clause expresses.
+ *   1. HARD FILTERS in SQL: area (suburb or postcode), type, beds, and price or rent
+ *      where a listing gives one. Cheap, and it stops stage 3 costing money on
+ *      candidates that were never eligible.
+ *   2. VECTOR SIMILARITY on the embedded preferences against the embedded listing
+ *      description, catching what no WHERE clause expresses.
  *   3. CLAUDE RANKS the survivors and writes one sentence per match.
  *
- * Stage 2 is optional at runtime. Where pgvector is absent the run proceeds on
- * stages 1 and 3 and RECORDS that it did (match_runs.vector_stage_ran), so a
- * thinner result set explains itself months later instead of looking like a bug.
+ * WHAT is matched is the PROPERTY, listed or not (2026-09-30, migration 0017).
+ * Off-market deals are matched without any listing. When a property does have an
+ * active listing (draft, live or under offer), that listing supplies the price range,
+ * sale-or-rent and description; without one, the money filter is skipped and the
+ * ranker is told no price is set.
  *
- * The reason string is not optional (§6). The database enforces it with
- * matches_reason_not_blank; this code never writes a match without one.
+ * Stage 2 is optional at runtime and RECORDED (match_runs.vector_stage_ran), so a
+ * thinner result explains itself later. The reason string is never optional: the
+ * database enforces matches_reason_not_blank and this code never writes without one.
  */
 
 const STAGE2_LIMIT = 20;
 const STAGE1_LIMIT = 200;
 
-/**
- * A parameterised id list for a raw `in (...)`.
- *
- * These ids come from our own database, so this is not plugging a live hole — but
- * building SQL by string-joining values is the habit that eventually meets a value
- * that did not come from us. Parameters also let Postgres plan the query once
- * rather than seeing a new statement for every candidate set.
- */
+/** Parameterised id list for a raw `in (...)`. */
 function idList(ids: string[]) {
   return sql.join(
     ids.map((id) => sql`${id}::uuid`),
@@ -58,14 +52,15 @@ function idList(ids: string[]) {
 
 /**
  * v2 (2026-09-27): a candidate that meets what the person asked for is always returned,
- * with a reason that says what matches and what is not yet known. v1 dropped anything
- * it could not justify beyond the filters, so sparse records (no brief, no listing copy)
- * produced "no matches" even for a house in the one suburb the buyer named.
+ * with a reason that says what matches and what is not yet known.
  */
 const RANK_PROMPT = "rank-matches.v2";
 
-/** Listing states matching works on. Drafts included: off-market deals are matched unpublished. */
+/** Listing states that count as a property's active campaign. Drafts included. */
 export const MATCHABLE_STATUSES: string[] = ["draft", "live", "under_offer"];
+
+/** Property states that are matched. Sold and archived stock is finished. */
+export const MATCHABLE_PROPERTY_STATUSES = ["prospect", "appraised", "off_market", "listed"] as const;
 
 export type MatchOutcome = {
   written: number;
@@ -81,64 +76,136 @@ const rankOutput = z.object({
       z.object({
         id: z.string().uuid(),
         score: z.number().min(0).max(1),
-        // Mirrors the database constraint. A blank reason must fail HERE, with a
-        // message about the model, rather than as a constraint violation later.
+        // Mirrors the database constraint: fail HERE, about the model, not later.
         reason: z.string().trim().min(10, "A match needs a real reason").max(400),
       }),
     )
     .max(30),
 });
 
-/* --------------------------------------------------- listing → contacts */
+/* ------------------------------------------------------ active listings */
 
+type ActiveListing = {
+  id: string;
+  propertyId: string;
+  status: string;
+  listingType: "sale" | "rent";
+  priceMin: number | null;
+  priceMax: number | null;
+  rentPw: number | null;
+  headline: string | null;
+  copy: string | null;
+  priceDisplay: string | null;
+  embeddedText: string | null;
+};
+
+/**
+ * The listing that speaks for each property: a preferred one if given and still
+ * active, otherwise the most recently listed active one. A property can hold a draft
+ * and a live listing at once; the newest is the current campaign.
+ */
+async function activeListings(
+  tx: Tx,
+  propertyIds: string[],
+  prefer?: string,
+): Promise<Map<string, ActiveListing>> {
+  const out = new Map<string, ActiveListing>();
+  if (propertyIds.length === 0) return out;
+  const rows = await tx
+    .select({
+      id: listings.id,
+      propertyId: listings.propertyId,
+      status: listings.status,
+      listingType: listings.listingType,
+      priceMin: listings.searchPriceMin,
+      priceMax: listings.searchPriceMax,
+      rentPw: listings.rentPw,
+      headline: listings.publicHeadline,
+      copy: listings.publicCopy,
+      priceDisplay: listings.priceDisplay,
+      embeddedText: listings.embeddedText,
+    })
+    .from(listings)
+    .where(
+      and(
+        inArray(listings.propertyId, propertyIds),
+        sql`${listings.status} in ('draft','live','under_offer')`,
+      ),
+    )
+    .orderBy(desc(listings.listedAt), desc(listings.createdAt));
+  for (const r of rows) {
+    if (prefer && r.id === prefer) out.set(r.propertyId, r);
+    else if (!out.has(r.propertyId)) out.set(r.propertyId, r);
+  }
+  return out;
+}
+
+/* -------------------------------------------------- property → contacts */
+
+/** Run from a listing: matches its property, using this listing for price. */
 export async function matchContactsForListing(
   tenantId: string,
   listingId: string,
 ): Promise<MatchOutcome> {
-  /**
-   * The API-key check used to come FIRST, which meant every test returned before
-   * the SQL ran — and the stage-1 query was broken on every real invocation for
-   * as long as it existed. Gathering candidates first costs one cheap query and
-   * means the filter is exercised by anything that calls this. Found by the B5
-   * review; tests/matching.test.ts now depends on this ordering.
-   */
+  const l = await withTenant(tenantId, async (tx) => {
+    const [row] = await tx
+      .select({ propertyId: listings.propertyId, status: listings.status })
+      .from(listings)
+      .where(eq(listings.id, listingId))
+      .limit(1);
+    return row ?? null;
+  });
+  if (!l) return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "gone" };
+  if (!MATCHABLE_STATUSES.includes(l.status)) {
+    return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "not-live" };
+  }
+  return matchContactsForProperty(tenantId, l.propertyId, listingId);
+}
+
+export async function matchContactsForProperty(
+  tenantId: string,
+  propertyId: string,
+  preferListingId?: string,
+): Promise<MatchOutcome> {
   const ctx = await withTenant(tenantId, async (tx) => {
-    const [l] = await tx
+    const [p] = await tx
       .select({
-        id: listings.id,
-        status: listings.status,
-        listingType: listings.listingType,
-        priceMin: listings.searchPriceMin,
-        priceMax: listings.searchPriceMax,
-        rentPw: listings.rentPw,
-        headline: listings.publicHeadline,
-        copy: listings.publicCopy,
-        priceDisplay: listings.priceDisplay,
-        embeddedText: listings.embeddedText,
+        id: properties.id,
+        status: properties.status,
         propertyType: properties.propertyType,
         beds: properties.beds,
         baths: properties.baths,
         parking: properties.parking,
         features: properties.features,
+        condition: properties.condition,
         suburbId: properties.suburbId,
         postcode: properties.postcode,
         suburbName: suburbs.name,
+        priceExpectation: properties.internalPriceExpectation,
       })
-      .from(listings)
-      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .from(properties)
       .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
-      .where(eq(listings.id, listingId))
+      .where(eq(properties.id, propertyId))
       .limit(1);
-    if (!l) return null;
+    if (!p) return null;
 
+    const listing = (await activeListings(tx, [p.id], preferListingId)).get(p.id) ?? null;
     const vectorReady = await hasPgvector(tx);
 
     /**
-     * Stage 1. Every predicate is a HARD requirement the contact stated, so a
-     * null on their side means "no constraint" and must not exclude them —
-     * getting that backwards silently empties the funnel, which is exactly the
-     * bug B1 caught when 'House' failed to match 'house'.
+     * Stage 1. Every predicate is a requirement the contact stated, so a null on their
+     * side means "no constraint" and must not exclude them. Every parameter in an
+     * `is null` test carries an explicit cast: a bare placeholder there has no
+     * inferable type and Postgres refuses the statement (42P08), which once failed
+     * this query on every run, invisibly (B5 review).
      */
+    const money = !listing
+      ? sql`true` // Unlisted: no price to compare. The ranker is told none is set.
+      : listing.listingType === "rent"
+        ? sql`(${contactPreferences.rentPwMax} is null or ${listing.rentPw ?? null}::int is null or ${contactPreferences.rentPwMax} >= ${listing.rentPw ?? null}::int)`
+        : sql`(${contactPreferences.priceMax} is null or ${listing.priceMin ?? null}::int is null or ${contactPreferences.priceMax} >= ${listing.priceMin ?? null}::int)
+              and (${contactPreferences.priceMin} is null or ${listing.priceMax ?? null}::int is null or ${contactPreferences.priceMin} <= ${listing.priceMax ?? null}::int)`;
+
     const candidates = await tx
       .select({
         contactId: contacts.id,
@@ -170,38 +237,13 @@ export async function matchContactsForListing(
           isNull(contacts.tombstonedAt),
           isNull(contacts.mergedIntoId),
           eq(contacts.doNotContact, false),
-          // Price: their max must cover our min, and their min must not exceed
-          // our max. Nulls mean unconstrained.
-          /**
-           * Every parameter that appears in an `is null` test carries an explicit
-           * cast. Without one Postgres cannot infer the type of a bare placeholder
-           * in that position and refuses the whole statement with 42P08 — which
-           * meant this query failed on EVERY run, invisibly, because hasApiKey()
-           * returns early in tests and the SQL was never reached. Found by the B5
-           * review; the regression test below now exercises the SQL with no key.
-           */
-          sql`(${contactPreferences.priceMax} is null or ${l.priceMin ?? null}::int is null or ${contactPreferences.priceMax} >= ${l.priceMin ?? null}::int)`,
-          sql`(${contactPreferences.priceMin} is null or ${l.priceMax ?? null}::int is null or ${contactPreferences.priceMin} <= ${l.priceMax ?? null}::int)`,
-          sql`(${contactPreferences.bedsMin} is null or ${l.beds ?? null}::int is null or ${contactPreferences.bedsMin} <= ${l.beds ?? null}::int)`,
-          // Property type: the shared enum, so 'house' compares to 'house'. An
-          // EMPTY array means "no stated preference" just as null does — the two
-          // directions disagreed on this, so one of them silently excluded people.
+          money,
+          sql`(${contactPreferences.bedsMin} is null or ${p.beds ?? null}::int is null or ${contactPreferences.bedsMin} <= ${p.beds ?? null}::int)`,
+          // Type: the shared enum. An EMPTY array means "no preference", as null does.
           sql`(${contactPreferences.propertyTypes} is null
                or cardinality(${contactPreferences.propertyTypes}) = 0
-               or ${l.propertyType}::property_type = any(${contactPreferences.propertyTypes}))`,
-          /**
-           * Rentals were matched on sale price, which is null on a rental listing —
-           * so the price gate passed everyone. Compare like with like, and never
-           * cross a rental listing with a buyer's sale budget.
-           */
-          l.listingType === "rent"
-            ? sql`(${contactPreferences.rentPwMax} is null or ${l.rentPw ?? null}::int is null or ${contactPreferences.rentPwMax} >= ${l.rentPw ?? null}::int)`
-            : sql`true`,
-          /**
-           * Area: in one of their suburbs OR one of their postcodes (0015). With
-           * neither stated, any area. The ::uuid / ::text casts are the 42P08 rule
-           * above: a bare placeholder in these positions has no inferable type.
-           */
+               or ${p.propertyType}::property_type = any(${contactPreferences.propertyTypes}))`,
+          // Area: one of their suburbs OR one of their postcodes; neither stated = any.
           sql`(
             (
               not exists (select 1 from contact_preference_suburbs s where s.preference_id = ${contactPreferences.id})
@@ -209,68 +251,49 @@ export async function matchContactsForListing(
             )
             or exists (
               select 1 from contact_preference_suburbs s
-              where s.preference_id = ${contactPreferences.id} and s.suburb_id = ${l.suburbId ?? null}::uuid
+              where s.preference_id = ${contactPreferences.id} and s.suburb_id = ${p.suburbId ?? null}::uuid
             )
-            or (${l.postcode ?? null}::text is not null and ${l.postcode ?? null}::text = any(${contactPreferences.postcodes}))
+            or (${p.postcode ?? null}::text is not null and ${p.postcode ?? null}::text = any(${contactPreferences.postcodes}))
           )`,
         ),
       )
-      // Deterministic: without an ORDER BY the 200-row cap returns a different
-      // slice run to run, so the same listing matched different people each time.
+      // Deterministic, so the 200-row cap returns the same slice every run.
       .orderBy(contacts.createdAt, contacts.id)
       .limit(STAGE1_LIMIT);
 
-    return { l, candidates, vectorReady };
+    return { p, listing, candidates, vectorReady };
   });
 
   if (!ctx) return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "gone" };
-  /**
-   * Draft listings match too (decided 2026-09-27): off-market deals are often matched
-   * and placed without ever being published. Matching sends nothing and a draft is
-   * never public, so publication is no precondition. Only finished campaigns (sold,
-   * leased, withdrawn) are refused.
-   */
-  if (!MATCHABLE_STATUSES.includes(ctx.l.status)) {
-    return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "not-live" };
+  if (!(MATCHABLE_PROPERTY_STATUSES as readonly string[]).includes(ctx.p.status)) {
+    return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false, skipped: "closed" };
   }
 
   const stage1 = ctx.candidates.length;
   if (!(await hasApiKey(tenantId))) {
-    // Stage 1 ran and is reported honestly; only the ranking needs the key.
     return { written: 0, stage1, stage2: 0, vectorStageRan: false, skipped: "no-api-key" };
   }
+  const runSubject = { propertyId, listingId: ctx.listing?.id };
   if (stage1 === 0) {
-    await recordRun(tenantId, { listingId, stage1: 0, stage2: 0, stage3: 0, vectorStageRan: false });
+    await recordRun(tenantId, { ...runSubject, stage1: 0, stage2: 0, stage3: 0, vectorStageRan: false });
     return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false };
   }
 
   /**
-   * Stage 2: narrow to the most similar, where the extension exists.
-   *
-   * Two rules that the first version got wrong, both found by the B5 review:
-   *
-   *   - the cap is applied UNCONDITIONALLY at the end. Previously it lived in the
-   *     else branch, so any run where the vector query returned nothing sent all
-   *     200 stage-1 candidates into a Sonnet prompt — the exact cost blow-up
-   *     stage 2 exists to prevent.
-   *   - partial embedding coverage must not silently drop people. The vector query
-   *     only sees rows WITH an embedding, so during a backfill it would return
-   *     three neighbours and quietly discard 197 eligible candidates while
-   *     match_runs recorded a clean vector run. Now the ranked ones lead and the
-   *     remainder fill the shortlist, so coverage affects ORDER, never eligibility.
+   * Stage 2, only where there is a listing embedding to compare against. The cap
+   * applies unconditionally at the end, and partial embedding coverage affects ORDER,
+   * never eligibility: ranked candidates lead, the rest fill the shortlist (B5 review).
    */
   let shortlist = ctx.candidates.map((c) => ({ ...c, similarity: null as number | null }));
   let vectorStageRan = false;
-
-  if (ctx.vectorReady && ctx.candidates.length > STAGE2_LIMIT) {
+  if (ctx.vectorReady && ctx.listing && ctx.candidates.length > STAGE2_LIMIT) {
+    const listingId = ctx.listing.id;
     const ranked = await withTenant(tenantId, (tx) =>
       tx.execute<{ contact_id: string; similarity: number }>(
-        sql`select cp.contact_id,
-                   1 - (cp.embedding <=> l.embedding) as similarity
+        sql`select cp.contact_id, 1 - (cp.embedding <=> l.embedding) as similarity
             from contact_preferences cp
             cross join (select embedding from listings where id = ${listingId}) l
-            where cp.embedding is not null
-              and l.embedding is not null
+            where cp.embedding is not null and l.embedding is not null
               and cp.contact_id in (${idList(ctx.candidates.map((c) => c.contactId))})
             order by cp.embedding <=> l.embedding
             limit ${STAGE2_LIMIT}`,
@@ -279,27 +302,22 @@ export async function matchContactsForListing(
     if (ranked.length > 0) {
       vectorStageRan = true;
       const byId = new Map(ranked.map((r) => [r.contact_id, Number(r.similarity)]));
-      const scored = ctx.candidates
-        .filter((c) => byId.has(c.contactId))
-        .map((c) => ({ ...c, similarity: byId.get(c.contactId)! }));
-      const unscored = ctx.candidates
-        .filter((c) => !byId.has(c.contactId))
-        .map((c) => ({ ...c, similarity: null as number | null }));
-      shortlist = [...scored, ...unscored];
+      shortlist = [
+        ...ctx.candidates.filter((c) => byId.has(c.contactId)).map((c) => ({ ...c, similarity: byId.get(c.contactId)! })),
+        ...ctx.candidates.filter((c) => !byId.has(c.contactId)).map((c) => ({ ...c, similarity: null as number | null })),
+      ];
     }
   }
-  // The cap, applied on every path.
   shortlist = shortlist.slice(0, STAGE2_LIMIT);
 
-  /** Stage 3: Claude ranks and writes the sentence. */
   const config = await getLlmConfig(tenantId);
   const prompt = loadPrompt(RANK_PROMPT);
   const { data, generationId } = await runTask(rankOutput, {
-    task: "rank-matches:listing",
+    task: "rank-matches:property",
     model: "sonnet",
     output: "structured",
     tenantId,
-    entity: { type: "listing", id: listingId },
+    entity: { type: "property", id: propertyId },
     promptVersion: prompt.version,
     system: [{ text: prompt.text, cache: true }],
     maxTokens: config.rankingMaxTokens,
@@ -307,25 +325,11 @@ export async function matchContactsForListing(
       {
         role: "user",
         content: JSON.stringify({
-          subject: {
-            kind: "listing",
-            headline: ctx.l.headline,
-            description: ctx.l.embeddedText ?? ctx.l.copy,
-            propertyType: ctx.l.propertyType,
-            suburb: ctx.l.suburbName,
-            postcode: ctx.l.postcode,
-            beds: ctx.l.beds,
-            baths: ctx.l.baths,
-            parking: ctx.l.parking,
-            features: ctx.l.features ?? [],
-            priceDisplay: ctx.l.priceDisplay,
-            listingType: ctx.l.listingType,
-          },
+          subject: propertyForRanker(ctx.p, ctx.listing),
           /**
-           * `stated` is what each person asked for. It used to be missing: the ranker saw
-           * only a brief and soft requirements, so a buyer with neither looked like
-           * someone with no wants at all and was dropped, even when the listing was in
-           * the very suburb they named.
+           * `stated` is what each person asked for. Without it the ranker saw only a
+           * brief and soft requirements, so a buyer with neither looked like someone
+           * with no wants and was dropped (2026-09-27).
            */
           candidates: shortlist.map((c) => ({
             id: c.contactId,
@@ -354,7 +358,8 @@ export async function matchContactsForListing(
   await writeMatches(
     tenantId,
     valid.map((m) => ({
-      listingId,
+      propertyId,
+      listingId: ctx.listing?.id ?? null,
       contactId: m.id,
       score: m.score,
       reason: m.reason,
@@ -362,22 +367,66 @@ export async function matchContactsForListing(
     })),
   );
   await recordRun(tenantId, {
-    listingId,
+    ...runSubject,
     stage1,
-    // Only a stage that RAN gets a count; otherwise the funnel reads as though
-    // similarity narrowed something when it never executed.
     stage2: vectorStageRan ? shortlist.length : 0,
     stage3: valid.length,
     vectorStageRan,
     generationId,
   });
-
   return { written: valid.length, stage1, stage2: shortlist.length, vectorStageRan };
 }
 
-/* --------------------------------------------------- contact → listings */
+/** What the ranker knows about a property: its facts, plus its campaign if it has one. */
+function propertyForRanker(
+  p: {
+    propertyType: string;
+    suburbName: string | null;
+    postcode: string | null;
+    beds: number | null;
+    baths: number | null;
+    parking: number | null;
+    features: string[] | null;
+    condition: string | null;
+    priceExpectation: string | null;
+  },
+  l: ActiveListing | null,
+) {
+  return {
+    kind: "property",
+    propertyType: p.propertyType,
+    suburb: p.suburbName,
+    postcode: p.postcode,
+    beds: p.beds,
+    baths: p.baths,
+    parking: p.parking,
+    features: p.features ?? [],
+    condition: p.condition,
+    listing: l
+      ? {
+          status: l.status,
+          listingType: l.listingType,
+          priceDisplay: l.priceDisplay,
+          priceMin: l.priceMin,
+          priceMax: l.priceMax,
+          rentPerWeek: l.rentPw,
+          headline: l.headline,
+          description: l.embeddedText ?? l.copy,
+        }
+      : null,
+    // Internal only, and this call is internal: the owner's own expectation is the
+    // best price signal an unlisted property has.
+    ownerPriceExpectation: l ? null : p.priceExpectation,
+    note: l ? null : "Not listed: no advertised price or sale/rent decided yet.",
+  };
+}
 
-export async function matchListingsForContact(
+/* -------------------------------------------------- contact → properties */
+
+/** Kept under its old name for the MatchListings job. */
+export const matchListingsForContact = matchPropertiesForContact;
+
+export async function matchPropertiesForContact(
   tenantId: string,
   contactId: string,
 ): Promise<MatchOutcome> {
@@ -407,77 +456,69 @@ export async function matchListingsForContact(
       .leftJoin(contactIntent, eq(contactIntent.contactId, contacts.id))
       .where(eq(contacts.id, contactId))
       .limit(1);
-    // doNotContact excluded people in the listing→contacts direction but not this
-    // one, so the same person was matchable from one side and not the other.
+    // doNotContact is excluded in both directions, so one person is matchable
+    // from both sides or neither.
     if (!c || c.tombstonedAt || c.mergedIntoId || c.doNotContact) return null;
 
     const vectorReady = await hasPgvector(tx);
-
     const subs = await tx
       .select({ id: suburbs.id, name: suburbs.name })
       .from(contactPreferenceSuburbs)
       .innerJoin(suburbs, eq(suburbs.id, contactPreferenceSuburbs.suburbId))
       .where(eq(contactPreferenceSuburbs.preferenceId, c.prefId));
 
-    const candidates = await tx
+    const props = await tx
       .select({
-        listingId: listings.id,
-        headline: listings.publicHeadline,
-        copy: listings.publicCopy,
-        priceDisplay: listings.priceDisplay,
-        embeddedText: listings.embeddedText,
+        id: properties.id,
         propertyType: properties.propertyType,
         beds: properties.beds,
         baths: properties.baths,
         parking: properties.parking,
         features: properties.features,
+        condition: properties.condition,
         suburbName: suburbs.name,
         postcode: properties.postcode,
-        listingType: listings.listingType,
+        priceExpectation: properties.internalPriceExpectation,
       })
-      .from(listings)
-      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .from(properties)
       .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
-      .orderBy(listings.listedAt, listings.id)
       .where(
         and(
-          // Drafts included: see MATCHABLE_STATUSES.
-          sql`${listings.status} in ('draft','live','under_offer')`,
-          /**
-           * Sale and rental are different markets with different money columns.
-           * Comparing a rental listing against a sale budget compared a number to
-           * null and passed everyone; the split keeps each side honest.
-           */
-          sql`(
-            (${listings.listingType} = 'sale'
-              and (${c.priceMax ?? null}::int is null or ${listings.searchPriceMin} is null or ${listings.searchPriceMin} <= ${c.priceMax ?? null}::int)
-              and (${c.priceMin ?? null}::int is null or ${listings.searchPriceMax} is null or ${listings.searchPriceMax} >= ${c.priceMin ?? null}::int))
-            or
-            (${listings.listingType} = 'rent'
-              and (${c.rentPwMax ?? null}::int is null or ${listings.rentPw} is null or ${listings.rentPw} <= ${c.rentPwMax ?? null}::int))
-          )`,
+          inArray(properties.status, [...MATCHABLE_PROPERTY_STATUSES]),
           sql`(${c.bedsMin ?? null}::int is null or ${properties.beds} is null or ${properties.beds} >= ${c.bedsMin ?? null}::int)`,
-          /**
-           * inArray, not `= any(${array})`. Drizzle renders a JS array in that
-           * position as a TUPLE — `any(($9, $10))` — and Postgres refuses it with
-           * 42809 because ANY needs an array on the right. Found the moment a test
-           * finally executed this query.
-           */
-          c.propertyTypes?.length
-            ? inArray(properties.propertyType, c.propertyTypes)
-            : sql`true`,
-          // Area: one of their suburbs OR one of their postcodes (0015); neither = open.
+          // inArray, not `= any(${array})`: Drizzle renders a JS array there as a
+          // tuple and Postgres refuses it (42809).
+          c.propertyTypes?.length ? inArray(properties.propertyType, c.propertyTypes) : sql`true`,
           subs.length || c.postcodes?.length
             ? or(
-                subs.length
-                  ? sql`${properties.suburbId} in (${idList(subs.map((x) => x.id))})`
-                  : sql`false`,
+                subs.length ? sql`${properties.suburbId} in (${idList(subs.map((x) => x.id))})` : sql`false`,
                 c.postcodes?.length ? inArray(properties.postcode, c.postcodes) : sql`false`,
               )
             : sql`true`,
         ),
       )
+      .orderBy(properties.createdAt, properties.id)
       .limit(STAGE1_LIMIT);
+
+    /**
+     * Money, where a property's active listing gives one. Sale and rental are
+     * different markets with different columns; a rental is never compared with a
+     * sale budget, which once passed everyone. Unlisted properties have no price and
+     * pass; the ranker is told so.
+     */
+    const active = await activeListings(tx, props.map((p) => p.id));
+    const candidates = props
+      .map((p) => ({ ...p, listing: active.get(p.id) ?? null }))
+      .filter(({ listing: l }) => {
+        if (!l) return true;
+        if (l.listingType === "rent") {
+          return c.rentPwMax == null || l.rentPw == null || l.rentPw <= c.rentPwMax;
+        }
+        return (
+          (c.priceMax == null || l.priceMin == null || l.priceMin <= c.priceMax) &&
+          (c.priceMin == null || l.priceMax == null || l.priceMax >= c.priceMin)
+        );
+      });
 
     return { c, subs, candidates, vectorReady };
   });
@@ -493,31 +534,30 @@ export async function matchListingsForContact(
     return { written: 0, stage1: 0, stage2: 0, vectorStageRan: false };
   }
 
-  let shortlist = ctx.candidates.map((l) => ({ ...l, similarity: null as number | null }));
+  // Stage 2 over the candidates that have a listing embedding; the rest keep their place.
+  let shortlist = ctx.candidates.map((p) => ({ ...p, similarity: null as number | null }));
   let vectorStageRan = false;
-
-  if (ctx.vectorReady && ctx.candidates.length > STAGE2_LIMIT) {
+  const withListing = ctx.candidates.filter((p) => p.listing);
+  if (ctx.vectorReady && ctx.candidates.length > STAGE2_LIMIT && withListing.length) {
     const ranked = await withTenant(tenantId, (tx) =>
       tx.execute<{ id: string; similarity: number }>(
         sql`select l.id, 1 - (l.embedding <=> cp.embedding) as similarity
             from listings l
             cross join (select embedding from contact_preferences where contact_id = ${contactId}) cp
             where l.embedding is not null and cp.embedding is not null
-              and l.id in (${idList(ctx.candidates.map((c) => c.listingId))})
+              and l.id in (${idList(withListing.map((p) => p.listing!.id))})
             order by l.embedding <=> cp.embedding
             limit ${STAGE2_LIMIT}`,
       ),
     );
     if (ranked.length > 0) {
       vectorStageRan = true;
-      const byId = new Map(ranked.map((r) => [r.id, Number(r.similarity)]));
-      const scored = ctx.candidates
-        .filter((l) => byId.has(l.listingId))
-        .map((l) => ({ ...l, similarity: byId.get(l.listingId)! }));
-      const unscored = ctx.candidates
-        .filter((l) => !byId.has(l.listingId))
-        .map((l) => ({ ...l, similarity: null as number | null }));
-      shortlist = [...scored, ...unscored];
+      const byListing = new Map(ranked.map((r) => [r.id, Number(r.similarity)]));
+      const sim = (p: (typeof shortlist)[number]) => (p.listing ? byListing.get(p.listing.id) : undefined);
+      shortlist = [
+        ...shortlist.filter((p) => sim(p) !== undefined).map((p) => ({ ...p, similarity: sim(p)! })),
+        ...shortlist.filter((p) => sim(p) === undefined),
+      ];
     }
   }
   shortlist = shortlist.slice(0, STAGE2_LIMIT);
@@ -540,7 +580,6 @@ export async function matchListingsForContact(
           subject: {
             kind: "contact",
             name: `${ctx.c.firstName} ${ctx.c.lastName}`,
-            // What they asked for. Previously absent; see the listing direction above.
             stated: {
               suburbs: ctx.subs.map((s) => s.name),
               postcodes: ctx.c.postcodes ?? [],
@@ -554,30 +593,22 @@ export async function matchListingsForContact(
             summary: ctx.c.embeddedText ?? ctx.c.brief ?? null,
             softRequirements: ctx.c.softRequirements,
           },
-          candidates: shortlist.map((l) => ({
-            id: l.listingId,
-            summary: l.embeddedText ?? l.copy ?? l.headline ?? null,
-            listingType: l.listingType,
-            propertyType: l.propertyType,
-            suburb: l.suburbName,
-            postcode: l.postcode,
-            beds: l.beds,
-            baths: l.baths,
-            parking: l.parking,
-            features: l.features ?? [],
-            priceDisplay: l.priceDisplay,
-            similarity: l.similarity,
+          candidates: shortlist.map((p) => ({
+            id: p.id,
+            ...propertyForRanker(p, p.listing),
+            similarity: p.similarity,
           })),
         }),
       },
     ],
   });
 
-  const valid = data.matches.filter((m) => shortlist.some((l) => l.listingId === m.id));
+  const valid = data.matches.filter((m) => shortlist.some((p) => p.id === m.id));
   await writeMatches(
     tenantId,
     valid.map((m) => ({
-      listingId: m.id,
+      propertyId: m.id,
+      listingId: shortlist.find((p) => p.id === m.id)?.listing?.id ?? null,
       contactId,
       score: m.score,
       reason: m.reason,
@@ -592,20 +623,20 @@ export async function matchListingsForContact(
     vectorStageRan,
     generationId,
   });
-
   return { written: valid.length, stage1, stage2: shortlist.length, vectorStageRan };
 }
 
 /* ---------------------------------------------------------------- writes */
 
 /**
- * Upsert, because re-running matching must refresh a pair rather than collide with
- * the (listing, contact) unique index. A re-run with a better reason should win.
+ * Upsert on (property, contact): re-running refreshes the pair, and a better reason
+ * wins. The listing is refreshed too, since the property's campaign may have changed.
  */
 async function writeMatches(
   tenantId: string,
   rows: {
-    listingId: string;
+    propertyId: string;
+    listingId: string | null;
     contactId: string;
     score: number;
     reason: string;
@@ -619,6 +650,7 @@ async function writeMatches(
         .insert(matches)
         .values({
           tenantId,
+          propertyId: r.propertyId,
           listingId: r.listingId,
           contactId: r.contactId,
           score: r.score,
@@ -627,8 +659,9 @@ async function writeMatches(
           aiGenerationId: r.generationId,
         })
         .onConflictDoUpdate({
-          target: [matches.listingId, matches.contactId],
+          target: [matches.propertyId, matches.contactId],
           set: {
+            listingId: r.listingId,
             score: r.score,
             reason: r.reason,
             stage: "ranked",
@@ -643,6 +676,7 @@ async function writeMatches(
 async function recordRun(
   tenantId: string,
   r: {
+    propertyId?: string;
     listingId?: string;
     contactId?: string;
     stage1: number;
@@ -655,6 +689,7 @@ async function recordRun(
   await withTenant(tenantId, (tx) =>
     tx.insert(matchRuns).values({
       tenantId,
+      propertyId: r.propertyId ?? null,
       listingId: r.listingId ?? null,
       contactId: r.contactId ?? null,
       stage1Count: r.stage1,
@@ -664,7 +699,7 @@ async function recordRun(
       aiGenerationId: r.generationId ?? null,
       note: r.vectorStageRan
         ? null
-        : "Vector stage did not run — pgvector unavailable or nothing embedded.",
+        : "Vector stage did not run: pgvector unavailable, nothing embedded, or the shortlist was already small.",
     }),
   );
 }

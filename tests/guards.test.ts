@@ -122,8 +122,8 @@ describe("listings and matching (16, 6)", () => {
 
   it("refuses a match with a blank reason", async () => {
     const msg = await rejects(
-      `insert into matches (tenant_id, listing_id, contact_id, score, reason, stage)
-       select '${tenantId}', l.id, c.id, 0.5, '   ', 'ranked'
+      `insert into matches (tenant_id, property_id, listing_id, contact_id, score, reason, stage)
+       select '${tenantId}', l.property_id, l.id, c.id, 0.5, '   ', 'ranked'
        from listings l, contacts c limit 1`,
     );
     expect(msg).toMatch(/matches_reason_not_blank/);

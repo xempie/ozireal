@@ -33,9 +33,15 @@ export const matches = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "restrict" }),
-    listingId: uuid("listing_id")
+    /**
+     * What was matched: the property, listed or not (migration 0017). The listing is
+     * optional detail: present when the property had a draft/live/under-offer listing
+     * at the time, which supplied its price range and sale/rent.
+     */
+    propertyId: uuid("property_id")
       .notNull()
-      .references(() => listings.id, { onDelete: "cascade" }),
+      .references(() => properties.id, { onDelete: "cascade" }),
+    listingId: uuid("listing_id").references(() => listings.id, { onDelete: "set null" }),
     contactId: uuid("contact_id")
       .notNull()
       .references(() => contacts.id, { onDelete: "cascade" }),
@@ -54,8 +60,8 @@ export const matches = pgTable(
       .defaultNow(),
   },
   (t) => [
-    uniqueIndex("matches_uq").on(t.listingId, t.contactId),
-    index("matches_listing_score_idx").on(t.listingId, t.score),
+    uniqueIndex("matches_property_contact_uq").on(t.propertyId, t.contactId),
+    index("matches_property_score_idx").on(t.propertyId, t.score),
     index("matches_contact_score_idx").on(t.contactId, t.score),
   ],
 );
@@ -281,6 +287,8 @@ export const matchRuns = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id, { onDelete: "restrict" }),
+    /** Exactly one of property / contact is the subject (match_runs_one_subject, 0017). */
+    propertyId: uuid("property_id").references(() => properties.id, { onDelete: "cascade" }),
     listingId: uuid("listing_id").references(() => listings.id, { onDelete: "cascade" }),
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
 

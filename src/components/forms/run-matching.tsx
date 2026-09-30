@@ -10,10 +10,12 @@ import { runMatching } from "@/server/actions/matching";
  * line under the button: how many matches, or why it could not run.
  */
 export function RunMatchingButton({
+  propertyId,
   listingId,
   contactId,
   label,
 }: {
+  propertyId?: string;
   listingId?: string;
   contactId?: string;
   label: string;
@@ -26,7 +28,9 @@ export function RunMatchingButton({
     setPending(true);
     setNote(null);
     try {
-      const r = await runMatching(listingId ? { listingId } : { contactId });
+      const r = await runMatching(
+        propertyId ? { propertyId } : listingId ? { listingId } : { contactId },
+      );
       if (!r.ok) setNote({ ok: false, text: r.error });
       else {
         setNote({ ok: r.data.ok, text: r.data.message });

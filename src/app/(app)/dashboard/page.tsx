@@ -234,10 +234,10 @@ export default async function DashboardPage() {
           big={c.matches}
           bigLabel={c.matches === 1 ? "match found" : "matches found"}
           stats={[
-            { text: `${c.liveListings} listing${c.liveListings === 1 ? "" : "s"} to match` },
+            { text: `${c.liveListings} propert${c.liveListings === 1 ? "y" : "ies"} to match` },
             { text: `${c.withPrefs} buyer${c.withPrefs === 1 ? "" : "s"} to match` },
           ]}
-          action={{ label: "Run matching", send: "Run matching for my newest listing", icon: "spark" }}
+          action={{ label: "Run matching", send: "Run matching for my newest property", icon: "spark" }}
         />
         <Tile
           href="/tasks"
