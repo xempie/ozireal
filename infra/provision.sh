@@ -28,8 +28,36 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq \
   curl ca-certificates gnupg git unzip ufw \
-  redis-server postgresql-client-16 \
+  redis-server \
   debian-keyring debian-archive-keyring apt-transport-https
+
+log "PostgreSQL 18 client (PGDG)"
+# The database is RDS PostgreSQL 18, and pg_dump refuses to dump a server newer than
+# itself, so Ubuntu's own client (16) cannot take the nightly backup. The first box
+# had the PGDG client installed by hand and this script still said 16; found while
+# rebuilding in account 310792823958 (2026-10-03).
+if [ ! -f /etc/apt/sources.list.d/pgdg.list ]; then
+  curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+    | gpg --dearmor -o /usr/share/keyrings/postgresql.gpg
+  echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+    > /etc/apt/sources.list.d/pgdg.list
+  apt-get update -qq
+fi
+apt-get install -y -qq postgresql-client-18
+pg_dump --version
+
+log "AWS CLI v2"
+# backup.sh uploads the nightly dump with `aws s3 cp`. The first box had the CLI
+# installed by hand; a box built from this script alone failed every backup with
+# "aws: command not found" (found 2026-10-03 rebuilding in 310792823958).
+if ! command -v aws >/dev/null; then
+  arch="$(uname -m)"   # aarch64 on t4g, x86_64 elsewhere
+  curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-${arch}.zip" -o /tmp/awscliv2.zip
+  unzip -q -o /tmp/awscliv2.zip -d /tmp
+  /tmp/aws/install --update
+  rm -rf /tmp/aws /tmp/awscliv2.zip
+fi
+aws --version
 
 log "Node ${NODE_MAJOR} + pnpm"
 if ! command -v node >/dev/null || [ "$(node -v | cut -d. -f1 | tr -d v)" != "$NODE_MAJOR" ]; then
@@ -93,6 +121,45 @@ if ! command -v caddy >/dev/null; then
   apt-get update -qq
   apt-get install -y -qq caddy
 fi
+
+log "Caddyfile"
+# Written here rather than by hand: the first box's was hand-made, which is drift.
+# CRM_HOST is the console's hostname; Caddy obtains its certificate on first request
+# once DNS points here.
+CRM_HOST="${CRM_HOST:-crm.ozirealty.com.au}"
+mkdir -p /var/log/caddy
+cat > /etc/caddy/Caddyfile <<CADDYEOF
+# OziRealty. Caddy terminates TLS (certificate obtained and renewed
+# automatically) and proxies to the Next.js server on loopback, which is why
+# port 3000 is never exposed by the firewall or the security group.
+${CRM_HOST} {
+	encode zstd gzip
+
+	# The public intake endpoints are rate-limited per IP in the app, which reads
+	# this header, so it must be the hop CADDY appended, never one the client sent.
+	reverse_proxy 127.0.0.1:3000 {
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Real-IP {remote_host}
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/crm.log {
+			roll_size 20mb
+			roll_keep 7
+		}
+	}
+}
+CADDYEOF
+chown caddy:caddy /var/log/caddy 2>/dev/null || true
+systemctl reload caddy 2>/dev/null || systemctl restart caddy
 
 log "Service user and directories"
 # No login shell and no password: this account exists to own files and run two

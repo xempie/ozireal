@@ -12,8 +12,9 @@ After=network-online.target
 [Service]
 Type=oneshot
 User=ozirealty
+# BACKUP_BUCKET comes from /etc/ozirealty/env (each AWS account has its own bucket;
+# backup.sh falls back to the original one if the variable is absent).
 EnvironmentFile=/etc/ozirealty/env
-Environment=BACKUP_BUCKET=ozirealty-backups-606196119385
 ExecStart=/bin/bash /usr/local/lib/ozirealty/backup.sh
 StandardOutput=append:/var/log/ozirealty/backup.log
 StandardError=append:/var/log/ozirealty/backup.log

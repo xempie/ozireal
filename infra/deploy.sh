@@ -13,8 +13,10 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
-IP="$(cat "$HERE/.public-ip")"
-KEY="$HERE/ozirealty.pem"
+# DEPLOY_IP / DEPLOY_KEY target another box (used to stand up the new account's
+# server during the 2026-10 move to 310792823958 without touching the live one).
+IP="${DEPLOY_IP:-$(cat "$HERE/.public-ip")}"
+KEY="${DEPLOY_KEY:-$HERE/ozirealty.pem}"
 APP_DIR=/srv/ozirealty
 SSH="ssh -i $KEY -o StrictHostKeyChecking=no ubuntu@$IP"
 

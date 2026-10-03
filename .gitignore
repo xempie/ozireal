@@ -27,3 +27,6 @@ infra/.public-ip
 infra/*.pem
 infra/.prod-secrets
 infra/.prod-login-password
+
+# New-account (310792823958) migration state: ids and secrets, never committed.
+infra/.migration/
