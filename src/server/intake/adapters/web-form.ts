@@ -1,6 +1,12 @@
 import { z } from "zod";
 import type { ChannelAdapter, NormalisedInteraction } from "../types";
 import { rolesForSubmission } from "../form-roles";
+import {
+  EMAIL_MESSAGE,
+  PHONE_MESSAGE,
+  isValidEmail,
+  isValidPhone,
+} from "@/components/public/forms/validate";
 
 /**
  * The website enquiry form (B3.4) — the wire format half. The Route Handler owns
@@ -13,8 +19,18 @@ export const webFormPayload = z
   .object({
     firstName: z.string().trim().max(200).default(""),
     lastName: z.string().trim().max(200).default(""),
-    email: z.string().trim().max(320).default(""),
-    phone: z.string().trim().max(32).default(""),
+    email: z
+      .string()
+      .trim()
+      .max(320)
+      .default("")
+      .refine((v) => v === "" || isValidEmail(v), EMAIL_MESSAGE),
+    phone: z
+      .string()
+      .trim()
+      .max(32)
+      .default("")
+      .refine((v) => v === "" || isValidPhone(v), PHONE_MESSAGE),
     message: z.string().trim().min(1, "An empty enquiry is not an enquiry").max(5000),
     /** Which property/listing the form was about, when it was on a listing page. */
     listingRef: z.string().trim().max(120).nullable().default(null),

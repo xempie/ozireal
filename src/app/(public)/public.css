@@ -2390,3 +2390,9 @@
 
 .foot-legal a { color: inherit; }
 .enq-check a { color: inherit; text-decoration: underline; }
+
+/* --------------------------------------------------- invalid fields */
+.enq-field.is-invalid input,
+.enq-field.is-invalid select,
+.enq-field.is-invalid textarea { border-color: var(--accent-dp); }
+.enq-field.is-invalid legend { color: var(--accent-dp); }

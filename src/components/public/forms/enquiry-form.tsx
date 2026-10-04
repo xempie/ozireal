@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { FormDefinition, FormField } from "./definitions";
+import { validateField, validateForm } from "./validate";
 
 /**
  * One component that renders any of the enquiry forms and posts it to the CRM.
@@ -112,14 +113,30 @@ export function EnquiryForm({
     };
   }, [formKey, definition.formName]);
 
-  const set = (id: string, v: string | string[]) =>
-    setValues((prev) => ({ ...prev, [id]: v }));
-
-  const toggle = (id: string, opt: string) =>
-    setValues((prev) => {
-      const cur = Array.isArray(prev[id]) ? (prev[id] as string[]) : [];
-      return { ...prev, [id]: cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt] };
+  /** Re-check one field. Clears its message as soon as the answer becomes valid. */
+  const recheck = (f: FormField, v: string | string[] | undefined) =>
+    setFieldErrors((prev) => {
+      const err = validateField(f, v);
+      const next = { ...prev };
+      if (err) next[f.id] = [err];
+      else delete next[f.id];
+      return next;
     });
+
+  const TYPED = ["text", "textarea", "email", "tel"];
+
+  const set = (f: FormField, v: string | string[]) => {
+    setValues((prev) => ({ ...prev, [f.id]: v }));
+    // Typing clears an error but does not raise a new one mid-word; choices re-check now.
+    if (fieldErrors[f.id] || !TYPED.includes(f.kind)) recheck(f, v);
+  };
+
+  const toggle = (f: FormField, opt: string) => {
+    const cur = Array.isArray(values[f.id]) ? (values[f.id] as string[]) : [];
+    const next = cur.includes(opt) ? cur.filter((x) => x !== opt) : [...cur, opt];
+    setValues((prev) => ({ ...prev, [f.id]: next }));
+    recheck(f, next);
+  };
 
   /**
    * The extra answers, as readable lines. Identity fields are excluded because they
@@ -138,15 +155,6 @@ export function EnquiryForm({
     return [`${definition.title} (${definition.formName})`, "", ...lines].join("\n").trim();
   }
 
-  function missingRequired(): FormField | null {
-    for (const f of definition.fields) {
-      if (!f.required) continue;
-      const v = values[f.id];
-      const empty = Array.isArray(v) ? v.length === 0 : !(v ?? "").toString().trim();
-      if (empty) return f;
-    }
-    return null;
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -154,9 +162,16 @@ export function EnquiryForm({
     setFieldErrors({});
     if (!meta) return;
 
-    const missing = missingRequired();
-    if (missing) {
-      setError(`${missing.label} is required.`);
+    const problems = validateForm(definition.fields, values);
+    const ids = Object.keys(problems);
+    if (ids.length) {
+      setFieldErrors(problems);
+      setError(
+        ids.length === 1
+          ? problems[ids[0]][0]
+          : `Please fix the ${ids.length} highlighted fields.`,
+      );
+      document.getElementById(`f-${ids[0]}`)?.focus();
       return;
     }
     if (!privacy) {
@@ -254,8 +269,9 @@ export function EnquiryForm({
             f={f}
             value={values[f.id]}
             errors={fieldErrors[f.id]}
-            onText={(v) => set(f.id, v)}
-            onToggle={(o) => toggle(f.id, o)}
+            onText={(v) => set(f, v)}
+            onToggle={(o) => toggle(f, o)}
+            onBlur={() => recheck(f, values[f.id])}
           />
         ))}
       </div>
@@ -402,15 +418,28 @@ function Field({
   errors,
   onText,
   onToggle,
+  onBlur,
 }: {
   f: FormField;
   value: string | string[] | undefined;
   errors?: string[];
   onText: (v: string) => void;
   onToggle: (o: string) => void;
+  onBlur: () => void;
 }) {
   const id = `f-${f.id}`;
-  const cls = `enq-field${f.half ? " enq-field--half" : ""}`;
+  const errId = `${id}-err`;
+  const bad = !!errors?.length;
+  const cls = `enq-field${f.half ? " enq-field--half" : ""}${bad ? " is-invalid" : ""}`;
+  const errorLine = bad ? (
+    <p className="enq-field-error" id={errId} role="alert">
+      {errors![0]}
+    </p>
+  ) : null;
+  const aria = {
+    "aria-invalid": bad || undefined,
+    "aria-describedby": bad ? errId : undefined,
+  };
 
   if (f.kind === "radio" || f.kind === "checkbox") {
     const selected = Array.isArray(value) ? value : value ? [value as string] : [];
@@ -423,15 +452,16 @@ function Field({
     const longest = Math.max(...(f.options ?? [""]).map((o) => o.length));
     const compact = longest <= 16;
     return (
-      <fieldset className={`${cls} enq-field--group`}>
+      <fieldset className={`${cls} enq-field--group`} {...aria}>
         <legend>
           {f.label}
           {f.required && <span className="enq-req" aria-hidden="true">*</span>}
         </legend>
         <div className={`enq-options${compact ? " enq-options--compact" : ""}`}>
-          {f.options?.map((o) => (
+          {f.options?.map((o, i) => (
             <label className="enq-opt" key={o}>
               <input
+                id={i === 0 ? id : undefined}
                 type={f.kind}
                 name={f.id}
                 value={o}
@@ -443,6 +473,7 @@ function Field({
             </label>
           ))}
         </div>
+        {errorLine}
       </fieldset>
     );
   }
@@ -459,6 +490,8 @@ function Field({
           name={f.id}
           value={(value as string) ?? ""}
           onChange={(e) => onText(e.target.value)}
+          onBlur={onBlur}
+          {...aria}
         >
           <option value="" disabled>
             Select an option
@@ -469,6 +502,7 @@ function Field({
             </option>
           ))}
         </select>
+        {errorLine}
       </div>
     );
   }
@@ -484,16 +518,35 @@ function Field({
           id={id}
           name={f.id}
           rows={3}
+          maxLength={2000}
           placeholder={f.placeholder}
           value={(value as string) ?? ""}
           onChange={(e) => onText(e.target.value)}
+          onBlur={onBlur}
+          {...aria}
         />
       ) : (
         <input
           id={id}
           name={f.id}
           type={f.kind}
-          placeholder={f.placeholder}
+          placeholder={
+            f.placeholder ??
+            (f.kind === "email" ? "name@example.com" : f.kind === "tel" ? "0412 345 678" : undefined)
+          }
+          inputMode={f.kind === "tel" ? "tel" : f.id === "postcode" ? "numeric" : undefined}
+          maxLength={
+            f.kind === "date"
+              ? undefined
+              : f.kind === "email"
+                ? 254
+                : f.kind === "tel"
+                  ? 20
+                  : f.id === "postcode"
+                    ? 4
+                    : 200
+          }
+          min={f.kind === "date" ? new Date().toISOString().slice(0, 10) : undefined}
           autoComplete={
             f.id === "firstName"
               ? "given-name"
@@ -503,13 +556,17 @@ function Field({
                   ? "email"
                   : f.id === "phone"
                     ? "tel"
-                    : "off"
+                    : f.id === "postcode"
+                      ? "postal-code"
+                      : "off"
           }
           value={(value as string) ?? ""}
           onChange={(e) => onText(e.target.value)}
+          onBlur={onBlur}
+          {...aria}
         />
       )}
-      {errors?.length ? <p className="enq-field-error">{errors[0]}</p> : null}
+      {errorLine}
     </div>
   );
 }

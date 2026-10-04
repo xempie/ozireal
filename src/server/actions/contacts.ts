@@ -164,6 +164,11 @@ const CONTACT_ROLES = [
   "agent",
 ] as const;
 
+/** Empty, or a number toE164 can key on: the same rule as the public forms. */
+function phoneOk(v: string): boolean {
+  return v === "" || toE164(v) !== null;
+}
+
 const contactInput = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(80),
   lastName: z.string().trim().min(1, "Last name is required").max(80),
@@ -172,7 +177,11 @@ const contactInput = z.object({
     .trim()
     .email("That does not look like an email address")
     .or(z.literal("")),
-  phone: z.string().trim().max(30),
+  phone: z
+    .string()
+    .trim()
+    .max(30)
+    .refine(phoneOk, "Enter a valid phone number, like 0412 345 678, or include the country code."),
   suburb: z.string().trim().max(80).optional(),
   roles: z.array(z.enum(CONTACT_ROLES)).min(1, "Pick at least one role"),
   doNotContact: z.boolean().default(false),
