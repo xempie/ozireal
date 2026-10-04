@@ -52,7 +52,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ozi Realty · Adelaide real estate, sales, rentals and management",
+    default: "Ozi Realty Adelaide | Real Estate Sales, Property Management & Rentals",
     template: "%s · Ozi Realty",
   },
   description:
@@ -66,6 +66,34 @@ export const metadata: Metadata = {
   // explicitly rather than relying on the absence of a rule.
   robots: { index: true, follow: true },
 };
+
+/**
+ * schema.org RealEstateAgent on every public page, from the same AGENCY constants the
+ * footer prints, so the markup can never claim anything the page does not.
+ */
+function agencyJsonLd() {
+  const url = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ozirealty.com.au";
+  return {
+    "@context": "https://schema.org",
+    "@type": "RealEstateAgent",
+    name: AGENCY.name,
+    url,
+    logo: `${url}/brand/logo.png`,
+    image: `${url}/brand/logo.png`,
+    telephone: AGENCY.phone,
+    email: AGENCY.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: AGENCY.street,
+      addressLocality: AGENCY.locality,
+      addressRegion: AGENCY.region,
+      postalCode: AGENCY.postcode,
+      addressCountry: "AU",
+    },
+    founder: { "@type": "Person", name: AGENCY.principal },
+    areaServed: AGENCY.areaServed,
+  };
+}
 
 export default function PublicLayout({
   children,
@@ -87,6 +115,11 @@ export default function PublicLayout({
       </a>
       <SiteHeader />
       <main id="main">{children}</main>
+      <script
+        type="application/ld+json"
+        // Our own constants, not user input; JSON.stringify output is safe here.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(agencyJsonLd()) }}
+      />
       <SiteFooter />
     </div>
   );

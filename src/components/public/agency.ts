@@ -25,6 +25,12 @@ export const AGENCY = {
   phone: "1800 400 333",
   phoneHref: "tel:1800400333",
   office: "308 Prospect Rd, Prospect SA 5082",
+  /** The office address in parts, for schema.org markup. */
+  street: "308 Prospect Rd",
+  locality: "Prospect",
+  region: "SA",
+  postcode: "5082",
+  areaServed: "Adelaide",
   licence: "RLA 350 628",
   abn: "14 682 825 449",
   email: "support@ozirealty.com.au",
@@ -45,8 +51,10 @@ export const EMAILS = [
 
 /** The live site's headline promise, and the strip under the hero. */
 export const HERO = {
-  title: "Your Property Journey",
-  titleEm: "Starts Here",
+  /** The live site's headline, kept as the eyebrow; the h1 carries the search terms. */
+  eyebrow: "Your property journey starts here",
+  title: "Adelaide real estate services:",
+  titleEm: "sell, buy, rent & manage property",
   lede: "From finding your first home to selling, investing, or managing property, we make every step simple, clear, and stress-free.",
 } as const;
 

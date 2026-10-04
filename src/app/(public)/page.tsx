@@ -69,9 +69,9 @@ export default async function HomePage() {
         <div className="hero-inner hero-inner--ticker">
           <div className="wrap">
             <div className="hero-copy">
-              <p className="eyebrow">Adelaide &middot; South Australia</p>
+              <p className="eyebrow">{HERO.eyebrow}</p>
               <h1>
-                {HERO.title}
+                {HERO.title}{" "}
                 <br />
                 <em>{HERO.titleEm}</em>
               </h1>
@@ -203,7 +203,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <Link className="txtlink" href="/property-services">
-              All services <span aria-hidden="true">&rarr;</span>
+              All Adelaide property services <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
           <ServiceGrid />
@@ -293,7 +293,7 @@ export default async function HomePage() {
               </h2>
             </div>
             <Link className="txtlink" href="/blog">
-              Read everything <span aria-hidden="true">&rarr;</span>
+              Read the Adelaide property blog <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
 
