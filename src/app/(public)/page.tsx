@@ -6,6 +6,7 @@ import { onMarket } from "@/server/public/listings";
 import { publicSiteSettings } from "@/server/public/site";
 import { PrincipalCard } from "@/components/public/principal";
 import { ServiceGrid } from "@/components/public/service-grid";
+import { FormSection } from "@/components/public/forms/form-section";
 import {
   AGENCY,
   HERO,
@@ -95,6 +96,9 @@ export default async function HomePage() {
           </div>
         </div>
       </header>
+
+      {/* The live home page's "Free book & Gift party" lead form, straight after the hero. */}
+      <FormSection slug="realestate-gift-adelaide" />
 
       {/* ========================================================= promises */}
       <section className="numbers">

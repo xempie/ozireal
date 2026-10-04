@@ -33,7 +33,13 @@ import type { contactRole } from "@/db/schema";
 
 export type ContactRole = (typeof contactRole.enumValues)[number];
 
-export type FieldKind = "text" | "email" | "tel" | "textarea" | "date" | "radio" | "checkbox";
+/**
+ * Choice fields follow one rule (site sync guide, 2026-10-04): a single choice from five
+ * or more options is a "select" dropdown, two to four is "radio", and any multi-choice is
+ * "checkbox". The live site's explicit dropdowns are kept as dropdowns.
+ */
+export type FieldKind =
+  | "text" | "email" | "tel" | "textarea" | "date" | "radio" | "checkbox" | "select";
 
 export interface FormField {
   /** Stable id, used as the input name and as the label in the composed message. */
@@ -41,7 +47,7 @@ export interface FormField {
   label: string;
   kind: FieldKind;
   required?: boolean;
-  /** radio and checkbox only. */
+  /** radio, checkbox and select only. */
   options?: string[];
   placeholder?: string;
   /** Half-width on a wide screen. Used for the name/contact pairs. */
@@ -106,7 +112,7 @@ export const FORMS: FormDefinition[] = [
     fields: [
       ...IDENTITY(),
       { id: "plan", label: "Select your plan", kind: "radio", required: true,
-        options: ["Income Protect", "Income Optimise", "Income & Risk Shield", "Not sure yet"] },
+        options: ["Income Protect", "Income Optimise", "Income & Risk Shield", "Owner-Designed Plan"] },
       { id: "address", label: "Property address (or multiple if a portfolio)", kind: "textarea", required: true },
       { id: "situation", label: "Current situation", kind: "radio", required: true,
         options: ["Self-managed", "Managed by another agency", "New investment", "Other"] },
@@ -146,7 +152,7 @@ export const FORMS: FormDefinition[] = [
     fields: [
       ...IDENTITY(),
       { id: "address", label: "Property address", kind: "textarea", required: true },
-      { id: "propertyType", label: "Your property type", kind: "radio",
+      { id: "propertyType", label: "Your property type", kind: "select",
         options: ["House", "Unit", "Townhouse", "Apartment", "Other"] },
       { id: "timeframe", label: "When are you planning to rent?", kind: "radio",
         options: ["1–3 months", "3–6 months", "6–12 months", "Just exploring"] },
@@ -205,7 +211,7 @@ export const FORMS: FormDefinition[] = [
       { id: "area", label: "Preferred area or suburbs", kind: "textarea", required: true },
       { id: "purpose", label: "What are you mainly looking for?", kind: "checkbox", required: true,
         options: ["Build a home later", "Investment", "Subdivision / development", "Still exploring"] },
-      { id: "landSize", label: "Preferred land size", kind: "radio", required: true,
+      { id: "landSize", label: "Preferred land size", kind: "select", required: true,
         options: ["Less than 300 sqm", "300–400 sqm", "400–600 sqm", "600+ sqm", "Not sure yet"] },
       { id: "timing", label: "Timing", kind: "radio", required: true,
         options: ["Actively looking now", "3–6 months", "6–12 months", "Just researching"] },
@@ -325,15 +331,26 @@ export const FORMS: FormDefinition[] = [
 
   {
     slug: "realestate-gift-adelaide",
+    // The live site's "Free book & Gift party" form. It is on the gift page and on the
+    // home page (FormSection slug="realestate-gift-adelaide"), one definition for both.
     formName: "Gift Party bundle",
     roles: [],
-    title: "Get on the list",
-    intro: "We will send the bundle to your inbox.",
-    submitLabel: "Send me the bundle",
+    roleFrom: {
+      field: "looking",
+      map: {
+        "Buy a property": "buyer",
+        "Sell a property": "vendor",
+        "Rent a property": "tenant",
+        "Investment property": "investor",
+      },
+    },
+    title: "Free book: 10 truths about finding the right home",
+    intro: "A guide to avoid common home buying traps.",
+    submitLabel: "Receive the book!",
     fields: [
       ...IDENTITY(),
-      { id: "looking", label: "Tell us what you are looking for", kind: "textarea", required: true,
-        placeholder: "Buying, selling, renting out, investing, or just curious" },
+      { id: "looking", label: "Tell us what you're looking for?", kind: "select", required: true,
+        options: ["Buy a property", "Sell a property", "Rent a property", "Investment property"] },
     ],
   },
 
@@ -348,7 +365,7 @@ export const FORMS: FormDefinition[] = [
     submitLabel: "Send my message",
     fields: [
       ...IDENTITY(),
-      { id: "about", label: "What is it about?", kind: "radio", required: true,
+      { id: "about", label: "What is it about?", kind: "select", required: true,
         options: ["Selling", "Renting out", "Buying", "Renting", "Property management", "Something else"] },
       { id: "message", label: "Your message", kind: "textarea", required: true },
     ],
@@ -364,7 +381,7 @@ export const FORMS: FormDefinition[] = [
     submitLabel: "Request my consultation",
     fields: [
       ...IDENTITY(),
-      { id: "topic", label: "What would you like to discuss?", kind: "radio", required: true,
+      { id: "topic", label: "What would you like to discuss?", kind: "select", required: true,
         options: ["Selling", "Renting out", "Buying", "Investing", "Property management", "Something else"] },
       { id: "when", label: "When generally suits?", kind: "checkbox", required: true,
         options: ["Weekday morning", "Weekday afternoon", "Weekday evening", "Saturday morning"] },
@@ -392,8 +409,9 @@ export const FORMS: FormDefinition[] = [
       { id: "suburb", label: "Suburb", kind: "text", required: true, half: true },
       { id: "postcode", label: "Postcode", kind: "text", required: true, half: true },
       { id: "state", label: "State", kind: "text", required: true, half: true },
-      { id: "timeframe", label: "When are you considering selling?", kind: "text", half: true,
-        placeholder: "e.g. within 6 months" },
+      { id: "timeframe", label: "When are you considering selling?", kind: "select",
+        required: true, half: true,
+        options: ["1-3 months", "3-6 months", "6-12 months", "Just browsing"] },
       { id: "purpose", label: "What do you want to do?", kind: "radio", required: true,
         options: ["Considering selling", "Buying and comparing value"] },
     ],
@@ -427,7 +445,7 @@ export const FORMS: FormDefinition[] = [
         placeholder: "Buying, selling, investing or just watching" },
       { id: "address", label: "Property address or preferred suburb", kind: "textarea", required: true },
       { id: "property", label: "The property you're looking at", kind: "text", required: true },
-      { id: "priceBand", label: "Which area would you prefer to explore?", kind: "radio", required: true,
+      { id: "priceBand", label: "Which area would you prefer to explore?", kind: "select", required: true,
         options: [
           "Affordable areas (under $500k)",
           "Growth areas ($500k – $700k)",

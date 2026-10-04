@@ -443,6 +443,32 @@ function Field({
     );
   }
 
+  if (f.kind === "select") {
+    return (
+      <div className={cls}>
+        <label htmlFor={id}>
+          {f.label}
+          {f.required && <span className="enq-req" aria-hidden="true">*</span>}
+        </label>
+        <select
+          id={id}
+          name={f.id}
+          value={(value as string) ?? ""}
+          onChange={(e) => onText(e.target.value)}
+        >
+          <option value="" disabled>
+            Select an option
+          </option>
+          {f.options?.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
   return (
     <div className={cls}>
       <label htmlFor={id}>
