@@ -348,3 +348,50 @@ export async function onMarketCount(): Promise<number> {
     return row?.n ?? 0;
   });
 }
+
+/* --------------------------------------------------------------- suburbs */
+
+/**
+ * The suburb pages are assembled from our own listings only: what is advertised there
+ * now and what has sold or leased. No medians or growth figures, because the agency has
+ * no licensed data source and an invented statistic is a misleading representation.
+ *
+ * Returns the suburb name and counts of listings that are already public, so it adds no
+ * field a public listing does not already show.
+ */
+export type PublicSuburb = { name: string; slug: string; onMarket: number; settled: number };
+
+export const suburbSlug = (name: string) =>
+  name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+export async function suburbsWithListings(): Promise<PublicSuburb[]> {
+  const rows = await publicQuery((tx) =>
+    tx
+      .select({
+        name: suburbs.name,
+        onMarket: sql<number>`(count(*) filter (where ${listings.status} in ('live', 'under_offer')))::int`,
+        settled: sql<number>`(count(*) filter (where ${listings.status} in ('sold', 'leased')))::int`,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .innerJoin(suburbs, eq(suburbs.id, properties.suburbId))
+      .where(inArray(listings.status, [...ON_MARKET, ...SETTLED]))
+      .groupBy(suburbs.name)
+      .orderBy(suburbs.name),
+  );
+  return rows.map((r) => ({ ...r, slug: suburbSlug(r.name) }));
+}
+
+/** Every public listing in one suburb, on the market first, then the archive. */
+export async function listingsInSuburb(name: string): Promise<PublicListing[]> {
+  return publicQuery((tx) =>
+    base(tx)
+      .where(
+        and(eq(suburbs.name, name), inArray(listings.status, [...ON_MARKET, ...SETTLED])),
+      )
+      .orderBy(
+        sql`case when ${listings.status} in ('live', 'under_offer') then 0 else 1 end`,
+        desc(listings.publishedAt),
+      ),
+  );
+}

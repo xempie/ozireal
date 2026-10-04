@@ -2357,3 +2357,36 @@
   .gallery-figs { gap: 12px; }
   .gallery-figs figure { aspect-ratio: 3/4; }
 }
+
+/* ----------------------------------------------------------- breadcrumbs */
+.crumbs { background: var(--paper-2); border-bottom: 1px solid var(--line); }
+.crumbs ol {
+  list-style: none; margin: 0; padding: 10px 0;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  font-size: 13px; color: var(--muted);
+}
+.crumbs li + li::before { content: "/"; margin-right: 6px; opacity: 0.6; }
+.crumbs a { color: inherit; text-decoration: none; }
+.crumbs a:hover { color: var(--accent); }
+.crumbs [aria-current] { color: var(--ink); }
+
+/* ------------------------------------------------------- legal pages */
+.legal { max-width: 72ch; display: grid; gap: 34px; }
+
+/* ------------------------------------------------------- suburb index */
+.suburb-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+}
+.suburb-list a {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 18px 20px; border: 1px solid var(--line); border-radius: 2px;
+  color: var(--ink); text-decoration: none; transition: border-color 0.2s;
+}
+.suburb-list a:hover { border-color: var(--accent); }
+.suburb-list span { font-size: 13.5px; color: var(--muted); }
+@media (max-width: 900px) { .suburb-list { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .suburb-list { grid-template-columns: 1fr; } }
+
+.foot-legal a { color: inherit; }
+.enq-check a { color: inherit; text-decoration: underline; }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Newsreader, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./public.css";
 import { SiteHeader, SiteFooter, AGENCY } from "@/components/public/site-chrome";
+import { Breadcrumbs } from "@/components/public/breadcrumbs";
 
 /**
  * The public website.
@@ -114,6 +115,7 @@ export default function PublicLayout({
         Skip to content
       </a>
       <SiteHeader />
+      <Breadcrumbs siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ozirealty.com.au"} />
       <main id="main">{children}</main>
       <script
         type="application/ld+json"

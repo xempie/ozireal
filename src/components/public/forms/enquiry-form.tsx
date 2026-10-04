@@ -279,7 +279,11 @@ export function EnquiryForm({
           />
           <span className="enq-mark" aria-hidden="true" />
           <span>
-            I have read the privacy notice and agree to OziRealty handling my details in
+            I have read the{" "}
+            <a href="/privacy" target="_blank" rel="noopener">
+              privacy policy
+            </a>{" "}
+            and agree to OziRealty handling my details in
             order to respond to this enquiry. <b>Required</b>
           </span>
         </label>

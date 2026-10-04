@@ -126,6 +126,7 @@ export function SiteFooter() {
               <li><Link href="/blog">Blog</Link></li>
               <li><Link href="/adelaide-property-faq">FAQ</Link></li>
               <li><Link href="/sold">Recently sold</Link></li>
+              <li><Link href="/suburbs">Suburbs</Link></li>
             </ul>
           </div>
 
@@ -149,11 +150,11 @@ export function SiteFooter() {
           <span>
             &copy; {new Date().getFullYear()} {AGENCY.name}. All rights reserved.
           </span>
-          {/*
-            Plain text until /privacy and /complaints exist. A policy link that 404s is
-            worse than none, and these are the pages a regulator looks for.
-          */}
-          <span>Privacy &middot; Complaints</span>
+          {/* Our own pages, never a policy hosted on another site. */}
+          <span className="foot-legal">
+            <Link href="/privacy">Privacy</Link> &middot; <Link href="/terms">Terms</Link>{" "}
+            &middot; <Link href="/complaints">Complaints</Link>
+          </span>
         </div>
       </div>
     </footer>
