@@ -62,7 +62,6 @@ export default function Page() {
             {REPORTS.suburb.items.map((i) => (
               <li key={i}>{i}</li>
             ))}
-            <li className="insight-more">And more</li>
           </ul>
         </div>
       </section>

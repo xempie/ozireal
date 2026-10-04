@@ -1357,6 +1357,19 @@
   height: 1px;
   background: var(--accent-lt);
 }
+/* Four offers, each with its own call to action (/property-strategy-services). */
+.report-grid--2 { grid-template-columns: repeat(2, 1fr); }
+.report-card--offer { display: flex; flex-direction: column; }
+.report-card--offer ul { margin-bottom: 26px; }
+.report-tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-lt);
+  margin: 0 0 12px;
+}
+.report-go { margin-top: auto; align-self: flex-start; }
 .report-cta {
   display: flex;
   align-items: center;
@@ -1414,7 +1427,7 @@
 .posts--two { grid-template-columns: repeat(2, 1fr); }
 
 @media (max-width: 1080px) {
-  .report-grid, .why-grid { grid-template-columns: 1fr; }
+  .report-grid, .report-grid--2, .why-grid { grid-template-columns: 1fr; }
   .insight-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 640px) {

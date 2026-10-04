@@ -7,9 +7,9 @@ import { MANAGEMENT_PLANS, REPORTS } from "@/components/public/agency";
  * Property management.
  *
  * `/manage-property-adelaide` mirrors the live Wix page, "Manage My Property" in the
- * site's services row. Note that `/rent-out-my-property-adelaide` and
- * `/property-rental-report` also market management on the current site; both should 301
- * here unless they are rebuilt separately.
+ * site's services row. `/rent-out-my-property-adelaide` and `/property-rental-report`
+ * also market management on the live site; both now have their own pages and forms
+ * and link here for the plans.
  *
  * Bespoke rather than a `ServicePageBody`, because this is the one page with a tier
  * comparison on it and three plans do not fit the shared points-and-prose layout.

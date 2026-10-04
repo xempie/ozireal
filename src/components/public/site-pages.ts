@@ -232,6 +232,40 @@ export const SERVICE_PAGES: ServicePage[] = [
   },
 
   {
+    // Mirrors www.ozirealty.com.au/property-rental-report, "Property Rental Estimation",
+    // the fourth card on /property-strategy-services (copied 2026-10-04).
+    slug: "property-rental-report",
+    eyebrow: "Property rental report",
+    title: "Property rental",
+    titleEm: "estimation",
+    lede: "Know exactly what your property can earn in today's market. Our rental estimate is built on live local data, comparable leased properties, and real tenant demand, not rough guesses.",
+    metaTitle: "Free property rental estimation in Adelaide",
+    metaDescription:
+      "Know what your Adelaide property can earn. A free rental estimate built on live local data, comparable leased properties and real tenant demand.",
+    image: "photo-1605146769289-440113cc3d00",
+    imageAlt: "Grey and white contemporary home",
+    facts: ["Free", "No commitments", "No sales push"],
+    points: [
+      "Accurate weekly rent range",
+      "Pricing strategy to minimise vacancy",
+      "Comparable nearby rental results",
+      "Vacancy and demand insights",
+      "Yield and annual income estimate",
+      "No-pressure promise: an information session, not a pitch",
+    ],
+    sections: [
+      {
+        heading: "The right rent, not just the high rent",
+        body: [
+          "We help you set the right rent, not just the high rent, so your property stays occupied and profitable.",
+          "Overpricing a rental costs more in vacancy than the extra rent recovers, which is why the estimate comes with a pricing strategy rather than a single headline number.",
+        ],
+      },
+    ],
+    cta: { label: "How management works", href: "/manage-property-adelaide" },
+  },
+
+  {
     slug: "property-investment",
     eyebrow: "Investment",
     title: "Invest on the numbers,",

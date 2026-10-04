@@ -225,8 +225,12 @@ export const REPORTS = {
       "Demographic and population insights",
       "School catchment zones",
       "Comparison with surrounding suburbs",
+      "Comparable property analytics",
+      "Market depth and buyer activity data",
       "Long-term capital growth trends",
+      "Rental performance metrics",
       "Risk indicators and suburb volatility analysis",
+      "And more",
     ],
   },
   rental: {

@@ -400,6 +400,21 @@ export const FORMS: FormDefinition[] = [
   },
 
   {
+    // Mirrors www.ozirealty.com.au/property-rental-report ("Property Rental
+    // Estimation"), linked from the strategy page's fourth card (2026-10-04).
+    slug: "property-rental-report",
+    formName: "Property rental report",
+    roles: ["landlord"],
+    title: "Get your free rental estimation now",
+    intro: "This is your information session: no commitments, no sales push.",
+    submitLabel: "Submit",
+    fields: [
+      ...IDENTITY(),
+      { id: "address", label: "Property address", kind: "textarea", required: true },
+    ],
+  },
+
+  {
     slug: "free-suburb-insight-report",
     formName: "Suburb insight report",
     roles: [],
@@ -411,6 +426,7 @@ export const FORMS: FormDefinition[] = [
       { id: "reason", label: "Reason for the report", kind: "text", required: true,
         placeholder: "Buying, selling, investing or just watching" },
       { id: "address", label: "Property address or preferred suburb", kind: "textarea", required: true },
+      { id: "property", label: "The property you're looking at", kind: "text", required: true },
       { id: "priceBand", label: "Which area would you prefer to explore?", kind: "radio", required: true,
         options: [
           "Affordable areas (under $500k)",

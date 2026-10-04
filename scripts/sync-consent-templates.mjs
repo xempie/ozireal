@@ -35,6 +35,10 @@ const TEMPLATES = [
     "Send me the report and occasional market updates for this suburb. I can unsubscribe at any time.",
   ],
   [
+    "Property rental report",
+    "Send me the rental estimate and occasional rental market updates for my property. I can unsubscribe at any time.",
+  ],
+  [
     "Property management enquiry",
     "Send me rental market updates and property management news by email. I can unsubscribe at any time.",
   ],
