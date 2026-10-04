@@ -32,7 +32,8 @@ const TEMPLATES = [
   ],
   [
     "Suburb insight report",
-    "Send me the report and occasional market updates for this suburb. I can unsubscribe at any time.",
+    // Reworded 2026-10-04 to the live Wix form's opt-in, approved by the agency.
+    "Send me hot investment opportunities across Australia. I can unsubscribe at any time.",
   ],
   [
     "Property rental report",
