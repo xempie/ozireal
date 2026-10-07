@@ -38,7 +38,14 @@ export default auth((req) => {
     return NextResponse.redirect(url);
   }
 
-  const res = NextResponse.next();
+  /**
+   * The path, forwarded as a request header so the public layout and page heroes can
+   * look up that page's content edits (src/server/public/content.ts). Server
+   * components cannot see the URL otherwise.
+   */
+  const fwd = new Headers(req.headers);
+  fwd.set("x-pathname", req.nextUrl.pathname);
+  const res = NextResponse.next({ request: { headers: fwd } });
 
   const host = req.headers.get("host")?.split(":")[0]?.toLowerCase();
   const isCanonical = host === CANONICAL_HOST;

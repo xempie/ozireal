@@ -391,3 +391,27 @@ export const disclosureRules = pgTable(
   },
   (t) => [uniqueIndex("disclosure_rules_uq").on(t.tenantId, t.jurisdiction, t.name)],
 );
+
+/**
+ * Website content edited from the console: text overrides and added blocks on built-in
+ * pages, whole new pages, and the theme (path "@theme"). Versioned; see 0019. The doc
+ * is validated by src/lib/site-content.ts before every write.
+ */
+export const siteContent = pgTable(
+  "site_content",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    path: text("path").notNull(),
+    version: integer("version").notNull(),
+    status: text("status").$type<"draft" | "published" | "archived">().notNull(),
+    doc: jsonb("doc").$type<Record<string, unknown>>().notNull(),
+    note: text("note"),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+  },
+  (t) => [uniqueIndex("site_content_version_uq").on(t.tenantId, t.path, t.version)],
+);

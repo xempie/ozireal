@@ -2396,3 +2396,28 @@
 .enq-field.is-invalid select,
 .enq-field.is-invalid textarea { border-color: var(--accent-dp); }
 .enq-field.is-invalid legend { color: var(--accent-dp); }
+
+/* ---------------------------------------------- website editor blocks */
+.sec--loose { padding-block: clamp(96px, 12vw, 168px); }
+.sec--accent { background: var(--accent); color: var(--paper-2); }
+.sec--accent .eyebrow, .sec--accent .display em { color: var(--paper-2); }
+.sec--accent .eyebrow::after { background: var(--paper-2); }
+.sec--accent .btn { background: var(--ink); }
+.blk--center { text-align: center; }
+.blk--center .sec-head { justify-content: center; }
+.blk--center .sec-head .display { margin-inline: auto; }
+.blk--center .blk-prose { margin-inline: auto; }
+.blk-prose { max-width: 68ch; }
+.blk-prose ul { margin: 0 0 1em; padding-left: 1.2em; }
+.blk-prose li { margin-bottom: 0.4em; }
+.blk-figure { margin: 0; }
+.blk-figure img { width: 100%; height: auto; display: block; }
+.blk-figure figcaption { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
+.blk-card-link { color: inherit; text-decoration: none; transition: transform 0.2s; }
+.blk-card-link:hover { transform: translateY(-2px); }
+.preview-bar {
+  position: relative; z-index: 60;
+  background: #1d4ed8; color: #fff; text-align: center;
+  font-size: 13px; padding: 8px 16px;
+}
+.preview-bar a { color: #fff; text-decoration: underline; margin-left: 6px; }

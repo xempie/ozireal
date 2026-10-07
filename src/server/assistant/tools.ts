@@ -12,6 +12,17 @@ import {
   getMatchesForProperty,
   getMatchesForContact,
 } from "@/server/queries";
+import { getSitePages, getWorkingPage, getWorkingTheme } from "@/server/queries/website";
+import { servicePageBySlug } from "@/components/public/site-pages";
+import { FORMS } from "@/components/public/forms/definitions";
+import {
+  BlockInputSchema,
+  GALLERY,
+  HeroTextSchema,
+  ServiceTextSchema,
+  ThemeDocSchema,
+  isBuiltinPath,
+} from "@/lib/site-content";
 
 /**
  * The assistant's tools.
@@ -283,6 +294,83 @@ export const TOOLS = {
       listingId: uuid().optional(),
     }),
   },
+
+  /* --------------------------------------------------------------- website */
+  website_list_pages: {
+    kind: "read",
+    description:
+      "Website editor: every page (built-in pages and pages created here) with whether it has unpublished changes, plus the image gallery ids and the enquiry forms a page can embed.",
+    schema: z.object({}),
+  },
+  website_get_page: {
+    kind: "read",
+    description:
+      "Website editor: one page's current edits (hero text, service points/sections, added blocks with their ids) and the words currently on the live page. Read this before changing a page.",
+    schema: z.object({ path: z.string().max(80) }),
+  },
+  website_create_page: {
+    kind: "write",
+    description:
+      "Create a NEW website page at a new path (e.g. /first-home-buyers) from blocks. Start with a hero block. Saved as a draft; the agent previews and publishes it.",
+    schema: z.object({
+      path: z.string().max(80),
+      title: z.string().max(70).optional(),
+      description: z.string().max(170).optional(),
+      blocks: z.array(BlockInputSchema).min(1).max(20),
+    }),
+  },
+  website_add_block: {
+    kind: "write",
+    description:
+      "Add a block to a page. On built-in pages choose zone after_hero or end (no hero blocks there). On new pages, position is the 0-based index (omit to add at the end). Saved as a draft.",
+    schema: z.object({
+      path: z.string().max(80),
+      block: BlockInputSchema,
+      zone: z.enum(["after_hero", "end"]).optional(),
+      position: z.number().int().min(0).max(40).optional(),
+    }),
+  },
+  website_update_block: {
+    kind: "write",
+    description:
+      "Replace one added block with a new version (give the whole block, same type or a different one). Get block ids from website_get_page. Saved as a draft.",
+    schema: z.object({ path: z.string().max(80), blockId: z.string().max(40), block: BlockInputSchema }),
+  },
+  website_remove_block: {
+    kind: "write",
+    description: "Remove one added block from a page. Saved as a draft.",
+    schema: z.object({ path: z.string().max(80), blockId: z.string().max(40) }),
+  },
+  website_set_text: {
+    kind: "write",
+    description:
+      "Change words on a page. Built-in pages: hero {eyebrow, title, titleEm, lede}; service pages also service {points, sections:[{heading, body:[...]}]} which REPLACE the whole list. New pages: title and description (search listing). reset puts the original words back. Saved as a draft.",
+    schema: z.object({
+      path: z.string().max(80),
+      hero: HeroTextSchema.optional(),
+      service: ServiceTextSchema.optional(),
+      title: z.string().max(70).optional(),
+      description: z.string().max(170).optional(),
+      reset: z.array(z.enum(["hero", "service", "meta"])).optional(),
+    }),
+  },
+  website_set_theme: {
+    kind: "write",
+    description:
+      "Change the site-wide look: accent (buttons, highlights), ink (dark sections, text), paper (background) as #RRGGBB; fontPair classic (serif headings, the default) | modern (all sans-serif) | editorial (all serif); buttonShape square | rounded | pill. reset:true returns to the original design. Saved as a draft.",
+    schema: ThemeDocSchema.extend({ reset: z.boolean().optional() }),
+  },
+  website_delete_page: {
+    kind: "write",
+    description: "Take down a page created in the editor (built-in pages cannot be deleted). Takes effect when published.",
+    schema: z.object({ path: z.string().max(80) }),
+  },
+  website_publish: {
+    kind: "write",
+    description:
+      "Publish a page's draft changes to the live website. Use path \"@theme\" for the theme. Only when the agent asks to publish.",
+    schema: z.object({ path: z.string().max(80) }),
+  },
 } satisfies Record<string, ToolSpec>;
 
 export type ToolName = keyof typeof TOOLS;
@@ -502,6 +590,57 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
         }));
       }
       return { error: "Give a propertyId, listingId or contactId." };
+    }
+
+    case "website_list_pages": {
+      const [pages, theme] = await Promise.all([getSitePages(), getWorkingTheme()]);
+      return {
+        pages: pages.map((p) => ({
+          path: p.path,
+          label: p.label,
+          kind: p.builtin ? "built-in" : "new page",
+          locked: p.locked || undefined,
+          unpublishedChanges: p.hasDraft,
+          takenDown: p.deleted || undefined,
+          service: servicePageBySlug(p.path.slice(1)) ? true : undefined,
+        })),
+        theme: { ...theme.theme, unpublishedChanges: theme.hasDraft },
+        images: GALLERY,
+        forms: FORMS.map((f) => ({ form: f.slug, title: f.title })),
+      };
+    }
+
+    case "website_get_page": {
+      const path = String(input.path);
+      const { doc, state } = await getWorkingPage(path);
+      const svc = servicePageBySlug(path.slice(1));
+      let liveText: string | undefined;
+      if (isBuiltinPath(path)) {
+        // The words on the page as built, so edits can be made to what is really there.
+        try {
+          const r = await fetch(`http://127.0.0.1:${process.env.PORT ?? 3000}${path}`, { cache: "no-store" });
+          const html = await r.text();
+          const main = html.split('<main id="main">')[1]?.split("</main>")[0] ?? html;
+          liveText = main
+            .replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/&amp;/g, "&")
+            .replace(/&#x27;|&rsquo;/g, "'")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 5000);
+        } catch {
+          liveText = undefined;
+        }
+      }
+      return {
+        path,
+        kind: isBuiltinPath(path) ? "built-in" : doc ? "new page" : "does not exist",
+        state,
+        edits: doc,
+        servicePage: svc ? { points: svc.points, sections: svc.sections } : undefined,
+        liveText,
+      };
     }
 
     default:

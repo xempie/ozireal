@@ -115,6 +115,18 @@ export function suggestionsFor(pathname: string): { area: string; items: Suggest
     };
   }
 
+  if (pathname.startsWith("/website")) {
+    return {
+      area: "the website",
+      items: [
+        p("Add a new page…", "Add a new page about "),
+        p("Change the homepage heading…", "Change the homepage heading to "),
+        p("Add a section to a page…", "Add a section to the "),
+        s("Make the buttons rounded"),
+        s("Which pages have unpublished changes?"),
+      ],
+    };
+  }
   if (pathname.startsWith("/approvals") || pathname.startsWith("/confirm")) {
     return {
       area: "approvals",

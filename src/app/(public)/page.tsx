@@ -7,6 +7,8 @@ import { publicSiteSettings } from "@/server/public/site";
 import { PrincipalCard } from "@/components/public/principal";
 import { ServiceGrid } from "@/components/public/service-grid";
 import { FormSection } from "@/components/public/forms/form-section";
+import { Zone } from "@/components/public/blocks";
+import { pageContent } from "@/server/public/content";
 import {
   AGENCY,
   HERO,
@@ -48,8 +50,19 @@ import {
  */
 
 export default async function HomePage() {
-  const [listed, site] = await Promise.all([onMarket(6), publicSiteSettings()]);
+  const [listed, site, doc] = await Promise.all([
+    onMarket(6),
+    publicSiteSettings(),
+    pageContent("/"),
+  ]);
   const advertised = listed.map(toCard);
+  // Hero text edited in the website editor, falling back to the agency's own copy.
+  const hero = {
+    eyebrow: doc?.hero?.eyebrow ?? HERO.eyebrow,
+    title: doc?.hero?.title ?? HERO.title,
+    titleEm: doc?.hero?.titleEm ?? HERO.titleEm,
+    lede: doc?.hero?.lede ?? HERO.lede,
+  };
 
   return (
     <>
@@ -69,13 +82,13 @@ export default async function HomePage() {
         <div className="hero-inner hero-inner--ticker">
           <div className="wrap">
             <div className="hero-copy">
-              <p className="eyebrow">{HERO.eyebrow}</p>
+              <p className="eyebrow">{hero.eyebrow}</p>
               <h1>
-                {HERO.title}{" "}
+                {hero.title}{" "}
                 <br />
-                <em>{HERO.titleEm}</em>
+                <em>{hero.titleEm}</em>
               </h1>
-              <p className="lede">{HERO.lede}</p>
+              <p className="lede">{hero.lede}</p>
             </div>
           </div>
 
@@ -96,6 +109,8 @@ export default async function HomePage() {
           </div>
         </div>
       </header>
+
+      <Zone blocks={doc?.blocks} zone="after_hero" />
 
       {/* The live home page's "Free book & Gift party" lead form, straight after the hero. */}
       <FormSection slug="realestate-gift-adelaide" />

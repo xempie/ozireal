@@ -21,7 +21,24 @@ import {
   Empty,
   ProtoNote,
 } from "@/components/ui";
-import { getRedirects, getSuburbPages, getListings, getSiteSettings } from "@/server/queries";
+import {
+  getRedirects,
+  getSuburbPages,
+  getListings,
+  getSiteSettings,
+  getSitePages,
+  getSiteHistory,
+  getWorkingTheme,
+} from "@/server/queries";
+import { THEME_PATH } from "@/lib/site-content";
+import { AskButton } from "@/components/assistant/ask-button";
+import {
+  PreviewLink,
+  PublishButton,
+  DiscardButton,
+  HistoryList,
+  type HistoryRow,
+} from "@/components/forms/site-editor-forms";
 import { SiteToggle } from "@/components/forms/website-forms";
 import {
   NewRedirectButton,
@@ -37,12 +54,32 @@ const redirectTone = {
 } as const;
 
 export default async function WebsitePage() {
-  const [redirects, suburbPages, listings, site] = await Promise.all([
+  const [redirects, suburbPages, listings, site, pages, theme] = await Promise.all([
     getRedirects(),
     getSuburbPages(),
     getListings(),
     getSiteSettings(),
+    getSitePages(),
+    getWorkingTheme(),
   ]);
+  // History only for paths that have ever been published; the rest have none.
+  const historyPaths = [
+    ...pages.filter((p) => p.publishedAt).map((p) => p.path),
+    ...(theme.publishedAt ? [THEME_PATH] : []),
+  ];
+  const histories = new Map<string, HistoryRow[]>(
+    await Promise.all(
+      historyPaths.map(async (path) => {
+        const rows = await getSiteHistory(path);
+        return [
+          path,
+          rows.map((h) => ({ ...h, publishedAt: h.publishedAt ? h.publishedAt.toISOString() : null })),
+        ] as const;
+      }),
+    ),
+  );
+  const edited = pages.filter((p) => p.hasDraft || p.publishedAt || !p.builtin);
+  const untouched = pages.filter((p) => !edited.includes(p));
   const mapped = redirects.filter((r) => r.status === "mapped").length;
   const live = listings.filter((l) => l.status === "live");
 
@@ -65,9 +102,94 @@ export default async function WebsitePage() {
       />
 
       {/*
-        Website management starts here. Adding and removing blocks and pages (with the
-        assistant) will live in this section; for now, the one switch the agency asked for.
+        The website editor. Changes are made by asking the assistant (bottom right); each
+        one lands in a draft. Nothing reaches the public site until Publish is pressed here
+        or the agent asks the assistant to publish.
       */}
+      <Section
+        title="Pages"
+        hint="ask the assistant to add pages, change words, add sections or restyle the site; every change is a draft until you publish"
+        actions={
+          <AskButton
+            prefill="Add a new page about "
+            className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9 hover:opacity-90"
+          >
+            Edit with the assistant
+          </AskButton>
+        }
+      >
+        <Card padded={false} className="p-0">
+          {edited.map((p) => (
+            <div key={p.path} className="p-3 border-b last:border-b-0 flex flex-wrap items-center gap-2">
+              <div className="min-w-0 mr-auto">
+                <div className="flex items-center gap-2">
+                  <span className="text-[13px] font-medium">{p.label}</span>
+                  {!p.builtin && <Badge tone="brand">new page</Badge>}
+                  {p.hasDraft && <Badge tone="queue">unpublished changes</Badge>}
+                  {p.deleted && <Badge tone="blocked">taken down</Badge>}
+                  {!p.hasDraft && p.publishedAt && <Badge tone="sent">live</Badge>}
+                  {!p.hasDraft && !p.publishedAt && !p.builtin && <Badge tone="neutral">not published</Badge>}
+                </div>
+                <div className="font-mono text-[11px] text-3 mt-0.5">
+                  {p.path}
+                  {p.publishedAt ? ` · published ${relative(p.publishedAt)}` : ""}
+                  {p.hasDraft && p.draftAt ? ` · draft edited ${relative(p.draftAt)}` : ""}
+                </div>
+                <div className="mt-2">
+                  <HistoryList rows={histories.get(p.path) ?? []} />
+                </div>
+              </div>
+              <PreviewLink path={p.path} />
+              {p.hasDraft && <DiscardButton path={p.path} />}
+              {p.hasDraft && <PublishButton path={p.path} />}
+            </div>
+          ))}
+          <details className="p-3">
+            <summary className="text-[12.5px] text-2 cursor-pointer">
+              {untouched.length} built-in pages with no edits
+            </summary>
+            <ul className="mt-2 grid sm:grid-cols-2 gap-1">
+              {untouched.map((p) => (
+                <li key={p.path} className="flex items-center gap-2 text-[12px]">
+                  <a href={p.path} target="_blank" rel="noopener" className="hover:underline underline-offset-2">
+                    {p.label}
+                  </a>
+                  <span className="font-mono text-3 text-[11px]">{p.path}</span>
+                  {p.locked && <Badge tone="neutral">legal, not editable</Badge>}
+                </li>
+              ))}
+            </ul>
+          </details>
+        </Card>
+      </Section>
+
+      <Section title="Theme" hint="colours, fonts and button shape across the whole site">
+        <Card>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="text-[12.5px] text-2 mr-auto">
+              {Object.keys(theme.theme).length === 0
+                ? "Original design."
+                : Object.entries(theme.theme)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(" · ")}
+              {theme.hasDraft ? " (unpublished)" : ""}
+            </div>
+            <AskButton
+              prefill="Change the website theme: "
+              className="inline-flex items-center gap-1.5 rounded-md surface-2 border text-[12px] font-medium px-2.5 min-h-8 hover:surface-3"
+            >
+              Change with the assistant
+            </AskButton>
+            <PreviewLink path={THEME_PATH} />
+            {theme.hasDraft && <DiscardButton path={THEME_PATH} />}
+            {theme.hasDraft && <PublishButton path={THEME_PATH} label="Publish theme" />}
+          </div>
+          <div className="mt-2">
+            <HistoryList rows={histories.get(THEME_PATH) ?? []} />
+          </div>
+        </Card>
+      </Section>
+
       <Section title="Homepage">
         <Card>
           <SiteToggle

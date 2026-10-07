@@ -5,6 +5,8 @@ import type { ServicePage } from "./site-pages";
 import { formForSlug } from "./forms/definitions";
 import { Icon } from "./icons";
 import { extrasFor, type ServiceCard, type ServiceExtras } from "./service-extras";
+import { Zone } from "./blocks";
+import { currentPageContent } from "@/server/public/content";
 
 /**
  * The shell every standalone page shares: a compact hero, then the body.
@@ -18,14 +20,15 @@ import { extrasFor, type ServiceCard, type ServiceExtras } from "./service-extra
  * appraisal form, which brings its own client island.
  */
 
-export function PageHero({
-  eyebrow,
-  title,
-  titleEm,
-  lede,
+export async function PageHero({
+  eyebrow: eyebrow0,
+  title: title0,
+  titleEm: titleEm0,
+  lede: lede0,
   image,
   imageAlt,
   facts,
+  noEdits,
 }: {
   eyebrow: string;
   title: string;
@@ -34,8 +37,23 @@ export function PageHero({
   image: string;
   imageAlt: string;
   facts?: string[];
+  /** For a hero that is itself an edited block: no overrides, no zone. */
+  noEdits?: boolean;
 }) {
+  /*
+    Text edits from the website editor replace the page's own words, and blocks added
+    "after the hero" render straight below it. Both come from the page being rendered,
+    found by path, so no page has to pass anything in.
+  */
+  const doc = noEdits ? null : await currentPageContent();
+  const h = doc?.hero ?? {};
+  const eyebrow = h.eyebrow ?? eyebrow0;
+  const title = h.title ?? title0;
+  const titleEm = h.titleEm ?? titleEm0;
+  const lede = h.lede ?? lede0;
+
   return (
+    <>
     <header className="phero">
       <div className="phero-media">
         <Image
@@ -68,6 +86,8 @@ export function PageHero({
         )}
       </div>
     </header>
+    {!noEdits && <Zone blocks={doc?.blocks} zone="after_hero" />}
+    </>
   );
 }
 
@@ -233,14 +253,21 @@ function Pitch({ extras }: { extras: ServiceExtras }) {
  * form. `children` is where the page's own form goes, so the pitch sits directly above it
  * rather than being separated by a section the reader has to scroll past.
  */
-export function ServicePageBody({
-  page,
+export async function ServicePageBody({
+  page: page0,
   children,
 }: {
   page: ServicePage;
   children?: React.ReactNode;
 }) {
-  const extras = extrasFor(page.slug);
+  const extras = extrasFor(page0.slug);
+  // Edited "what you get" points and prose sections, when the editor has changed them.
+  const edits = (await currentPageContent())?.service;
+  const page = {
+    ...page0,
+    points: edits?.points ?? page0.points,
+    sections: edits?.sections ?? page0.sections,
+  };
 
   return (
     <>

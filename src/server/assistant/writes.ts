@@ -11,6 +11,16 @@ import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
 import { didYouMean } from "@/server/suburbs/suggest";
+import {
+  createSitePage,
+  addSiteBlock,
+  updateSiteBlock,
+  removeSiteBlock,
+  setSiteText,
+  setSiteTheme,
+  deleteSitePage,
+  publishSitePath,
+} from "@/server/actions/site-content";
 import { matchContactsForProperty, matchPropertiesForContact, MATCHABLE_STATUSES } from "@/server/matching/engine";
 import { getContact, getProperties, getListing, getTasks } from "@/server/queries";
 import { TOOLS, type ToolName } from "./tools";
@@ -157,6 +167,55 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
         lines,
       };
     }
+    case "website_create_page": {
+      const blocks = (input.blocks as { type: string; title?: string; heading?: string }[]) ?? [];
+      return {
+        title: `Create the page ${input.path}`,
+        lines: [
+          ...(input.title ? [`Title: ${input.title}`] : []),
+          ...blocks.map((b, i) => `${i + 1}. ${blockLabel(b)}`),
+          "Saved as a draft. Preview it, then publish.",
+        ],
+      };
+    }
+    case "website_add_block": {
+      const b = input.block as { type: string; title?: string; heading?: string };
+      const where = input.zone === "after_hero" ? "after the hero" : input.position !== undefined ? `at position ${Number(input.position) + 1}` : "at the end";
+      return { title: `Add ${blockLabel(b)} to ${input.path}`, lines: [`Placed ${where}.`, "Saved as a draft."] };
+    }
+    case "website_update_block":
+      return {
+        title: `Change a block on ${input.path}`,
+        lines: [`New version: ${blockLabel(input.block as { type: string })}`, "Saved as a draft."],
+      };
+    case "website_remove_block":
+      return { title: `Remove a block from ${input.path}`, lines: ["Saved as a draft."] };
+    case "website_set_text": {
+      const lines: string[] = [];
+      const h = (input.hero ?? {}) as Record<string, string>;
+      for (const [k, v] of Object.entries(h)) lines.push(`${label(k)}: ${v}`);
+      const sv = (input.service ?? {}) as { points?: string[]; sections?: { heading: string }[] };
+      if (sv.points) lines.push(`What you get: ${sv.points.length} points`);
+      if (sv.sections) lines.push(`Sections: ${sv.sections.map((s) => s.heading).join(", ")}`);
+      if (input.title) lines.push(`Search title: ${input.title}`);
+      if (input.description) lines.push(`Search description: ${input.description}`);
+      if (Array.isArray(input.reset) && input.reset.length) lines.push(`Put back original: ${input.reset.join(", ")}`);
+      lines.push("Saved as a draft.");
+      return { title: `Change the words on ${input.path}`, lines };
+    }
+    case "website_set_theme":
+      return {
+        title: input.reset ? "Reset the website theme" : "Change the website theme",
+        lines: [...fieldLines(["reset"]), "Saved as a draft. Preview any page, then publish the theme."],
+      };
+    case "website_delete_page":
+      return { title: `Take down ${input.path}`, lines: ["Takes effect when you publish."] };
+    case "website_publish":
+      return {
+        title: input.path === "@theme" ? "Publish the theme to the live site" : `Publish ${input.path} to the live site`,
+        lines: ["Visitors will see the changes straight away."],
+      };
+
     default:
       return { title: name, lines: fieldLines([]) };
   }
@@ -173,6 +232,16 @@ function outcome<T>(r: ActionResult<T>, success: string, href?: string): WriteOu
 }
 
 const opt = <T,>(v: T | null | undefined) => (v === null ? undefined : v);
+
+/** The preview link for a page in the website editor. */
+const preview = (path: unknown) =>
+  `/api/website/preview?path=${encodeURIComponent(String(path ?? "/"))}`;
+
+/** "text block: Why Prospect", for the confirm card. */
+function blockLabel(b: { type: string; title?: string; heading?: string }) {
+  const name = b.title ?? b.heading;
+  return `${b.type} block${name ? `: ${name}` : ""}`;
+}
 
 /**
  * What an agent usually does next, after each kind of change. Fixed rather than
@@ -239,6 +308,15 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
           ? [`Draft an SMS to ${who}`]
           : [`Add a task to call ${who}`];
     }
+    case "website_create_page":
+    case "website_add_block":
+    case "website_update_block":
+    case "website_remove_block":
+    case "website_set_text":
+    case "website_delete_page":
+      return [`Publish ${input.path}`, `Add another section to ${input.path}`];
+    case "website_set_theme":
+      return ["Publish the theme", "Make the buttons rounded"];
     default:
       return [];
   }
@@ -469,6 +547,40 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     case "draft_message": {
       const r = await createMessageDraft(input);
       return outcome(r, "Draft is waiting in Approvals. Review and send it there.", "/approvals");
+    }
+
+    case "website_create_page": {
+      const r = await createSitePage(input);
+      return outcome(r, `Draft page created. Preview it, then publish.`, preview(input.path));
+    }
+    case "website_add_block": {
+      const r = await addSiteBlock(input);
+      return outcome(r, "Block added to the draft.", preview(input.path));
+    }
+    case "website_update_block": {
+      const r = await updateSiteBlock(input);
+      return outcome(r, "Block changed in the draft.", preview(input.path));
+    }
+    case "website_remove_block": {
+      const r = await removeSiteBlock(input);
+      return outcome(r, "Block removed from the draft.", preview(input.path));
+    }
+    case "website_set_text": {
+      const r = await setSiteText(input);
+      return outcome(r, "Words changed in the draft.", preview(input.path));
+    }
+    case "website_set_theme": {
+      const r = await setSiteTheme(input);
+      return outcome(r, "Theme changed in the draft. Preview any page.", preview("/"));
+    }
+    case "website_delete_page": {
+      const r = await deleteSitePage(input);
+      return outcome(r, "Marked to be taken down. Publish to remove it from the site.", "/website");
+    }
+    case "website_publish": {
+      const r = await publishSitePath(input);
+      const live = input.path === "@theme" ? "/" : input.path;
+      return outcome(r, "Published. It is live now.", live);
     }
 
     default:

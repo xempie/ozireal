@@ -3,6 +3,9 @@ import { Newsreader, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./public.css";
 import { SiteHeader, SiteFooter, AGENCY } from "@/components/public/site-chrome";
 import { Breadcrumbs } from "@/components/public/breadcrumbs";
+import { Zone } from "@/components/public/blocks";
+import { currentPath, currentPageContent, isPreview, themeContent } from "@/server/public/content";
+import { isBuiltinPath, themeCss } from "@/lib/site-content";
 
 /**
  * The public website.
@@ -96,11 +99,21 @@ function agencyJsonLd() {
   };
 }
 
-export default function PublicLayout({
+export default async function PublicLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Website editor: theme colours and fonts, blocks added at the end of a built-in
+  // page, and a bar that makes a preview impossible to mistake for the live site.
+  const [path, doc, theme, preview] = await Promise.all([
+    currentPath(),
+    currentPageContent(),
+    themeContent(),
+    isPreview(),
+  ]);
+  const css = themeCss(theme);
+
   return (
     /**
      * `.site` scopes the whole theme. The root layout stamps `data-theme` on <html>
@@ -114,9 +127,19 @@ export default function PublicLayout({
       <a href="#main" className="skip-link">
         Skip to content
       </a>
+      {css && <style dangerouslySetInnerHTML={{ __html: css }} />}
+      {preview && (
+        <div className="preview-bar" role="status">
+          Preview: you are seeing unpublished changes.{" "}
+          <a href={`/api/website/preview/exit?path=${encodeURIComponent(path)}`}>Exit preview</a>
+        </div>
+      )}
       <SiteHeader />
       <Breadcrumbs siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.ozirealty.com.au"} />
-      <main id="main">{children}</main>
+      <main id="main">
+        {children}
+        {isBuiltinPath(path) && <Zone blocks={doc?.blocks} zone="end" />}
+      </main>
       <script
         type="application/ld+json"
         // Our own constants, not user input; JSON.stringify output is safe here.

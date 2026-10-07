@@ -31,7 +31,7 @@ import type { ActionResult } from "./action";
  * could have done themselves.
  */
 
-const PROMPT = "assistant.v3";
+const PROMPT = "assistant.v4";
 const MAX_ROUNDS = 6;
 
 const block = z.union([
@@ -137,7 +137,7 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
         ],
         messages: history as { role: "user" | "assistant"; content: string | ContentBlock[] }[],
         tools: TOOL_DEFINITIONS,
-        maxTokens: 2500,
+        maxTokens: 6000,
         tenantId: s.tenantId,
         promptVersion: prompt.version,
       });

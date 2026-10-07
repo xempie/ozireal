@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { suburbsWithListings } from "@/server/public/listings";
 import { POSTS } from "@/components/public/posts";
+import { publishedCustomPaths } from "@/server/public/content";
 
 /**
  * sitemap.xml for the public site: every static page, every blog post (kept at the
@@ -48,8 +49,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   } catch {
     // A database hiccup should cost the suburb entries, not the whole sitemap.
   }
+  const custom = await publishedCustomPaths();
   return [
     ...PAGES.map((p) => ({ url: base + p })),
+    ...custom.map((p) => ({ url: base + p })),
     ...POSTS.map((p) => ({ url: `${base}/post/${p.slug}` })),
     ...suburbs.map((s) => ({ url: `${base}/suburbs/${s.slug}` })),
   ];
