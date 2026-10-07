@@ -97,9 +97,13 @@ pnpm install --frozen-lockfile --silent
 # every subprocess. It is shredded immediately afterwards.
 sudo cat /etc/ozirealty/env > /tmp/build/.env.production
 chmod 600 /tmp/build/.env.production
+# Shredded even when the build fails, so a failed deploy never leaves secrets in /tmp.
+trap 'shred -u /tmp/build/.env.production 2>/dev/null || rm -f /tmp/build/.env.production' EXIT
 
-# STANDALONE=1 is what next.config.ts gates the standalone output behind.
-STANDALONE=1 pnpm build
+# STANDALONE=1 is what next.config.ts gates the standalone output behind. The type
+# check alone peaks around 1.2 GB, above Node's default heap on this 2 GB box; the
+# swap file covers the difference.
+NODE_OPTIONS=--max-old-space-size=2560 STANDALONE=1 pnpm build
 shred -u /tmp/build/.env.production 2>/dev/null || rm -f /tmp/build/.env.production
 REMOTE
 
