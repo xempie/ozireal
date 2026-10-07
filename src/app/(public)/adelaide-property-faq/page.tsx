@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Frequently asked questions.
  *
@@ -106,46 +107,50 @@ export default function Page() {
         facts={["South Australia", "RLA 350 628", "General information only"]}
       />
 
-      <section className="sec">
-        <div className="wrap">
-          <div className="faq-list">
-            {FAQS.map((f) => (
-              <details className="faq" key={f.q}>
-                <summary className="faq-q">
-                  <span>{f.q}</span>
-                  <span className="svc-plus" aria-hidden="true" />
-                </summary>
-                <div className="faq-a">
-                  {f.a.map((p, i) => (
-                    <p key={i}>{p}</p>
-                  ))}
-                </div>
-              </details>
-            ))}
+      <Fixed id="questions">
+        <section className="sec">
+          <div className="wrap">
+            <div className="faq-list">
+              {FAQS.map((f) => (
+                <details className="faq" key={f.q}>
+                  <summary className="faq-q">
+                    <span>{f.q}</span>
+                    <span className="svc-plus" aria-hidden="true" />
+                  </summary>
+                  <div className="faq-a">
+                    {f.a.map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+
+            {/*
+              Not boilerplate. Several answers describe commercial offers with their own
+              terms, and CLAUDE.md rule 3 holds the compliance advisor to citing or staying
+              silent rather than rendering a definitive ruling. A public FAQ making claims
+              about fees and notice periods is the same class of content.
+            */}
+            <p className="faq-note">
+              General information about how we work, current at the time of writing and not
+              legal, tax or financial advice. Offers and terms described here are subject to
+              change and to their own conditions. Property law in South Australia changes,
+              and your circumstances change what applies, so confirm anything that matters
+              with a licensed conveyancer or a solicitor before you rely on it.
+            </p>
           </div>
+        </section>
+      </Fixed>
 
-          {/*
-            Not boilerplate. Several answers describe commercial offers with their own
-            terms, and CLAUDE.md rule 3 holds the compliance advisor to citing or staying
-            silent rather than rendering a definitive ruling. A public FAQ making claims
-            about fees and notice periods is the same class of content.
-          */}
-          <p className="faq-note">
-            General information about how we work, current at the time of writing and not
-            legal, tax or financial advice. Offers and terms described here are subject to
-            change and to their own conditions. Property law in South Australia changes,
-            and your circumstances change what applies, so confirm anything that matters
-            with a licensed conveyancer or a solicitor before you rely on it.
-          </p>
-        </div>
-      </section>
-
-      <CtaBand
-        heading="Cannot find what you are"
-        headingEm="looking for?"
-        label="Book a free consultation"
-        href="/book-online"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Cannot find what you are"
+          headingEm="looking for?"
+          label="Book a free consultation"
+          href="/book-online"
+        />
+      </Fixed>
     </>
   );
 }

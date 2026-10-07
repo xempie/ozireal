@@ -1,0 +1,264 @@
+/**
+ * The built-in sections of each public page, wrapped in <Fixed id> so the website
+ * editor can hide them, show them again, and place blocks before or after them.
+ *
+ * Generated from the page files on 2026-10-07; keep in step when a page gains or
+ * loses a section (an id here with no <Fixed> on the page is simply never found).
+ */
+export type FixedSection = { id: string; label: string };
+
+/** Every page built on ServicePageBody shares one layout, so one list. */
+export const SERVICE_SECTIONS: FixedSection[] = [
+  {
+    "id": "form",
+    "label": "Enquiry form"
+  },
+  {
+    "id": "benefits",
+    "label": "Three benefit cards"
+  },
+  {
+    "id": "what-you-get",
+    "label": "What you get (points and sections)"
+  },
+  {
+    "id": "gallery",
+    "label": "Photo gallery"
+  },
+  {
+    "id": "pitch",
+    "label": "Pitch (what waiting costs)"
+  },
+  {
+    "id": "closing-cta",
+    "label": "Closing call to action"
+  }
+];
+
+const PAGES: Record<string, FixedSection[] | "service"> = {
+  "/about-adelaide-land-agent": [
+    {
+      "id": "the-person-you-will-actually-deal-with",
+      "label": "The person you will actually deal with"
+    },
+    {
+      "id": "mission",
+      "label": "Mission"
+    },
+    {
+      "id": "what-the-agency-runs-on",
+      "label": "What the agency runs on"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Your property journey starts here."
+    }
+  ],
+  "/adelaide-property-faq": [
+    {
+      "id": "questions",
+      "label": "The questions and answers"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Cannot find what you are looking for?"
+    }
+  ],
+  "/book-online": [
+    {
+      "id": "form",
+      "label": "Enquiry form (book-online)"
+    },
+    {
+      "id": "principal",
+      "label": "Principal card (Esi Dor)"
+    },
+    {
+      "id": "what-we-cover",
+      "label": "What the consultation covers"
+    }
+  ],
+  "/buyer-agent-adelaide": "service",
+  "/contact": [
+    {
+      "id": "form",
+      "label": "Enquiry form (contact)"
+    },
+    {
+      "id": "principal",
+      "label": "Principal card (Esi Dor)"
+    },
+    {
+      "id": "what-we-will-cover",
+      "label": "What we will cover"
+    }
+  ],
+  "/for-sale": [
+    {
+      "id": "listings",
+      "label": "Listings search and results"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Not seeing it? We usually know what is coming."
+    }
+  ],
+  "/free-property-appraisal-sa": [
+    {
+      "id": "form",
+      "label": "Enquiry form (free-property-appraisal-sa)"
+    },
+    {
+      "id": "a-report-not-a-number",
+      "label": "A report, not a number"
+    }
+  ],
+  "/free-suburb-insight-report": [
+    {
+      "id": "form",
+      "label": "Enquiry form (free-suburb-insight-report)"
+    },
+    {
+      "id": "whats-in-it",
+      "label": "What is in the report"
+    },
+    {
+      "id": "also-available",
+      "label": "Also available"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Unlock my suburb insights"
+    }
+  ],
+  "/land-opportunities-sa-adelaide": "service",
+  "/manage-property-adelaide": [
+    {
+      "id": "form",
+      "label": "Enquiry form (manage-property-adelaide)"
+    },
+    {
+      "id": "designed-to-maximise-your-investment",
+      "label": "Designed to maximise your investment"
+    },
+    {
+      "id": "three-ways-to-manage-it",
+      "label": "Three ways to manage it"
+    },
+    {
+      "id": "smart-rent-stable-income-zero-guesswork",
+      "label": "Smart rent, stable income, zero guesswork"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Get your rent report"
+    }
+  ],
+  "/overseas-investment": "service",
+  "/property-investment": "service",
+  "/property-rental-report": "service",
+  "/property-services": [
+    {
+      "id": "form",
+      "label": "Enquiry form (property-services)"
+    },
+    {
+      "id": "eight-services-one-office",
+      "label": "Eight services, one office"
+    },
+    {
+      "id": "start-with-the-numbers",
+      "label": "Start with the numbers"
+    },
+    {
+      "id": "one-team-across-the-whole-journey",
+      "label": "One team across the whole journey"
+    }
+  ],
+  "/property-strategy-services": [
+    {
+      "id": "intro",
+      "label": "Introduction paragraph"
+    },
+    {
+      "id": "four-ways-to-start",
+      "label": "Four ways to start"
+    },
+    {
+      "id": "form",
+      "label": "Enquiry form (property-strategy-services)"
+    }
+  ],
+  "/realestate-gift-adelaide": "service",
+  "/rent-out-my-property-adelaide": "service",
+  "/rent-property-house-adelaide": "service",
+  "/sell-my-business-australia": "service",
+  "/sell-property-house-adelaide": "service",
+  "/sold": [
+    {
+      "id": "results",
+      "label": "Sold and leased results"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Want to know what yours is worth?"
+    }
+  ],
+  "/suburbs": [
+    {
+      "id": "suburb-list",
+      "label": "List of suburbs"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action: Want a written report on your suburb?"
+    }
+  ],
+  "/": [
+    {
+      "id": "form",
+      "label": "Free book form (10 truths about finding the right home)"
+    },
+    {
+      "id": "promises",
+      "label": "Promises strip (2.99%, 100 days, $399, no middle men)"
+    },
+    {
+      "id": "listings",
+      "label": "Listings: Currently advertised"
+    },
+    {
+      "id": "reports",
+      "label": "Reports: Free premium appraisal report"
+    },
+    {
+      "id": "services",
+      "label": "Services: Eight services, one office"
+    },
+    {
+      "id": "why-us",
+      "label": "Why us: Exclusive, available, flexible"
+    },
+    {
+      "id": "partners",
+      "label": "Partner logos (We work with the best)"
+    },
+    {
+      "id": "quote",
+      "label": "Testimonial quote"
+    },
+    {
+      "id": "journal",
+      "label": "Journal: Discover Australia's property market"
+    },
+    {
+      "id": "consultation",
+      "label": "Consultation: speak directly with the principal"
+    }
+  ]
+};
+
+export function fixedSectionsFor(path: string): FixedSection[] {
+  const v = PAGES[path];
+  return v === "service" ? SERVICE_SECTIONS : v ?? [];
+}

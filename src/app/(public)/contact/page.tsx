@@ -5,6 +5,7 @@ import { PageHero } from "@/components/public/page-shell";
 import { PrincipalCard } from "@/components/public/principal";
 import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Contact.
  *
@@ -38,94 +39,100 @@ export default function Page() {
         facts={[AGENCY.licence, "No pressure", "One-on-one"]}
       />
 
-      <FormSection slug="contact" />
+      <Fixed id="form">
+        <FormSection slug="contact" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap">
-          <PrincipalCard />
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <div className="points">
-            <h2 className="display">What we will cover</h2>
-            <ul className="report">
-              {[
-                "Your property's current market value",
-                "Rental income potential",
-                "Selling strategies to maximise price",
-                "Property management options",
-              ].map((p, i) => (
-                <li key={p}>
-                  <em>{String(i + 1).padStart(2, "0")}</em> {p}
-                </li>
-              ))}
-            </ul>
-            <p className="prose" style={{ marginTop: 24 }}>
-              <span style={{ color: "var(--muted)" }}>
-                Whether you are planning to sell, invest, or need professional property
-                management, this one-on-one session gives you practical insights based on
-                the South Australian market. No pressure. Just clear, professional advice.
-              </span>
-            </p>
-            <Link className="btn" href="/book-online" style={{ marginTop: 8 }}>
-              Book your free consultation
-            </Link>
+      <Fixed id="principal">
+        <section className="sec">
+          <div className="wrap">
+            <PrincipalCard />
           </div>
+        </section>
+      </Fixed>
 
-          <div className="contact-cols">
-            <div className="contact-block">
-              <h2>The office</h2>
-              <p>{AGENCY.office}</p>
-              <p>
-                <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
-              </p>
-              <p>
-                Licence Number: {AGENCY.licence}
-                <br />
-                ABN: {AGENCY.abn}
-              </p>
-            </div>
-
-            {/*
-              Five addresses, one per department, exactly as the live site lists them.
-              Routing an enquiry to the right desk at the point of contact is cheaper than
-              forwarding it afterwards.
-            */}
-            <div className="contact-block">
-              <h2>Email the right desk</h2>
-              <ul className="plain-list">
-                {EMAILS.map((e) => (
-                  <li key={e.address}>
-                    {e.label}:{" "}
-                    <a href={`mailto:${e.address}`}>{e.address}</a>
+      <Fixed id="what-we-will-cover">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <div className="points">
+              <h2 className="display">What we will cover</h2>
+              <ul className="report">
+                {[
+                  "Your property's current market value",
+                  "Rental income potential",
+                  "Selling strategies to maximise price",
+                  "Property management options",
+                ].map((p, i) => (
+                  <li key={p}>
+                    <em>{String(i + 1).padStart(2, "0")}</em> {p}
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="contact-block">
-              <h2>Free reports</h2>
-              <p>
-                {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
+              <p className="prose" style={{ marginTop: 24 }}>
+                <span style={{ color: "var(--muted)" }}>
+                  Whether you are planning to sell, invest, or need professional property
+                  management, this one-on-one session gives you practical insights based on
+                  the South Australian market. No pressure. Just clear, professional advice.
+                </span>
               </p>
-              <Link className="txtlink" href="/free-property-appraisal-sa">
-                Request the report <span aria-hidden="true">&rarr;</span>
+              <Link className="btn" href="/book-online" style={{ marginTop: 8 }}>
+                Book your free consultation
               </Link>
             </div>
 
-            <div className="contact-block">
-              <h2>Looking to buy, sell or rent</h2>
-              <p>
-                Located at {AGENCY.office}, we provide personalised service tailored to
-                your needs, whether you are a first-time buyer, an investor exploring
-                overseas opportunities, or after expert advice on the local market.
-              </p>
+            <div className="contact-cols">
+              <div className="contact-block">
+                <h2>The office</h2>
+                <p>{AGENCY.office}</p>
+                <p>
+                  <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
+                </p>
+                <p>
+                  Licence Number: {AGENCY.licence}
+                  <br />
+                  ABN: {AGENCY.abn}
+                </p>
+              </div>
+
+              {/*
+                Five addresses, one per department, exactly as the live site lists them.
+                Routing an enquiry to the right desk at the point of contact is cheaper than
+                forwarding it afterwards.
+              */}
+              <div className="contact-block">
+                <h2>Email the right desk</h2>
+                <ul className="plain-list">
+                  {EMAILS.map((e) => (
+                    <li key={e.address}>
+                      {e.label}:{" "}
+                      <a href={`mailto:${e.address}`}>{e.address}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="contact-block">
+                <h2>Free reports</h2>
+                <p>
+                  {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
+                </p>
+                <Link className="txtlink" href="/free-property-appraisal-sa">
+                  Request the report <span aria-hidden="true">&rarr;</span>
+                </Link>
+              </div>
+
+              <div className="contact-block">
+                <h2>Looking to buy, sell or rent</h2>
+                <p>
+                  Located at {AGENCY.office}, we provide personalised service tailored to
+                  your needs, whether you are a first-time buyer, an investor exploring
+                  overseas opportunities, or after expert advice on the local market.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
     </>
   );
 }

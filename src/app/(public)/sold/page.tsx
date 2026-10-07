@@ -4,6 +4,7 @@ import { ListingCard } from "@/components/public/listing-card";
 import { toCard } from "@/components/public/listing-cards";
 import { soldAndLeased } from "@/server/public/listings";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * The sold and leased archive.
  *
@@ -39,29 +40,33 @@ export default async function Page() {
         facts={["Results kept", "Adelaide and South Australia"]}
       />
 
-      <section className="sec">
-        <div className="wrap">
-          {done.length === 0 ? (
-            <p className="lede">
-              Settled sales and leases will appear here. Ask the office about recent results in
-              your street.
-            </p>
-          ) : (
-            <div className="grid">
-              {done.map((l) => (
-                <ListingCard key={l.id} l={l} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <Fixed id="results">
+        <section className="sec">
+          <div className="wrap">
+            {done.length === 0 ? (
+              <p className="lede">
+                Settled sales and leases will appear here. Ask the office about recent results in
+                your street.
+              </p>
+            ) : (
+              <div className="grid">
+                {done.map((l) => (
+                  <ListingCard key={l.id} l={l} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </Fixed>
 
-      <CtaBand
-        heading="Want to know what yours is"
-        headingEm="worth?"
-        label="Book a free appraisal"
-        href="/free-property-appraisal-sa"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Want to know what yours is"
+          headingEm="worth?"
+          label="Book a free appraisal"
+          href="/free-property-appraisal-sa"
+        />
+      </Fixed>
     </>
   );
 }

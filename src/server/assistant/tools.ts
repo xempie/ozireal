@@ -14,6 +14,7 @@ import {
 } from "@/server/queries";
 import { getSitePages, getWorkingPage, getWorkingTheme } from "@/server/queries/website";
 import { servicePageBySlug } from "@/components/public/site-pages";
+import { fixedSectionsFor } from "@/lib/fixed-sections";
 import { FORMS } from "@/components/public/forms/definitions";
 import {
   BlockInputSchema,
@@ -322,11 +323,11 @@ export const TOOLS = {
   website_add_block: {
     kind: "write",
     description:
-      "Add a block to a page. On built-in pages choose zone after_hero or end (no hero blocks there). On new pages, position is the 0-based index (omit to add at the end). Saved as a draft.",
+      "Add a block to a page. On built-in pages choose zone: after_hero, end, or before:<section id> / after:<section id> to place it next to a built-in section (ids from website_get_page); no hero blocks there. On new pages, position is the 0-based index (omit to add at the end). Saved as a draft.",
     schema: z.object({
       path: z.string().max(80),
       block: BlockInputSchema,
-      zone: z.enum(["after_hero", "end"]).optional(),
+      zone: z.string().max(60).optional(),
       position: z.number().int().min(0).max(40).optional(),
     }),
   },
@@ -335,6 +336,12 @@ export const TOOLS = {
     description:
       "Replace one added block with a new version (give the whole block, same type or a different one). Get block ids from website_get_page. Saved as a draft.",
     schema: z.object({ path: z.string().max(80), blockId: z.string().max(40), block: BlockInputSchema }),
+  },
+  website_show_hide_section: {
+    kind: "write",
+    description:
+      "Hide (hidden:true) or show again (hidden:false) one BUILT-IN section of a built-in page, such as the home page's free book form. Section ids come from website_get_page. To change the words of a built-in section, hide it and add a block with the new words in its place (zone after:<section id>). Saved as a draft.",
+    schema: z.object({ path: z.string().max(80), sectionId: z.string().max(40), hidden: z.boolean() }),
   },
   website_remove_block: {
     kind: "write",
@@ -639,6 +646,9 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
         state,
         edits: doc,
         servicePage: svc ? { points: svc.points, sections: svc.sections } : undefined,
+        builtInSections: isBuiltinPath(path)
+          ? fixedSectionsFor(path).map((s) => ({ ...s, hidden: doc?.hidden?.includes(s.id) ?? false }))
+          : undefined,
         liveText,
       };
     }

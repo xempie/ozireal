@@ -11,11 +11,13 @@ import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
 import { didYouMean } from "@/server/suburbs/suggest";
+import { fixedSectionsFor } from "@/lib/fixed-sections";
 import {
   createSitePage,
   addSiteBlock,
   updateSiteBlock,
   removeSiteBlock,
+  setSiteSectionHidden,
   setSiteText,
   setSiteTheme,
   deleteSitePage,
@@ -190,6 +192,13 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
       };
     case "website_remove_block":
       return { title: `Remove a block from ${input.path}`, lines: ["Saved as a draft."] };
+    case "website_show_hide_section": {
+      const sec = fixedSectionsFor(String(input.path)).find((x) => x.id === input.sectionId);
+      return {
+        title: `${input.hidden ? "Hide" : "Show"} "${sec?.label ?? input.sectionId}" on ${input.path}`,
+        lines: ["Saved as a draft. Preview, then publish."],
+      };
+    }
     case "website_set_text": {
       const lines: string[] = [];
       const h = (input.hero ?? {}) as Record<string, string>;
@@ -312,6 +321,7 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
     case "website_add_block":
     case "website_update_block":
     case "website_remove_block":
+    case "website_show_hide_section":
     case "website_set_text":
     case "website_delete_page":
       return [`Publish ${input.path}`, `Add another section to ${input.path}`];
@@ -564,6 +574,10 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     case "website_remove_block": {
       const r = await removeSiteBlock(input);
       return outcome(r, "Block removed from the draft.", preview(input.path));
+    }
+    case "website_show_hide_section": {
+      const r = await setSiteSectionHidden(input);
+      return outcome(r, input.hidden ? "Section hidden in the draft." : "Section shown again in the draft.", preview(input.path));
     }
     case "website_set_text": {
       const r = await setSiteText(input);

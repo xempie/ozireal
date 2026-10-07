@@ -4,6 +4,7 @@ import { ListingsGrid } from "@/components/public/listings-grid";
 import { toCard } from "@/components/public/listing-cards";
 import { onMarket } from "@/server/public/listings";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Homes for sale.
  *
@@ -39,26 +40,30 @@ export default async function Page() {
         facts={["Adelaide and South Australia", "Auction or private treaty"]}
       />
 
-      <section className="sec" id="listings">
-        <div className="wrap">
-          <ListingsGrid
-            items={forSale}
-            empty={
-              <p className="lede">
-                Nothing is advertised for sale right now. We usually know what is coming, so
-                talk to the office.
-              </p>
-            }
-          />
-        </div>
-      </section>
+      <Fixed id="listings">
+        <section className="sec" id="listings">
+          <div className="wrap">
+            <ListingsGrid
+              items={forSale}
+              empty={
+                <p className="lede">
+                  Nothing is advertised for sale right now. We usually know what is coming, so
+                  talk to the office.
+                </p>
+              }
+            />
+          </div>
+        </section>
+      </Fixed>
 
-      <CtaBand
-        heading="Not seeing it? We usually know what is"
-        headingEm="coming."
-        label="Talk to the office"
-        href="/contact"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Not seeing it? We usually know what is"
+          headingEm="coming."
+          label="Talk to the office"
+          href="/contact"
+        />
+      </Fixed>
     </>
   );
 }

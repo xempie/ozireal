@@ -5,6 +5,7 @@ import { PageHero } from "@/components/public/page-shell";
 import { ServiceGrid } from "@/components/public/service-grid";
 import { REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Our services.
  *
@@ -37,96 +38,104 @@ export default function Page() {
         facts={["Local and global", "Transparent fees", "RLA 350 628"]}
       />
 
-      <FormSection slug="property-services" />
+      <Fixed id="form">
+        <FormSection slug="property-services" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">What we do</p>
-              <h2 className="display">
-                Eight services, <em>one office</em>
-              </h2>
-            </div>
-            <p className="lede" style={{ margin: 0 }}>
-              Pick the one that fits and tell us about it. Each goes straight to the
-              person who handles it.
-            </p>
-          </div>
-
-          <ServiceGrid />
-        </div>
-      </section>
-
-      <section className="sec dark">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">Free reports</p>
-              <h2 className="display">
-                Start with the <em>numbers</em>
-              </h2>
-            </div>
-            <p className="lede" style={{ margin: 0 }}>
-              {REPORTS.appraisal.note}
-            </p>
-          </div>
-
-          <div className="report-grid">
-            {[REPORTS.appraisal, REPORTS.suburb, REPORTS.rental].map((r) => (
-              <div className="report-card" key={r.title}>
-                <h3>{r.title}</h3>
-                <ul>
-                  {r.items.slice(0, 6).map((i) => (
-                    <li key={i}>{i}</li>
-                  ))}
-                </ul>
+      <Fixed id="eight-services-one-office">
+        <section className="sec">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">What we do</p>
+                <h2 className="display">
+                  Eight services, <em>one office</em>
+                </h2>
               </div>
-            ))}
-          </div>
-
-          <div className="report-cta">
-            <Link className="btn" href="/free-property-appraisal-sa">
-              Get my free appraisal
-            </Link>
-            <Link className="txtlink" href="/free-suburb-insight-report">
-              Free suburb insight report <span aria-hidden="true">&rarr;</span>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <div className="prose-stack">
-            <div className="prose">
-              <h2>One team across the whole journey</h2>
-              <p>
-                Our dedicated team combines local market expertise with global insights to
-                guide you through every stage of your property journey. With a commitment
-                to transparency, results, and long-term value, we are here to help you
-                make smarter, more confident real estate decisions.
+              <p className="lede" style={{ margin: 0 }}>
+                Pick the one that fits and tell us about it. Each goes straight to the
+                person who handles it.
               </p>
             </div>
+
+            <ServiceGrid />
           </div>
-          <div className="prose-stack">
-            <div className="prose">
-              <h2>Property and finance together</h2>
-              <p>
-                OziRealty blends real estate expertise with financial advising and finance
-                broking, providing seamless property and investment solutions. That
-                combination is unusual in a local agency, and it is why a strategy
-                conversation here can cover the finance as well as the property.
-              </p>
-              <p>
-                <Link className="txtlink" href="/property-strategy-services">
-                  Property strategy services <span aria-hidden="true">&rarr;</span>
-                </Link>
+        </section>
+      </Fixed>
+
+      <Fixed id="start-with-the-numbers">
+        <section className="sec dark">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Free reports</p>
+                <h2 className="display">
+                  Start with the <em>numbers</em>
+                </h2>
+              </div>
+              <p className="lede" style={{ margin: 0 }}>
+                {REPORTS.appraisal.note}
               </p>
             </div>
+
+            <div className="report-grid">
+              {[REPORTS.appraisal, REPORTS.suburb, REPORTS.rental].map((r) => (
+                <div className="report-card" key={r.title}>
+                  <h3>{r.title}</h3>
+                  <ul>
+                    {r.items.slice(0, 6).map((i) => (
+                      <li key={i}>{i}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            <div className="report-cta">
+              <Link className="btn" href="/free-property-appraisal-sa">
+                Get my free appraisal
+              </Link>
+              <Link className="txtlink" href="/free-suburb-insight-report">
+                Free suburb insight report <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
+
+      <Fixed id="one-team-across-the-whole-journey">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <div className="prose-stack">
+              <div className="prose">
+                <h2>One team across the whole journey</h2>
+                <p>
+                  Our dedicated team combines local market expertise with global insights to
+                  guide you through every stage of your property journey. With a commitment
+                  to transparency, results, and long-term value, we are here to help you
+                  make smarter, more confident real estate decisions.
+                </p>
+              </div>
+            </div>
+            <div className="prose-stack">
+              <div className="prose">
+                <h2>Property and finance together</h2>
+                <p>
+                  OziRealty blends real estate expertise with financial advising and finance
+                  broking, providing seamless property and investment solutions. That
+                  combination is unusual in a local agency, and it is why a strategy
+                  conversation here can cover the finance as well as the property.
+                </p>
+                <p>
+                  <Link className="txtlink" href="/property-strategy-services">
+                    Property strategy services <span aria-hidden="true">&rarr;</span>
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </Fixed>
     </>
   );
 }

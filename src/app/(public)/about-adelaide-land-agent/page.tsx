@@ -3,6 +3,7 @@ import { PageHero, Prose, CtaBand } from "@/components/public/page-shell";
 import { PrincipalCard } from "@/components/public/principal";
 import { ABOUT, AGENCY } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * About.
  *
@@ -34,68 +35,76 @@ export default function Page() {
         facts={[AGENCY.licence, AGENCY.office, `ABN ${AGENCY.abn}`]}
       />
 
-      <section className="sec">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">Meet the board</p>
-              <h2 className="display">
-                The person you will <em>actually deal with</em>
-              </h2>
-            </div>
-          </div>
-
-          <PrincipalCard cta={{ label: "Book a free consultation", href: "/book-online" }}>
-            <p>
-              Esi leads OziRealty and holds the agency&rsquo;s licence. When the site says
-              there is no middle man between you and the principal, this is who it means.
-            </p>
-          </PrincipalCard>
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <div className="prose-stack">
-            <Prose heading="Mission" body={[ABOUT.mission]} />
-            <Prose heading="Vision" body={[ABOUT.vision]} />
-          </div>
-          <div className="prose-stack">
-            <Prose heading="How we work" body={[...ABOUT.body]} />
-          </div>
-        </div>
-      </section>
-
-      <section className="sec">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">Values</p>
-              <h2 className="display">
-                What the agency <em>runs on</em>
-              </h2>
-            </div>
-          </div>
-
-          <div className="why-grid">
-            {ABOUT.values.map((v) => (
-              <div className="why-card" key={v.name}>
-                <h3>{v.name}</h3>
-                <ul>
-                  <li>{v.body}</li>
-                </ul>
+      <Fixed id="the-person-you-will-actually-deal-with">
+        <section className="sec">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Meet the board</p>
+                <h2 className="display">
+                  The person you will <em>actually deal with</em>
+                </h2>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
 
-      <CtaBand
-        heading="Your property journey"
-        headingEm="starts here."
-        label="Talk to Esi"
-        href="/contact"
-      />
+            <PrincipalCard cta={{ label: "Book a free consultation", href: "/book-online" }}>
+              <p>
+                Esi leads OziRealty and holds the agency&rsquo;s licence. When the site says
+                there is no middle man between you and the principal, this is who it means.
+              </p>
+            </PrincipalCard>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="mission">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <div className="prose-stack">
+              <Prose heading="Mission" body={[ABOUT.mission]} />
+              <Prose heading="Vision" body={[ABOUT.vision]} />
+            </div>
+            <div className="prose-stack">
+              <Prose heading="How we work" body={[...ABOUT.body]} />
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="what-the-agency-runs-on">
+        <section className="sec">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Values</p>
+                <h2 className="display">
+                  What the agency <em>runs on</em>
+                </h2>
+              </div>
+            </div>
+
+            <div className="why-grid">
+              {ABOUT.values.map((v) => (
+                <div className="why-card" key={v.name}>
+                  <h3>{v.name}</h3>
+                  <ul>
+                    <li>{v.body}</li>
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Your property journey"
+          headingEm="starts here."
+          label="Talk to Esi"
+          href="/contact"
+        />
+      </Fixed>
     </>
   );
 }

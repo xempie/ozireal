@@ -6,6 +6,7 @@ import { and, eq } from "drizzle-orm";
 import { defineAction, ActionError, type ActionContext } from "./action";
 import { siteContent } from "@/db/schema";
 import { servicePageBySlug } from "@/components/public/site-pages";
+import { fixedSectionsFor } from "@/lib/fixed-sections";
 import {
   BlockSchema,
   HeroTextSchema,
@@ -14,6 +15,7 @@ import {
   ServiceTextSchema,
   THEME_PATH,
   ThemeDocSchema,
+  ZONE_RE,
   isBuiltinPath,
   newBlockId,
   newPagePathProblem,
@@ -108,6 +110,18 @@ function finish(doc: PageDoc): PageDoc {
 
 const pathField = z.string().trim().min(1).max(80);
 
+/** A zone naming a built-in section must name one this page really has. */
+function checkZone(path: string, zone: string | undefined) {
+  const m = zone?.match(/^(before|after):(.+)$/);
+  if (!m) return;
+  const known = fixedSectionsFor(path);
+  if (!known.some((s) => s.id === m[2])) {
+    throw new ActionError(
+      `${path} has no built-in section "${m[2]}". Its sections are: ${known.map((s) => s.id).join(", ") || "none"}.`,
+    );
+  }
+}
+
 /* ---------------------------------------------------------------- pages */
 
 export const createSitePage = defineAction({
@@ -153,7 +167,7 @@ export const addSiteBlock = defineAction({
   input: z.object({
     path: pathField,
     block: z.unknown(),
-    zone: z.enum(["after_hero", "end"]).optional(),
+    zone: z.string().regex(ZONE_RE).optional(),
     /** 0-based position among the page's blocks; omitted adds at the end. */
     position: z.number().int().min(0).max(40).optional(),
   }),
@@ -165,7 +179,10 @@ export const addSiteBlock = defineAction({
       throw new ActionError(`There is no page at ${input.path}. Create it first.`);
     }
     const block = parseBlock(input.block, builtin);
-    if (builtin) block.zone = input.zone ?? block.zone ?? "end";
+    if (builtin) {
+      block.zone = input.zone ?? block.zone ?? "end";
+      checkZone(input.path, block.zone);
+    }
     else delete block.zone;
     const blocks = [...doc.blocks];
     blocks.splice(input.position ?? blocks.length, 0, block);
@@ -205,6 +222,37 @@ export const removeSiteBlock = defineAction({
       throw new ActionError("A page needs at least one block. Delete the page instead.");
     }
     await saveDraft(ctx, input.path, finish({ ...doc, blocks }), "Removed a block");
+    revalidatePath("/website");
+    return { path: input.path };
+  },
+});
+
+/* ------------------------------------------------------ built-in sections */
+
+export const setSiteSectionHidden = defineAction({
+  input: z.object({
+    path: pathField,
+    sectionId: z.string().trim().max(40),
+    hidden: z.boolean(),
+  }),
+  async handler(input, ctx) {
+    guardPath(input.path);
+    if (!isBuiltinPath(input.path)) {
+      throw new ActionError("Only built-in pages have fixed sections. On a new page, remove the block instead.");
+    }
+    const sections = fixedSectionsFor(input.path);
+    const section = sections.find((s) => s.id === input.sectionId);
+    if (!section) {
+      throw new ActionError(
+        `${input.path} has no section "${input.sectionId}". Its sections are: ${sections.map((s) => s.id).join(", ") || "none"}.`,
+      );
+    }
+    const doc = await currentPage(ctx, input.path);
+    const hidden = new Set(doc.hidden ?? []);
+    if (input.hidden) hidden.add(section.id);
+    else hidden.delete(section.id);
+    const next: PageDoc = { ...doc, hidden: hidden.size ? [...hidden] : undefined };
+    await saveDraft(ctx, input.path, finish(next), `${input.hidden ? "Hid" : "Showed"} ${section.label}`);
     revalidatePath("/website");
     return { path: input.path };
   },

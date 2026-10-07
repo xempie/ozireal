@@ -225,7 +225,7 @@ export function BlockView({ b }: { b: Block }) {
 }
 
 /** Blocks for one zone of a built-in page. */
-export function Zone({ blocks, zone }: { blocks: Block[] | undefined; zone: "after_hero" | "end" }) {
+export function Zone({ blocks, zone }: { blocks: Block[] | undefined; zone: string }) {
   const list = (blocks ?? []).filter((b) => (b.zone ?? "end") === zone);
   if (!list.length) return null;
   return (

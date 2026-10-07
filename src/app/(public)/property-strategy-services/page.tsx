@@ -5,6 +5,7 @@ import { PageHero } from "@/components/public/page-shell";
 import { servicePageBySlug } from "@/components/public/site-pages";
 import { REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * "Strategy Services", mirroring www.ozirealty.com.au/property-strategy-services
  * (copied 2026-10-04): the heading, the introduction, and the four free offers, each
@@ -72,49 +73,55 @@ export default function Page() {
         facts={["Investors", "Homeowners", "Landlords"]}
       />
 
-      <section className="sec">
-        <div className="wrap">
-          <div className="prose" style={{ maxWidth: "64ch" }}>
-            <p>
-              We provide property strategy services for investors, homeowners and landlords:
-              reducing risk, increasing returns, and making every move count. Start with
-              whichever of these free reports fits the question you are weighing.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="sec dark">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">Free, no obligation</p>
-              <h2 className="display">
-                Four ways to <em>start</em>
-              </h2>
+      <Fixed id="intro">
+        <section className="sec">
+          <div className="wrap">
+            <div className="prose" style={{ maxWidth: "64ch" }}>
+              <p>
+                We provide property strategy services for investors, homeowners and landlords:
+                reducing risk, increasing returns, and making every move count. Start with
+                whichever of these free reports fits the question you are weighing.
+              </p>
             </div>
           </div>
+        </section>
+      </Fixed>
 
-          <div className="report-grid report-grid--2">
-            {OFFERS.map((o) => (
-              <div className="report-card report-card--offer" key={o.href}>
-                <p className="report-tag">{o.tag}</p>
-                <h3>{o.title}</h3>
-                <ul>
-                  {o.items.map((i) => (
-                    <li key={i}>{i}</li>
-                  ))}
-                </ul>
-                <Link className="btn report-go" href={o.href}>
-                  {o.cta}
-                </Link>
+      <Fixed id="four-ways-to-start">
+        <section className="sec dark">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Free, no obligation</p>
+                <h2 className="display">
+                  Four ways to <em>start</em>
+                </h2>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
 
-      <FormSection slug="property-strategy-services" />
+            <div className="report-grid report-grid--2">
+              {OFFERS.map((o) => (
+                <div className="report-card report-card--offer" key={o.href}>
+                  <p className="report-tag">{o.tag}</p>
+                  <h3>{o.title}</h3>
+                  <ul>
+                    {o.items.map((i) => (
+                      <li key={i}>{i}</li>
+                    ))}
+                  </ul>
+                  <Link className="btn report-go" href={o.href}>
+                    {o.cta}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="form">
+        <FormSection slug="property-strategy-services" />
+      </Fixed>
     </>
   );
 }

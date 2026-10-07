@@ -3,6 +3,7 @@ import Link from "next/link";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
 import { suburbsWithListings } from "@/server/public/listings";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Suburb index. Only suburbs where the agency has advertised, sold or leased something
  * are listed; a page for a suburb with nothing on it would be thin content.
@@ -32,33 +33,37 @@ export default async function Page() {
         facts={["Real listings only", "Adelaide and South Australia"]}
       />
 
-      <section className="sec">
-        <div className="wrap">
-          {list.length === 0 ? (
-            <p className="lede">Suburb pages appear here as listings go live.</p>
-          ) : (
-            <ul className="suburb-list">
-              {list.map((s) => (
-                <li key={s.slug}>
-                  <Link href={`/suburbs/${s.slug}`}>
-                    <b>{s.name} real estate</b>
-                    <span>
-                      {s.onMarket} on the market &middot; {s.settled} sold or leased
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </section>
+      <Fixed id="suburb-list">
+        <section className="sec">
+          <div className="wrap">
+            {list.length === 0 ? (
+              <p className="lede">Suburb pages appear here as listings go live.</p>
+            ) : (
+              <ul className="suburb-list">
+                {list.map((s) => (
+                  <li key={s.slug}>
+                    <Link href={`/suburbs/${s.slug}`}>
+                      <b>{s.name} real estate</b>
+                      <span>
+                        {s.onMarket} on the market &middot; {s.settled} sold or leased
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      </Fixed>
 
-      <CtaBand
-        heading="Want a written report on"
-        headingEm="your suburb?"
-        label="Get a free suburb insight report"
-        href="/free-suburb-insight-report"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Want a written report on"
+          headingEm="your suburb?"
+          label="Get a free suburb insight report"
+          href="/free-suburb-insight-report"
+        />
+      </Fixed>
     </>
   );
 }

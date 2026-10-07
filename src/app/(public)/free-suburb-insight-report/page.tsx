@@ -3,6 +3,7 @@ import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero, CtaBand } from "@/components/public/page-shell";
 import { REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * The suburb insight report.
  *
@@ -42,73 +43,81 @@ export default function Page() {
         facts={["Free", "No obligation", "South Australia"]}
       />
 
-      <FormSection slug="free-suburb-insight-report" />
+      <Fixed id="form">
+        <FormSection slug="free-suburb-insight-report" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">What is in it</p>
-              <h2 className="display">
-                {REPORTS.suburb.title.replace("Free ", "")}
-              </h2>
+      <Fixed id="whats-in-it">
+        <section className="sec">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">What is in it</p>
+                <h2 className="display">
+                  {REPORTS.suburb.title.replace("Free ", "")}
+                </h2>
+              </div>
+              <p className="lede" style={{ margin: 0 }}>
+                {REPORTS.suburb.note}
+              </p>
             </div>
-            <p className="lede" style={{ margin: 0 }}>
-              {REPORTS.suburb.note}
-            </p>
-          </div>
 
-          <ul className="insight-grid">
-            {REPORTS.suburb.items.map((i) => (
-              <li key={i}>{i}</li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <div className="points">
-            <h2 className="display">Also available</h2>
-            <ul className="report">
-              <li>
-                <em>01</em> {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
-              </li>
-              <li>
-                <em>02</em> {REPORTS.rental.title}, for weekly rent and yield
-              </li>
-              <li>
-                <em>03</em> {REPORTS.consultation.title}, one-on-one with the principal
-              </li>
+            <ul className="insight-grid">
+              {REPORTS.suburb.items.map((i) => (
+                <li key={i}>{i}</li>
+              ))}
             </ul>
           </div>
+        </section>
+      </Fixed>
 
-          <div className="prose-stack">
-            <div className="prose">
-              <h2>Why not an automated estimate</h2>
-              <p>
-                An automated valuation reads sale prices and square metres. It cannot see
-                that one side of a street backs onto a main road, that a block is deep
-                enough to subdivide, or that the house two doors down sold badly because
-                of a deadline rather than the market.
-              </p>
-              <p>
-                Those are the things that move a price by six figures, and they are why
-                the report is written by somebody who knows the area rather than generated
-                from a postcode.
-              </p>
+      <Fixed id="also-available">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <div className="points">
+              <h2 className="display">Also available</h2>
+              <ul className="report">
+                <li>
+                  <em>01</em> {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
+                </li>
+                <li>
+                  <em>02</em> {REPORTS.rental.title}, for weekly rent and yield
+                </li>
+                <li>
+                  <em>03</em> {REPORTS.consultation.title}, one-on-one with the principal
+                </li>
+              </ul>
+            </div>
+
+            <div className="prose-stack">
+              <div className="prose">
+                <h2>Why not an automated estimate</h2>
+                <p>
+                  An automated valuation reads sale prices and square metres. It cannot see
+                  that one side of a street backs onto a main road, that a block is deep
+                  enough to subdivide, or that the house two doors down sold badly because
+                  of a deadline rather than the market.
+                </p>
+                <p>
+                  Those are the things that move a price by six figures, and they are why
+                  the report is written by somebody who knows the area rather than generated
+                  from a postcode.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
 
 
-      <CtaBand
-        heading="Unlock my"
-        headingEm="suburb insights"
-        label="Request the report"
-        href="/contact"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Unlock my"
+          headingEm="suburb insights"
+          label="Request the report"
+          href="/contact"
+        />
+      </Fixed>
     </>
   );
 }

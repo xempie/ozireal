@@ -119,6 +119,8 @@ const style = z
 
 const FORM_SLUGS = FORMS.map((f) => f.slug) as [string, ...string[]];
 
+export const ZONE_RE = /^(after_hero|end|(before|after):[a-z0-9-]{2,40})$/;
+
 /**
  * The block types, built for a given id rule: required when stored, optional when the
  * assistant proposes a new block (the action assigns one).
@@ -126,8 +128,11 @@ const FORM_SLUGS = FORMS.map((f) => f.slug) as [string, ...string[]];
 function blockOptions<I extends z.ZodTypeAny>(id: I) {
   const base = {
     id,
-    /** Built-in pages only: straight after the hero, or at the end of the page. */
-    zone: z.enum(["after_hero", "end"]).optional(),
+    /**
+     * Built-in pages only: straight after the hero, at the end of the page, or before /
+     * after one of the page's built-in sections ("before:why-us", "after:form").
+     */
+    zone: z.string().regex(ZONE_RE, "Use after_hero, end, before:<section id> or after:<section id>.").optional(),
     style: style.optional(),
   };
   return [
@@ -195,6 +200,7 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
 }
 
 const blockId = z.string().regex(/^[a-z0-9-]{3,40}$/);
+export const SECTION_ID_RE = /^[a-z0-9-]{2,40}$/;
 export const BlockSchema = z.discriminatedUnion("type", blockOptions(blockId));
 /** What the assistant proposes: the same, with the id left to the server. */
 export const BlockInputSchema = z.discriminatedUnion("type", blockOptions(blockId.optional()));
@@ -227,6 +233,8 @@ export const PageDocSchema = z
     hero: HeroTextSchema.optional(),
     service: ServiceTextSchema.optional(),
     blocks: z.array(BlockSchema).max(40).default([]),
+    /** Built-in sections hidden on this page, by their <Fixed> id. */
+    hidden: z.array(z.string().regex(/^[a-z0-9-]{2,40}$/)).max(40).optional(),
     /** A new page taken down. Built-in pages cannot be deleted. */
     deleted: z.boolean().optional(),
   })

@@ -5,6 +5,7 @@ import { PageHero } from "@/components/public/page-shell";
 import { PrincipalCard } from "@/components/public/principal";
 import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Free meeting.
  *
@@ -52,70 +53,76 @@ export default function Page() {
         facts={["Free", "One-on-one", "No obligation"]}
       />
 
-      <FormSection slug="book-online" />
+      <Fixed id="form">
+        <FormSection slug="book-online" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap">
-          <PrincipalCard />
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <div className="points">
-            <h2 className="display">{REPORTS.consultation.title}</h2>
-            <ul className="report">
-              {REPORTS.consultation.items.map((p, i) => (
-                <li key={p}>
-                  <em>{String(i + 1).padStart(2, "0")}</em> {p}
-                </li>
-              ))}
-            </ul>
+      <Fixed id="principal">
+        <section className="sec">
+          <div className="wrap">
+            <PrincipalCard />
           </div>
+        </section>
+      </Fixed>
 
-          <div className="contact-cols">
-            <div className="contact-block">
-              <h2>Book by phone</h2>
-              <p>
-                The fastest way to get a time in the diary. Call during business hours and
-                you will speak to the principal rather than a queue.
-              </p>
-              <p>
-                <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
-              </p>
-            </div>
-
-            <div className="contact-block">
-              <h2>Or email</h2>
-              <ul className="plain-list">
-                {EMAILS.map((e) => (
-                  <li key={e.address}>
-                    {e.label}: <a href={`mailto:${e.address}`}>{e.address}</a>
+      <Fixed id="what-we-cover">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <div className="points">
+              <h2 className="display">{REPORTS.consultation.title}</h2>
+              <ul className="report">
+                {REPORTS.consultation.items.map((p, i) => (
+                  <li key={p}>
+                    <em>{String(i + 1).padStart(2, "0")}</em> {p}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="contact-block">
-              <h2>Where</h2>
-              <p>{AGENCY.office}</p>
-              <p>
-                At the office, at the property, or by video call if that suits you better.
-              </p>
-            </div>
+            <div className="contact-cols">
+              <div className="contact-block">
+                <h2>Book by phone</h2>
+                <p>
+                  The fastest way to get a time in the diary. Call during business hours and
+                  you will speak to the principal rather than a queue.
+                </p>
+                <p>
+                  <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
+                </p>
+              </div>
 
-            <div className="contact-block">
-              <h2>If it is about a valuation</h2>
-              <p>
-                Request the premium appraisal report instead. {REPORTS.appraisal.note}
-              </p>
-              <Link className="btn" href="/free-property-appraisal-sa">
-                Get my free report
-              </Link>
+              <div className="contact-block">
+                <h2>Or email</h2>
+                <ul className="plain-list">
+                  {EMAILS.map((e) => (
+                    <li key={e.address}>
+                      {e.label}: <a href={`mailto:${e.address}`}>{e.address}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="contact-block">
+                <h2>Where</h2>
+                <p>{AGENCY.office}</p>
+                <p>
+                  At the office, at the property, or by video call if that suits you better.
+                </p>
+              </div>
+
+              <div className="contact-block">
+                <h2>If it is about a valuation</h2>
+                <p>
+                  Request the premium appraisal report instead. {REPORTS.appraisal.note}
+                </p>
+                <Link className="btn" href="/free-property-appraisal-sa">
+                  Get my free report
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
 
     </>
   );

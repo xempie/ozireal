@@ -4,6 +4,7 @@ import { PageHero } from "@/components/public/page-shell";
 import { FormSection } from "@/components/public/forms/form-section";
 import { photo } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * The appraisal request.
  *
@@ -36,48 +37,52 @@ export default function Page() {
         facts={["48 hour turnaround", "No obligation", "No listing pitch"]}
       />
 
-      <FormSection slug="free-property-appraisal-sa" />
+      <Fixed id="form">
+        <FormSection slug="free-property-appraisal-sa" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap appraise">
-          <figure className="appraise-fig">
-            <Image
-              src={photo("photo-1615873968403-89e068629265", 1000)}
-              alt="Living room with a tan leather sofa against a dark green wall"
-              fill
-              sizes="(max-width: 1080px) 100vw, 40vw"
-              style={{ objectFit: "cover" }}
-            />
-            <div className="appraise-badge">
-              Turnaround<b>48 hours</b>
+      <Fixed id="a-report-not-a-number">
+        <section className="sec">
+          <div className="wrap appraise">
+            <figure className="appraise-fig">
+              <Image
+                src={photo("photo-1615873968403-89e068629265", 1000)}
+                alt="Living room with a tan leather sofa against a dark green wall"
+                fill
+                sizes="(max-width: 1080px) 100vw, 40vw"
+                style={{ objectFit: "cover" }}
+              />
+              <div className="appraise-badge">
+                Turnaround<b>48 hours</b>
+              </div>
+            </figure>
+
+            <div>
+              <p className="eyebrow">What you get</p>
+              <h2 className="display">
+                A report, not a <em>number</em>
+              </h2>
+
+              <ul className="report">
+                <li>
+                  <em>01</em> A price range, with the six comparable sales it came from
+                </li>
+                <li>
+                  <em>02</em> Buyer demand for your street over the past ninety days
+                </li>
+                <li>
+                  <em>03</em> Rental yield, if you would rather hold than sell
+                </li>
+                <li>
+                  <em>04</em> The three jobs worth doing before you list, and what they
+                  return
+                </li>
+              </ul>
+
             </div>
-          </figure>
-
-          <div>
-            <p className="eyebrow">What you get</p>
-            <h2 className="display">
-              A report, not a <em>number</em>
-            </h2>
-
-            <ul className="report">
-              <li>
-                <em>01</em> A price range, with the six comparable sales it came from
-              </li>
-              <li>
-                <em>02</em> Buyer demand for your street over the past ninety days
-              </li>
-              <li>
-                <em>03</em> Rental yield, if you would rather hold than sell
-              </li>
-              <li>
-                <em>04</em> The three jobs worth doing before you list, and what they
-                return
-              </li>
-            </ul>
-
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
 
     </>
   );

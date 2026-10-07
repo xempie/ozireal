@@ -3,6 +3,7 @@ import { FormSection } from "@/components/public/forms/form-section";
 import { PageHero, Points, CtaBand } from "@/components/public/page-shell";
 import { MANAGEMENT_PLANS, REPORTS } from "@/components/public/agency";
 
+import { Fixed } from "@/components/public/fixed";
 /**
  * Property management.
  *
@@ -41,103 +42,113 @@ export default function Page() {
         facts={["From 2.99%", "100 days risk-free", "No middle man"]}
       />
 
-      <FormSection slug="manage-property-adelaide" />
+      <Fixed id="form">
+        <FormSection slug="manage-property-adelaide" />
+      </Fixed>
 
-      <section className="sec">
-        <div className="wrap page-cols">
-          <Points
-            title="What the service includes"
-            items={[
-              "Strategic rent pricing and market monitoring",
-              "Careful tenant screening and leasing management",
-              "Routine inspections and maintenance coordination",
-              "Fast response to tenant issues and compliance matters",
-              "Direct communication with your dedicated property manager",
-            ]}
-          />
-          <div className="prose-stack">
-            <div className="prose">
-              <h2>Designed to maximise your investment</h2>
-              <p>
-                Our approach focuses on proactive management, careful tenant selection, and
-                smart rental strategies based on current market data across South
-                Australia.
-              </p>
-              <p>
-                With transparent fees, clear communication, and professional oversight,
-                landlords always know how their property is performing. Whether you own one
-                property or a growing portfolio, the goal is simple: protect your asset,
-                optimise your income, and make property ownership easier.
-              </p>
-            </div>
-            <div className="prose">
-              <h2>Bring a friend</h2>
-              <p>
-                On all packages, refer another landlord who signs with us and you both earn
-                two months of management fee-free.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="sec dark">
-        <div className="wrap">
-          <div className="sec-head">
-            <div>
-              <p className="eyebrow">Plans</p>
-              <h2 className="display">
-                Three ways to <em>manage it</em>
-              </h2>
-            </div>
-            <p className="lede" style={{ margin: 0 }}>
-              Each plan builds on the one before it. Ask for the full fee schedule in
-              writing before you sign anything, here or anywhere else.
-            </p>
-          </div>
-
-          <div className="report-grid">
-            {MANAGEMENT_PLANS.map((plan) => (
-              <div className="report-card" key={plan.name}>
-                <h3>{plan.name}</h3>
-                <ul>
-                  {plan.points.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                </ul>
+      <Fixed id="designed-to-maximise-your-investment">
+        <section className="sec">
+          <div className="wrap page-cols">
+            <Points
+              title="What the service includes"
+              items={[
+                "Strategic rent pricing and market monitoring",
+                "Careful tenant screening and leasing management",
+                "Routine inspections and maintenance coordination",
+                "Fast response to tenant issues and compliance matters",
+                "Direct communication with your dedicated property manager",
+              ]}
+            />
+            <div className="prose-stack">
+              <div className="prose">
+                <h2>Designed to maximise your investment</h2>
+                <p>
+                  Our approach focuses on proactive management, careful tenant selection, and
+                  smart rental strategies based on current market data across South
+                  Australia.
+                </p>
+                <p>
+                  With transparent fees, clear communication, and professional oversight,
+                  landlords always know how their property is performing. Whether you own one
+                  property or a growing portfolio, the goal is simple: protect your asset,
+                  optimise your income, and make property ownership easier.
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <Points title={REPORTS.rental.title} items={[...REPORTS.rental.items]} />
-          <div className="prose-stack">
-            <div className="prose">
-              <h2>Smart rent, stable income, zero guesswork</h2>
-              <p>
-                Before you set a rent, it is worth knowing what comparable properties
-                actually leased for, how long they sat vacant, and what tenant profile the
-                property attracts. The rental report covers all of it.
-              </p>
-              <p>
-                Pricing a rental too high costs more in vacancy than the extra rent
-                recovers. That is the calculation the report is there to settle.
-              </p>
+              <div className="prose">
+                <h2>Bring a friend</h2>
+                <p>
+                  On all packages, refer another landlord who signs with us and you both earn
+                  two months of management fee-free.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
+
+      <Fixed id="three-ways-to-manage-it">
+        <section className="sec dark">
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Plans</p>
+                <h2 className="display">
+                  Three ways to <em>manage it</em>
+                </h2>
+              </div>
+              <p className="lede" style={{ margin: 0 }}>
+                Each plan builds on the one before it. Ask for the full fee schedule in
+                writing before you sign anything, here or anywhere else.
+              </p>
+            </div>
+
+            <div className="report-grid">
+              {MANAGEMENT_PLANS.map((plan) => (
+                <div className="report-card" key={plan.name}>
+                  <h3>{plan.name}</h3>
+                  <ul>
+                    {plan.points.map((p) => (
+                      <li key={p}>{p}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="smart-rent-stable-income-zero-guesswork">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <Points title={REPORTS.rental.title} items={[...REPORTS.rental.items]} />
+            <div className="prose-stack">
+              <div className="prose">
+                <h2>Smart rent, stable income, zero guesswork</h2>
+                <p>
+                  Before you set a rent, it is worth knowing what comparable properties
+                  actually leased for, how long they sat vacant, and what tenant profile the
+                  property attracts. The rental report covers all of it.
+                </p>
+                <p>
+                  Pricing a rental too high costs more in vacancy than the extra rent
+                  recovers. That is the calculation the report is there to settle.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </Fixed>
 
 
-      <CtaBand
-        heading="Get your"
-        headingEm="rent report"
-        label="Talk to the office"
-        href="/contact"
-      />
+      <Fixed id="closing-cta">
+        <CtaBand
+          heading="Get your"
+          headingEm="rent report"
+          label="Talk to the office"
+          href="/contact"
+        />
+      </Fixed>
     </>
   );
 }

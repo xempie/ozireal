@@ -6,6 +6,7 @@ import { formForSlug } from "./forms/definitions";
 import { Icon } from "./icons";
 import { extrasFor, type ServiceCard, type ServiceExtras } from "./service-extras";
 import { Zone } from "./blocks";
+import { Fixed } from "./fixed";
 import { currentPageContent } from "@/server/public/content";
 
 /**
@@ -286,41 +287,55 @@ export async function ServicePageBody({
         should not have to scroll past the whole pitch to find where to do it; the
         benefits, points and gallery below are for the visitor still deciding.
       */}
-      {children}
+      {children && <Fixed id="form">{children}</Fixed>}
 
       {extras && (
-        <section className="sec sec--tight">
-          <div className="wrap">
-            <Benefits cards={extras.cards} />
-          </div>
-        </section>
+        <Fixed id="benefits">
+          <section className="sec sec--tight">
+            <div className="wrap">
+              <Benefits cards={extras.cards} />
+            </div>
+          </section>
+        </Fixed>
       )}
 
-      <section className="sec" style={{ background: "var(--paper-2)" }}>
-        <div className="wrap page-cols">
-          <Points title="What you get" items={page.points} />
-          <div className="prose-stack">
-            {page.sections.map((s) => (
-              <Prose key={s.heading} heading={s.heading} body={s.body} />
-            ))}
+      <Fixed id="what-you-get">
+        <section className="sec" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap page-cols">
+            <Points title="What you get" items={page.points} />
+            <div className="prose-stack">
+              {page.sections.map((s) => (
+                <Prose key={s.heading} heading={s.heading} body={s.body} />
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </Fixed>
 
-      {extras && <Gallery extras={extras} />}
-      {extras && <Pitch extras={extras} />}
+      {extras && (
+        <Fixed id="gallery">
+          <Gallery extras={extras} />
+        </Fixed>
+      )}
+      {extras && (
+        <Fixed id="pitch">
+          <Pitch extras={extras} />
+        </Fixed>
+      )}
 
       {/*
         No closing band when the page carries an enquiry form. The form IS the call to
         action, and the site footer already ends every page with one.
       */}
       {!formForSlug(page.slug) && (
-        <CtaBand
-          heading="Not sure where to"
-          headingEm="start?"
-          label={page.cta.label}
-          href={page.cta.href}
-        />
+        <Fixed id="closing-cta">
+          <CtaBand
+            heading="Not sure where to"
+            headingEm="start?"
+            label={page.cta.label}
+            href={page.cta.href}
+          />
+        </Fixed>
       )}
     </>
   );

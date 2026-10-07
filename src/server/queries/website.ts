@@ -36,7 +36,8 @@ function editCount(doc: PageDoc | null) {
     doc.blocks.length +
     Object.keys(doc.hero ?? {}).length +
     Object.keys(doc.service ?? {}).length +
-    Object.keys(doc.meta ?? {}).length
+    Object.keys(doc.meta ?? {}).length +
+    (doc.hidden?.length ?? 0)
   );
 }
 
