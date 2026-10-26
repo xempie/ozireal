@@ -47,6 +47,7 @@ export const PUBLIC_LISTING_FIELDS = [
   "landSqm",
   "publishedAt",
   "soldAt",
+  "coverPhoto",
 ] as const;
 
 export type PublicListing = {
@@ -73,6 +74,12 @@ export type PublicListing = {
   landSqm: number | null;
   publishedAt: Date | null;
   soldAt: Date | null;
+  /**
+   * The main photo's storage key (listing_media, first kind='photo' by sort order), or
+   * null. Added 2026-10-26 with listing photo uploads: a photo the agent uploaded to the
+   * listing is published with it by design. Served at /media/<key>.
+   */
+  coverPhoto: string | null;
 };
 
 /**
@@ -130,6 +137,12 @@ const publicSelect = {
   landSqm: properties.landAreaSqm,
   publishedAt: listings.publishedAt,
   soldAt: listings.soldAt,
+  coverPhoto: sql<string | null>`(
+    select m.s3_key from listing_media m
+    where m.listing_id = ${listings.id} and m.kind = 'photo'
+    order by m.sort_order, m.created_at
+    limit 1
+  )`,
 };
 
 function base(tx: Parameters<Parameters<typeof publicQuery>[0]>[0]) {

@@ -68,7 +68,7 @@ export function ListingCard({ l }: { l: CardListing }) {
         <span className={`tag ${l.tagClass}`}>{l.tag}</span>
         {l.img ? (
           <Image
-            src={photo(l.img, 800)}
+            src={l.img.startsWith("/") ? l.img : photo(l.img, 800)}
             alt={l.alt}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1080px) 50vw, 33vw"

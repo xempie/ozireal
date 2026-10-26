@@ -28,6 +28,8 @@ import {
   getContact,
 } from "@/server/queries";
 import { statusLabel } from "@/lib/labels";
+import { getListingPhotos } from "@/server/queries";
+import { ListingPhotos } from "@/components/forms/listing-photos";
 import { DraftCampaignForListingButton } from "@/components/forms/content-forms";
 import {
   EditListingButton,
@@ -48,6 +50,7 @@ export default async function ListingDetail({
   const p = await getProperty(l.propertyId);
   const listingMatches = await getMatchesForListing(l.id);
   const insp = (await getInspections()).filter((i) => i.listingId === l.id);
+  const photos = await getListingPhotos(l.id);
 
   /**
    * Consent state is not carried on the match row, so it is read per matched contact.
@@ -111,6 +114,13 @@ export default async function ListingDetail({
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6 min-w-0">
+          <Card>
+            <CardTitle>
+              Photos{photos.length ? ` (${photos.length})` : ""}
+            </CardTitle>
+            <ListingPhotos listingId={l.id} photos={photos} />
+          </Card>
+
           <Card>
             <CardTitle>Public copy</CardTitle>
             <div className="space-y-3">

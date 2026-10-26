@@ -9,3 +9,4 @@ export * from "./analytics";
  */
 export * from "./pickers";
 export * from "./website";
+export * from "./media";

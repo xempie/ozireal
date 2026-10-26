@@ -47,7 +47,7 @@ export function toCard(l: PublicListing): CardListing {
     land: l.landSqm ? `${l.landSqm} m²` : "",
     agent: AGENCY.principal,
     open: l.headline ?? "",
-    img: null,
+    img: l.coverPhoto ? `/media/${l.coverPhoto}` : null,
     alt: l.address,
   };
 }
