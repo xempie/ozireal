@@ -63,6 +63,11 @@ const nextConfig: NextConfig = {
         destination: "/contact",
         statusCode: 301,
       },
+      // Wix URLs found in the live sitemap on 2026-10-26 with no page of their own here.
+      { source: "/blog/categories/:slug*", destination: "/blog", statusCode: 301 },
+      { source: "/inquiry-services-page", destination: "/contact", statusCode: 301 },
+      { source: "/service-page/:slug*", destination: "/book-online", statusCode: 301 },
+      { source: "/booking-calendar/:slug*", destination: "/book-online", statusCode: 301 },
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],

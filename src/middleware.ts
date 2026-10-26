@@ -9,6 +9,7 @@ import { authConfig } from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 import { NextResponse } from "next/server";
 import { isPrivatePath } from "@/lib/private-paths";
+import { routeForHost } from "@/lib/host-routing";
 
 /**
  * The public/private split lives in a framework-free module so it can be tested
@@ -31,7 +32,21 @@ export { PRIVATE_PREFIXES, isPrivatePath } from "@/lib/private-paths";
 const CANONICAL_HOST =
   process.env.PUBLIC_SITE_HOST ?? "www.ozirealty.com.au";
 
+/** The console's host: login and everything behind it (src/lib/host-routing.ts). */
+const CRM_HOST = process.env.CRM_HOST ?? "crm.ozirealty.com.au";
+
 export default auth((req) => {
+  const reqHost = req.headers.get("host")?.split(":")[0]?.toLowerCase();
+  const moved = routeForHost({
+    host: reqHost,
+    pathname: req.nextUrl.pathname,
+    search: req.nextUrl.search,
+    publicHost: CANONICAL_HOST,
+    crmHost: CRM_HOST,
+    preview: req.cookies.has("__prerender_bypass"),
+  });
+  if (moved) return NextResponse.redirect(moved.location, moved.status);
+
   if (isPrivatePath(req.nextUrl.pathname) && !req.auth) {
     const url = new URL("/login", req.nextUrl.origin);
     url.searchParams.set("from", req.nextUrl.pathname);

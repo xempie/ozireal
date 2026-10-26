@@ -124,15 +124,20 @@ fi
 
 log "Caddyfile"
 # Written here rather than by hand: the first box's was hand-made, which is drift.
-# CRM_HOST is the console's hostname; Caddy obtains its certificate on first request
-# once DNS points here.
+# Three hosts, one app (src/lib/host-routing.ts decides what each serves):
+#   CRM_HOST   the console            SITE_HOST  the public website (canonical)
+#   APEX_HOST  301 to SITE_HOST
+# Caddy obtains each certificate on first request once that name's DNS points here;
+# until then it retries in the background and the other hosts are unaffected.
 CRM_HOST="${CRM_HOST:-crm.ozirealty.com.au}"
+SITE_HOST="${SITE_HOST:-www.ozirealty.com.au}"
+APEX_HOST="${APEX_HOST:-ozirealty.com.au}"
 mkdir -p /var/log/caddy
 cat > /etc/caddy/Caddyfile <<CADDYEOF
-# OziRealty. Caddy terminates TLS (certificate obtained and renewed
+# OziRealty. Caddy terminates TLS (certificates obtained and renewed
 # automatically) and proxies to the Next.js server on loopback, which is why
 # port 3000 is never exposed by the firewall or the security group.
-${CRM_HOST} {
+(app) {
 	encode zstd gzip
 
 	# The public intake endpoints are rate-limited per IP in the app, which reads
@@ -143,19 +148,39 @@ ${CRM_HOST} {
 	}
 
 	header {
-		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options nosniff
 		X-Frame-Options DENY
 		Referrer-Policy strict-origin-when-cross-origin
 		-Server
 	}
+}
 
+${CRM_HOST} {
+	import app
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
 	log {
 		output file /var/log/caddy/crm.log {
 			roll_size 20mb
 			roll_keep 7
 		}
 	}
+}
+
+# No includeSubDomains on the public host: the agency's other names (mail and
+# whatever else the domain carries) are not ours to force onto HTTPS.
+${SITE_HOST} {
+	import app
+	header Strict-Transport-Security "max-age=31536000"
+	log {
+		output file /var/log/caddy/www.log {
+			roll_size 20mb
+			roll_keep 7
+		}
+	}
+}
+
+${APEX_HOST} {
+	redir https://${SITE_HOST}{uri} permanent
 }
 CADDYEOF
 chown caddy:caddy /var/log/caddy 2>/dev/null || true

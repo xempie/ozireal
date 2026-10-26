@@ -19,7 +19,9 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       disallow: [
-        ...PRIVATE_PREFIXES.map((p) => `${p}/`),
+        // /properties/ is the console's on its own host, but on www it is where the
+        // old Wix property pages 301 from, and a crawler must be able to see that.
+        ...PRIVATE_PREFIXES.filter((p) => p !== "/properties").map((p) => `${p}/`),
         "/login",
         "/api/",
       ],
