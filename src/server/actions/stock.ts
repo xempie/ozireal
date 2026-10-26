@@ -544,9 +544,9 @@ export const updateListing = defineAction({
       .limit(1);
     if (!l) throw new ActionError("That listing no longer exists.");
 
-    if (input.listingType !== l.listingType && l.status !== "draft") {
+    if (input.listingType !== l.listingType && (l.status === "sold" || l.status === "leased")) {
       throw new ActionError(
-        "A campaign that has gone live cannot change between sale and rent. Withdraw it and start a new one.",
+        `A ${l.status} listing is a result and keeps its type. Start a new listing to advertise it again.`,
       );
     }
 

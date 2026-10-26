@@ -553,7 +553,8 @@ export function EditListingButton({ listing }: { listing: EditableListing }) {
   const [open, setOpen] = React.useState(false);
   const [type, setType] = React.useState<"sale" | "rent">(listing.type);
   const a = useAction(updateListing, { onSuccess: () => setOpen(false) });
-  const isDraft = listing.status === "draft";
+  // Sold and leased are results: a sold sale cannot become a rental after the fact.
+  const settled = listing.status === "sold" || listing.status === "leased";
 
   return (
     <>
@@ -581,7 +582,7 @@ export function EditListingButton({ listing }: { listing: EditableListing }) {
               label="For"
               name="listingTypeVisible"
               value={type}
-              disabled={!isDraft}
+              disabled={settled}
               onChange={(e) => setType(e.target.value as "sale" | "rent")}
               options={[
                 { value: "sale", label: "Sale" },
@@ -596,12 +597,19 @@ export function EditListingButton({ listing }: { listing: EditableListing }) {
               errors={a.fieldErrors.method}
             />
           </div>
-          {!isDraft && (
+          {settled ? (
             <p className="text-3 text-[11px] -mt-2">
-              A campaign that has gone live cannot change between sale and rent — it
-              would reprice against the wrong field and change what the public page says
-              the property is.
+              A {listing.status} listing is a result and keeps its type. Start a new listing to
+              advertise it again.
             </p>
+          ) : (
+            type !== listing.type && (
+              <p className="text-[11.5px] -mt-2 text-[#9a5b00] dark:text-[#f0b45a]">
+                Changing to {type === "rent" ? "rent" : "sale"}: check the price wording and fill
+                in the {type === "rent" ? "weekly rent" : "search price range"} below. The public
+                page will show it as {type === "rent" ? "for lease" : "for sale"}.
+              </p>
+            )
           )}
 
           <Input
