@@ -32,6 +32,21 @@ export const GALLERY = {
   "photo-1600607687939-ce8a6c25118c": "Meeting room in a small business",
   "photo-1584738766473-61c083514bf4": "Established block with mature trees",
   "photo-1580587771525-78b9dba3b914": "Terrace homes on a leafy street",
+  // Ordinary Australian suburban homes, added 2026-10-29 for the projects page.
+  "photo-1782511295240-2d55c11776ec": "Single-storey brick home with a garage",
+  "photo-1720175328600-06f71cee36c4": "Suburban house with a blue roof",
+  "photo-1777105986341-9677da85607e": "Row of modern townhouses behind a fence",
+  "photo-1777104631979-d57208fa7cf7": "Row of garages with solar panels above",
+  "photo-1772325434696-14473ee3b53b": "New housing estate from above",
+  "photo-1781231444047-3736480fa5f9": "Small apartment building among trees",
+  "photo-1720175338668-2e96d090d780": "Weatherboard house behind a white picket fence",
+  "photo-1733639516571-575618028339": "Brick bungalow with a bay window",
+  "photo-1777104623084-1b36260d1577": "Row of new townhouses with dark roofs",
+  "photo-1579678929710-862f8e01c0b2": "Two-storey brick houses on a suburban street",
+  "photo-1720175356041-6b1c963e0075": "Californian bungalow with a front garden",
+  "photo-1600645174997-bea67efe2fd1": "Two-storey townhouse with timber cladding",
+  "photo-1666000346172-8e7e87547d2a": "Brick house behind a white picket fence",
+  "photo-1598249467153-963a1ef910cf": "House with a green roof among trees",
 } as const;
 export const IMAGE_IDS = Object.keys(GALLERY) as [keyof typeof GALLERY, ...(keyof typeof GALLERY)[]];
 
