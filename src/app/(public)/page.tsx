@@ -15,7 +15,6 @@ import {
   HERO,
   JOURNEY,
   JOURNAL_POSTS,
-  PROMISES,
   REPORTS,
   PARTNERS,
   TESTIMONIAL,
@@ -141,23 +140,6 @@ export default async function HomePage() {
       {/* The live home page's "Free book & Gift party" lead form, straight after the hero. */}
       <Fixed id="form">
         <FormSection slug="realestate-gift-adelaide" />
-      </Fixed>
-
-      {/* ========================================================= promises */}
-      <Fixed id="promises">
-        <section className="numbers">
-          <div className="wrap">
-            {PROMISES.map((n) => (
-              <div className="num" key={n.caption}>
-                <b>
-                  {n.value}
-                  {n.unit && <i>{n.unit}</i>}
-                </b>
-                <span>{n.caption}</span>
-              </div>
-            ))}
-          </div>
-        </section>
       </Fixed>
 
       {/* ========================================================= listings */}
