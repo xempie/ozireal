@@ -185,7 +185,17 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
       type: z.literal("cards"),
       heading: t(160).optional(),
       items: z
-        .array(z.object({ title: t(120), body: t(600), href: href.optional() }).strict())
+        .array(
+          z
+            .object({
+              title: t(120),
+              /** Short line under the title, e.g. a phrase quoted from a review. */
+              highlight: t(120).optional(),
+              body: t(600),
+              href: href.optional(),
+            })
+            .strict(),
+        )
         .min(1)
         .max(6),
     }).strict(),

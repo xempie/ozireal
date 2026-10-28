@@ -205,11 +205,13 @@ export function BlockView({ b }: { b: Block }) {
                 c.href ? (
                   <SmartLink className="benefit blk-card-link" href={c.href} key={i}>
                     <h3>{c.title}</h3>
+                    {c.highlight && <p className="benefit-hl">{c.highlight}</p>}
                     <p>{c.body}</p>
                   </SmartLink>
                 ) : (
                   <div className="benefit" key={i}>
                     <h3>{c.title}</h3>
+                    {c.highlight && <p className="benefit-hl">{c.highlight}</p>}
                     <p>{c.body}</p>
                   </div>
                 ),
