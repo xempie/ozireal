@@ -24,12 +24,13 @@ export default function Page() {
       title="Privacy"
       titleEm="policy"
       lede={`How ${A.name} collects, uses, stores and protects your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.`}
-      updated="4 October 2026"
+      updated="29 October 2026"
       sections={[
         {
           heading: "Who we are",
           body: [
             `${A.name} (ABN ${A.abn}, ${A.licence}) is a real estate agency at ${A.office}. In this policy "we" and "us" means ${A.name}.`,
+            `${A.name} is one of a group of associated businesses with Prospect Business Centre Pty Ltd (ABN 38 603 202 875), alongside AussiAcc, Smart Loanz and Aussie Will. Each business is responsible for the personal information it holds. This policy covers ${A.name}; the other businesses have their own privacy policies.`,
             `Questions about this policy or your information go to ${A.email} or ${A.phone}.`,
           ],
         },
@@ -38,8 +39,18 @@ export default function Page() {
           body: [
             "Your name, email address, phone number and postal or property address when you fill in a form, call, email or message us.",
             "What you tell us about your property needs: the property you own or want, price range, suburbs, timing, finance position and similar details, and the notes we keep of our conversations with you.",
-            "A record of your consent to marketing: which form you used, when, from which IP address, and the exact wording you agreed to.",
+            "A record of any consent you give us to marketing: how and when you gave it, and the wording you agreed to.",
             "Basic technical information when you use this website, such as your IP address and browser type, used to keep the site secure and working.",
+            "We do not ask for sensitive information (such as health information) and ask that you do not send it to us.",
+          ],
+        },
+        {
+          heading: "How we collect it",
+          body: [
+            "Mostly directly from you: through forms on this website, by phone, email, SMS or social media message, at inspections, appraisals, meetings and events.",
+            "Sometimes from others: from property portals when you enquire about a listing, from the other party, conveyancer or agent in a transaction, from public records, or from one of our associated businesses when you have asked to be referred to us.",
+            "If we receive your information from someone other than you, we will tell you we have it and how we got it, unless it is obvious from the circumstances.",
+            "Where it is lawful and practical, you can deal with us without giving your name, for example a general question by phone. We need your contact details to respond to an enquiry or act for you.",
           ],
         },
         {
@@ -75,6 +86,16 @@ export default function Page() {
           ],
         },
         {
+          heading: "Sharing within our group of businesses",
+          body: [
+            `${A.name}, Prospect Business Centre, AussiAcc, Smart Loanz and Aussie Will offer related services: property, accounting, lending and wills. Information moves between them only in these ways:`,
+            "When you ask to be referred, for example to Smart Loanz for finance on a purchase or to AussiAcc for tax advice on an investment property, we pass on the details needed for that referral, and tell you what we are passing on.",
+            "Where the businesses share office administration and systems (such as reception, phone and IT support), staff of the group may see your information only to perform those tasks, under the same confidentiality and security rules as our own staff.",
+            "We do not give your information to another group business for it to market its services to you unless you have agreed to that. If you have agreed, you can withdraw at any time and each business will stop.",
+            "Credit information you provide for a loan is handled by Smart Loanz under its own credit and privacy policy, not by us.",
+          ],
+        },
+        {
           heading: "Marketing and unsubscribing",
           body: [
             "We send marketing only to people who have opted in, and we check that consent again at the moment each message is sent.",
@@ -89,9 +110,23 @@ export default function Page() {
           ],
         },
         {
+          heading: "Cookies",
+          body: [
+            "This website uses only the cookies it needs to work, such as keeping our staff signed in and protecting forms from automated abuse. It does not use advertising or tracking cookies.",
+            "You can block cookies in your browser; the public pages will still work.",
+          ],
+        },
+        {
           heading: "Security",
           body: [
-            "Access to your information is limited to our team and protected by individual sign-in, and changes to records are logged. Information sent to and from this website is encrypted.",
+            "Access to your information is limited to our team and protected by individual sign-in, and changes to records are logged. Information sent to and from this website is encrypted, and stored data is encrypted.",
+            "No system is perfectly secure. If a data breach is likely to cause you serious harm, we will notify you and the OAIC as required by the Notifiable Data Breaches scheme.",
+          ],
+        },
+        {
+          heading: "How long we keep it",
+          body: [
+            "We keep your information while it is needed for the purpose we collected it and for as long as the law requires us to keep records, for example agency and transaction records. After that we delete or de-identify it.",
           ],
         },
         {
