@@ -13,7 +13,6 @@ import { Fixed } from "@/components/public/fixed";
 import {
   AGENCY,
   HERO,
-  JOURNEY,
   JOURNAL_POSTS,
   REPORTS,
   PARTNERS,
@@ -79,7 +78,7 @@ export default async function HomePage() {
           />
         </div>
 
-        <div className="hero-inner hero-inner--ticker">
+        <div className="hero-inner">
           <div className="wrap">
             <div className="hero-copy">
               <p className="eyebrow">{hero.eyebrow}</p>
@@ -89,22 +88,6 @@ export default async function HomePage() {
                 <em>{hero.titleEm}</em>
               </h1>
               <p className="lede">{hero.lede}</p>
-            </div>
-          </div>
-
-          {/*
-            The live site's row of destinations, in the strip the invented medians ticker
-            used to occupy. Real links rather than a marquee, so it is navigation instead
-            of decoration.
-          */}
-          <div className="journey" aria-label="Where to start">
-            <div className="journey-label">Start here</div>
-            <div className="journey-track">
-              {JOURNEY.map((j) => (
-                <Link className="journey-item" key={j.label} href={j.href}>
-                  {j.label}
-                </Link>
-              ))}
             </div>
           </div>
         </div>
