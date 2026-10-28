@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Newsreader, Instrument_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Newsreader, Instrument_Sans } from "next/font/google";
 import "./public.css";
 import { SiteHeader, SiteFooter, AGENCY } from "@/components/public/site-chrome";
 import { Breadcrumbs } from "@/components/public/breadcrumbs";
@@ -42,17 +42,11 @@ const body = Instrument_Sans({
   variable: "--font-body",
 });
 
-/**
- * The template's third face, and the one that carries its voice: every eyebrow, label,
- * button, price and stat is mono. It is doing structural work rather than decoration,
- * so it is a real font rather than a fallback stack.
+/*
+ * There used to be a third face here, IBM Plex Mono, for every eyebrow, label, button,
+ * price and stat. Since 2026-10-29 those use the body face at semibold (owner's
+ * choice); public.css points --mono at --font-body, so the token name survives.
  */
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  display: "swap",
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -121,7 +115,7 @@ export default async function PublicLayout({
      * nothing to act on, so the public site stays light without having to fight it.
      */
     <div
-      className={`site ${display.variable} ${body.variable} ${mono.variable}`}
+      className={`site ${display.variable} ${body.variable}`}
       style={{ display: "flex", flexDirection: "column", minHeight: "100dvh" }}
     >
       <a href="#main" className="skip-link">
