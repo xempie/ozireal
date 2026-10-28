@@ -20,19 +20,20 @@
    ============================================================ */
 
 .site {
-  --ink:        #0F1E22;
-  --ink-2:      #172E33;
-  --ink-3:      #21454B;
-  --paper:      #EAE7DE;
-  --paper-2:    #F4F2EC;
+  --ink:        #0A182E;
+  --ink-2:      #13254A;
+  --ink-3:      #1E3358;
+  --paper:      #FFFFFF;
+  --paper-2:    #F6F7F9;
   --white:      #FFFFFF;
-  --accent:     #D84315;   /* Ozi Realty brand colour, primary */
-  --accent-dp:  #AE3410;   /* darker cut: small text and hover on light paper */
-  --accent-lt:  #F5824F;   /* lighter cut: anything on the dark bluestone */
-  --muted:      #6C7B7E;
-  --muted-2:    #93A0A2;
-  --line:       rgba(15, 30, 34, 0.14);
-  --line-dk:    rgba(234, 231, 222, 0.16);
+  --accent:     #0034C8;   /* cobalt blue, main colour (Prospect BC palette, 2026-10-29) */
+  --accent-dp:  #002385;   /* darker cut: small text and hover on light paper */
+  --accent-lt:  #F2804F;   /* light orange: highlights on the dark navy */
+  --accent-2:   #D84315;   /* Ozi Realty orange: the appraisal CTA and listing tags */
+  --muted:      #5B6472;
+  --muted-2:    #8E9BB0;
+  --line:       rgba(10, 24, 46, 0.14);
+  --line-dk:    rgba(255, 255, 255, 0.16);
 
   --serif: var(--font-display), Georgia, serif;
   --sans:  var(--font-body), -apple-system, "Segoe UI", sans-serif;
@@ -102,7 +103,7 @@
   line-height: 1.65;
   margin: 22px 0 0;
 }
-.dark .lede { color: rgba(234, 231, 222, 0.66); }
+.dark .lede { color: rgba(255, 255, 255, 0.66); }
 
 /* -------------------------------------------------------- buttons ---- */
 .btn {
@@ -193,8 +194,8 @@
 }
 .nav.stuck {
   border-bottom-color: var(--line);
-  box-shadow: 0 1px 24px rgba(15, 30, 34, 0.09);
-  background: rgba(234, 231, 222, 0.94);
+  box-shadow: 0 1px 24px rgba(10, 24, 46, 0.09);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(10px);
 }
 .nav .wrap {
@@ -255,7 +256,7 @@
   position: absolute; top: 100%; left: -18px; z-index: 60;
   min-width: 200px; flex-direction: column;
   padding: 10px 18px; background: var(--paper-2);
-  border: 1px solid var(--line); box-shadow: 0 12px 28px rgba(15, 30, 34, 0.12);
+  border: 1px solid var(--line); box-shadow: 0 12px 28px rgba(10, 24, 46, 0.12);
 }
 .menu-group:hover .submenu,
 .menu-group:focus-within .submenu { display: flex; }
@@ -297,8 +298,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(103deg, rgba(15,30,34,.93) 0%, rgba(15,30,34,.72) 42%, rgba(15,30,34,.12) 78%),
-    linear-gradient(to top, rgba(15,30,34,.8) 0%, transparent 44%);
+    linear-gradient(103deg, rgba(10, 24, 46,.93) 0%, rgba(10, 24, 46,.72) 42%, rgba(10, 24, 46,.12) 78%),
+    linear-gradient(to top, rgba(10, 24, 46,.8) 0%, transparent 44%);
 }
 .hero-inner { position: relative; z-index: 2; padding: clamp(72px, 10vw, 132px) 0 clamp(48px, 6vw, 78px); }
 .hero-copy { max-width: 820px; color: var(--paper); }
@@ -311,7 +312,7 @@
   letter-spacing: -0.018em;
 }
 .hero h1 em { font-style: italic; font-weight: 500; color: var(--accent-lt); }
-.hero .lede { color: rgba(234, 231, 222, 0.74); max-width: 50ch; margin-top: 28px; }
+.hero .lede { color: rgba(255, 255, 255, 0.74); max-width: 50ch; margin-top: 28px; }
 .hero .eyebrow { color: var(--accent-lt); }
 .hero .eyebrow::after { background: var(--accent-lt); }
 
@@ -418,7 +419,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  color: rgba(234, 231, 222, 0.55);
+  color: rgba(255, 255, 255, 0.55);
   background: linear-gradient(160deg, var(--ink-3), var(--ink-2));
   font-family: var(--mono); font-weight: 600;
   font-size: 11.5px;
@@ -435,7 +436,7 @@
   display: grid;
   place-items: center;
   background: linear-gradient(150deg, var(--ink-3) 0%, var(--ink-2) 55%, var(--ink) 100%);
-  color: rgba(234, 231, 222, 0.42);
+  color: rgba(255, 255, 255, 0.42);
   font-family: var(--mono); font-weight: 600;
   font-size: 10.5px;
   letter-spacing: 0.1em;
@@ -587,7 +588,7 @@
 .svc-plus::after { top: 0; bottom: 0; left: 7px; width: 1px; }
 .svc[open] .svc-plus::after { transform: scaleY(0); }
 .svc-panel-in { padding: 0 0 30px 96px; }
-.svc-panel-in p { margin: 0 0 20px; color: rgba(234, 231, 222, 0.68); max-width: 46ch; font-size: 15.5px; }
+.svc-panel-in p { margin: 0 0 20px; color: rgba(255, 255, 255, 0.68); max-width: 46ch; font-size: 15.5px; }
 .svc-meta {
   display: flex;
   gap: 26px;
@@ -607,12 +608,12 @@
   bottom: 0;
   right: 0;
   padding: 26px;
-  background: linear-gradient(to top, rgba(15, 30, 34, 0.9), transparent);
+  background: linear-gradient(to top, rgba(10, 24, 46, 0.9), transparent);
   font-family: var(--mono); font-weight: 600;
   font-size: 11px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(234, 231, 222, 0.8);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* --------------------------------------------------------- suburbs ---- */
@@ -630,7 +631,7 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(to top, rgba(15, 30, 34, 0.92) 8%, rgba(15, 30, 34, 0.1) 62%);
+  background: linear-gradient(to top, rgba(10, 24, 46, 0.92) 8%, rgba(10, 24, 46, 0.1) 62%);
 }
 .sub:hover img { transform: scale(1.07); }
 .sub-body { position: relative; z-index: 2; padding: 30px; color: var(--paper); width: 100%; }
@@ -640,7 +641,7 @@
   font-size: 11px;
   letter-spacing: 0.075em;
   text-transform: uppercase;
-  color: rgba(234, 231, 222, 0.6);
+  color: rgba(255, 255, 255, 0.6);
   margin: 0;
 }
 .sub-stats {
@@ -653,7 +654,7 @@
   font-size: 12px;
 }
 .sub-stats span {
-  color: rgba(234, 231, 222, 0.6);
+  color: rgba(255, 255, 255, 0.6);
   display: block;
   font-size: 9.5px;
   letter-spacing: 0.16em;
@@ -699,7 +700,7 @@
 }
 
 /* ---------------------------------------------------------- footer ---- */
-.foot { background: var(--ink); color: rgba(234, 231, 222, 0.62); padding-top: clamp(60px, 7vw, 96px); margin-top: auto; }
+.foot { background: var(--ink); color: rgba(255, 255, 255, 0.62); padding-top: clamp(60px, 7vw, 96px); margin-top: auto; }
 .foot-cta {
   display: flex;
   justify-content: space-between;
@@ -806,7 +807,7 @@
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.4s ease;
-    box-shadow: 0 18px 30px -22px rgba(15, 30, 34, 0.45);
+    box-shadow: 0 18px 30px -22px rgba(10, 24, 46, 0.45);
   }
   .nav.open .menu { max-height: 70vh; overflow-y: auto; }
   .menu a {
@@ -874,7 +875,7 @@
   border-top: 1px solid var(--line-dk);
   border-bottom: 1px solid var(--line-dk);
   overflow: hidden;
-  background: rgba(15, 30, 34, 0.42);
+  background: rgba(10, 24, 46, 0.42);
 }
 .ticker-label {
   position: absolute;
@@ -909,7 +910,7 @@
   font-family: var(--mono); font-weight: 600;
   font-size: 12px;
   letter-spacing: 0.04em;
-  color: rgba(234, 231, 222, 0.72);
+  color: rgba(255, 255, 255, 0.72);
   white-space: nowrap;
   border-right: 1px solid var(--line-dk);
 }
@@ -1069,8 +1070,8 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(103deg, rgba(15, 30, 34, 0.9) 0%, rgba(15, 30, 34, 0.62) 46%, rgba(15, 30, 34, 0.12) 100%),
-    linear-gradient(to top, rgba(15, 30, 34, 0.72) 0%, transparent 46%);
+    linear-gradient(103deg, rgba(10, 24, 46, 0.9) 0%, rgba(10, 24, 46, 0.62) 46%, rgba(10, 24, 46, 0.12) 100%),
+    linear-gradient(to top, rgba(10, 24, 46, 0.72) 0%, transparent 46%);
 }
 .phero-inner {
   position: relative;
@@ -1090,7 +1091,7 @@
 .phero h1 em { font-style: italic; font-weight: 500; color: var(--accent-lt); }
 .phero .eyebrow { color: var(--accent-lt); }
 .phero .eyebrow::after { background: var(--accent-lt); }
-.phero .lede { color: rgba(234, 231, 222, 0.76); max-width: 54ch; margin-top: 22px; }
+.phero .lede { color: rgba(255, 255, 255, 0.76); max-width: 54ch; margin-top: 22px; }
 
 .phero-facts {
   display: flex;
@@ -1105,7 +1106,7 @@
   font-size: 11px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: rgba(234, 231, 222, 0.82);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 /* ------------------------------------------------------ page body ----- */
@@ -1204,7 +1205,7 @@
   color: var(--paper);
 }
 .nf-lede {
-  color: rgba(234, 231, 222, 0.74);
+  color: rgba(255, 255, 255, 0.74);
   max-width: 52ch;
   font-size: clamp(15px, 1.15vw, 17.5px);
   line-height: 1.65;
@@ -1219,9 +1220,9 @@
   border: 1px solid var(--line-dk);
   transition: border-color 0.25s, background 0.25s;
 }
-.nf-path:hover { border-color: var(--accent-lt); background: rgba(234, 231, 222, 0.04); }
+.nf-path:hover { border-color: var(--accent-lt); background: rgba(255, 255, 255, 0.04); }
 .nf-path .t { font-family: var(--serif); font-size: 1.25rem; font-weight: 600; color: var(--paper); }
-.nf-path .d { color: rgba(234, 231, 222, 0.62); font-size: 14.5px; line-height: 1.6; }
+.nf-path .d { color: rgba(255, 255, 255, 0.62); font-size: 14.5px; line-height: 1.6; }
 .nf-path .go {
   margin-top: 6px;
   font-family: var(--mono); font-weight: 600;
@@ -1310,7 +1311,7 @@
   margin-top: clamp(40px, 5vw, 68px);
   border-top: 1px solid var(--line-dk);
   border-bottom: 1px solid var(--line-dk);
-  background: rgba(15, 30, 34, 0.5);
+  background: rgba(10, 24, 46, 0.5);
   display: flex;
   align-items: stretch;
 }
@@ -1342,7 +1343,7 @@
   font-size: 11.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(234, 231, 222, 0.78);
+  color: rgba(255, 255, 255, 0.78);
   white-space: nowrap;
   border-right: 1px solid var(--line-dk);
   transition: background 0.25s, color 0.25s;
@@ -1373,7 +1374,7 @@
   padding-left: 20px;
   font-size: 14.5px;
   line-height: 1.55;
-  color: rgba(234, 231, 222, 0.7);
+  color: rgba(255, 255, 255, 0.7);
 }
 .report-card li::before {
   content: "";
@@ -1503,7 +1504,7 @@
 .principal-contact a:hover { color: var(--accent-dp); }
 .principal .btn { margin-top: 6px; }
 /* On the dark consultation band the card keeps the light panel, so text stays readable. */
-.dark .principal { background: rgba(234, 231, 222, 0.06); }
+.dark .principal { background: rgba(255, 255, 255, 0.06); }
 .dark .principal-body h3 { color: var(--paper); }
 
 /* ------------------------------------------------------- partners ----- */
@@ -1642,7 +1643,7 @@
 .enq-field textarea:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(216, 67, 21, 0.14);
+  box-shadow: 0 0 0 3px rgba(0, 52, 200, 0.14);
 }
 .enq-field-error { margin: 7px 0 0; font-size: 13.5px; color: var(--accent-dp); }
 
@@ -1734,7 +1735,7 @@
   transform: rotate(45deg);
 }
 
-.enq-opt:has(input:checked) { border-color: var(--accent); background: rgba(216, 67, 21, 0.05); }
+.enq-opt:has(input:checked) { border-color: var(--accent); background: rgba(0, 52, 200, 0.05); }
 /* Focus lands on the hidden input, so the ring is drawn on what can actually be seen. */
 .enq-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .enq-check:has(input:focus-visible) .enq-mark { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -1800,7 +1801,7 @@
   margin: 24px 0 0;
   padding: 15px 18px;
   border-left: 3px solid var(--accent);
-  background: rgba(216, 67, 21, 0.06);
+  background: rgba(0, 52, 200, 0.06);
   font-size: 14.5px;
   line-height: 1.6;
   color: var(--ink);
@@ -1844,7 +1845,7 @@
   background: var(--ink);
   color: var(--paper-2);
   font-size: 15.5px;
-  box-shadow: 0 18px 50px rgba(15, 30, 34, 0.28);
+  box-shadow: 0 18px 50px rgba(10, 24, 46, 0.28);
 }
 
 .enq-spinner {
@@ -1871,7 +1872,7 @@
   align-items: center;
   justify-content: center;
   padding: 16px;
-  background: rgba(15, 30, 34, 0.55);
+  background: rgba(10, 24, 46, 0.55);
   animation: thanks-fade 0.2s ease-out;
 }
 .thanks {
@@ -1882,7 +1883,7 @@
   border-top: 4px solid var(--accent);
   padding: clamp(28px, 5vw, 44px);
   text-align: center;
-  box-shadow: 0 30px 80px rgba(15, 30, 34, 0.35);
+  box-shadow: 0 30px 80px rgba(10, 24, 46, 0.35);
   animation: thanks-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .thanks-icon {
@@ -1953,7 +1954,7 @@
 .svc-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 14px 30px -22px rgba(15, 30, 34, 0.5);
+  box-shadow: 0 14px 30px -22px rgba(10, 24, 46, 0.5);
 }
 /* The whole card is the link, so the ring belongs on the card rather than the text. */
 .svc-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -2013,9 +2014,9 @@
 .svc-card:hover .svc-card-go { gap: 14px; }
 
 /* On the dark band the cards invert, keeping the same structure. */
-.dark .svc-card { background: rgba(234, 231, 222, 0.05); border-color: var(--line-dk); }
+.dark .svc-card { background: rgba(255, 255, 255, 0.05); border-color: var(--line-dk); }
 .dark .svc-card h3 { color: var(--paper); }
-.dark .svc-card p { color: rgba(234, 231, 222, 0.66); }
+.dark .svc-card p { color: rgba(255, 255, 255, 0.66); }
 .dark .svc-card-icon { background: transparent; border-color: var(--line-dk); color: var(--accent-lt); }
 .dark .svc-card-go { color: var(--accent-lt); border-top-color: var(--line-dk); }
 
@@ -2309,7 +2310,7 @@
   margin: 0;
   font-size: clamp(16px, 1.25vw, 18px);
   line-height: 1.72;
-  color: rgba(234, 231, 222, 0.78);
+  color: rgba(255, 255, 255, 0.78);
   max-width: 46ch;
 }
 
@@ -2468,3 +2469,15 @@
   font-size: 13px; padding: 8px 16px;
 }
 .preview-bar a { color: #fff; text-decoration: underline; margin-left: 6px; }
+
+/* ---------------------------------------- Prospect BC palette (2026-10-29) */
+/* Orange stays the highlight: the appraisal CTA and listing tags. */
+.nav-cta .btn { background: var(--accent-2); }
+.nav-cta .btn:hover { background: #B5360F; }
+.menu-cta { color: var(--accent-2); }
+.tag--accent { background: var(--accent-2); }
+/* The call-to-action band is cobalt blue with a white button, as on the reference site. */
+.cta-band { background: var(--accent); color: var(--white); }
+.cta-band .display em { color: var(--white); opacity: 0.85; }
+.cta-band .btn { background: var(--white); color: var(--accent); }
+.cta-band .btn:hover { background: var(--paper-2); color: var(--accent-dp); }
