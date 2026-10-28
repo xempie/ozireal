@@ -266,11 +266,13 @@ export function groupProjects(blocks: Block[]): PageItem[] {
 }
 
 export function ProjectGrid({ items }: { items: Project[] }) {
+  // A card without its own CTA borrows the run's first one, so every card has a button.
+  const fallback = items.find((p) => p.cta)?.cta;
   return (
     <section className="sec blk">
       <div className="wrap">
         <div className="proj-grid">
-          {items.map(({ image, text, cta }) => (
+          {items.map(({ image, text, cta = fallback }) => (
             <article className="proj" key={image.id}>
               <figure className="proj-fig">
                 <Image
