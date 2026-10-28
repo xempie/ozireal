@@ -31,8 +31,9 @@ import { validateField, validateForm } from "./validate";
  *
  *   - the required one acknowledges the privacy policy and does NOT set marketingOptIn.
  *     It is a condition of handling the enquiry, which is legitimate.
- *   - the optional one is the marketing consent, carries the server's wording verbatim,
- *     and is the only thing that sets marketingOptIn.
+ *   - the optional one was the marketing consent. It was removed on 2026-10-29 at the
+ *     owner's request, so website enquiries no longer record marketing consent and
+ *     campaigns to those contacts are blocked at send time until consent is obtained.
  *
  * The adapter records a consent row only when the box was ticked AND the wording
  * travelled with it, so an unticked box is silence rather than consent. Someone can
@@ -62,7 +63,6 @@ export function EnquiryForm({
   const [meta, setMeta] = React.useState<Meta | null>(null);
   const [metaFailed, setMetaFailed] = React.useState(false);
   const [values, setValues] = React.useState<Record<string, string | string[]>>({});
-  const [optIn, setOptIn] = React.useState(false);
   const [privacy, setPrivacy] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
   const [done, setDone] = React.useState(false);
@@ -194,7 +194,9 @@ export function EnquiryForm({
           message: composeMessage(),
           listingRef: null,
           formName: meta.formName,
-          marketingOptIn: optIn,
+          // The marketing opt-in box was removed from the site (owner's decision,
+          // 2026-10-29), so a website enquiry never records a marketing consent.
+          marketingOptIn: false,
           consentWording: meta.consentWording,
         }),
       });
@@ -301,25 +303,6 @@ export function EnquiryForm({
             </a>{" "}
             and agree to OziRealty handling my details in
             order to respond to this enquiry. <b>Required</b>
-          </span>
-        </label>
-
-        {/*
-          Separate, optional, and the only thing that records a marketing consent. The
-          wording is the server's, verbatim, because it is what the consent row stores as
-          evidence of what was on screen.
-        */}
-        <label className="enq-check">
-          <input
-            type="checkbox"
-            checked={optIn}
-            onChange={(e) => setOptIn(e.target.checked)}
-          />
-          <span className="enq-mark" aria-hidden="true" />
-          <span>
-            {meta?.consentWording ??
-              "Send me property updates by email. You can unsubscribe at any time."}{" "}
-            <b>Optional</b>
           </span>
         </label>
       </div>
