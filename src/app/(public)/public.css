@@ -2508,6 +2508,25 @@
 }
 
 /* ---------------------------------------- Prospect BC palette (2026-10-29) */
+/*
+  Filled buttons: white text and a soft shadow. `.site a { color: inherit }` outranks a
+  bare `.btn`, so a button that is a link took the surrounding dark text; this selector
+  outranks it. Ghost and on-ink buttons keep their own colours.
+*/
+.site .btn:not(.btn--ghost):not(.btn--onink) {
+  color: var(--white);
+  box-shadow: 0 6px 16px -6px rgba(0, 52, 200, 0.55), 0 2px 4px rgba(10, 24, 46, 0.12);
+  transition: background 0.25s, color 0.25s, transform 0.25s, box-shadow 0.25s;
+}
+.site .btn:not(.btn--ghost):not(.btn--onink):hover {
+  box-shadow: 0 10px 22px -8px rgba(0, 52, 200, 0.6), 0 3px 6px rgba(10, 24, 46, 0.14);
+  transform: translateY(-1px);
+}
+.site .nav-cta .btn { box-shadow: 0 6px 16px -6px rgba(216, 67, 21, 0.55), 0 2px 4px rgba(10, 24, 46, 0.12); }
+@media (prefers-reduced-motion: reduce) {
+  .site .btn:not(.btn--ghost):not(.btn--onink):hover { transform: none; }
+}
+
 /* Orange stays the highlight: the appraisal CTA and listing tags. */
 .nav-cta .btn { background: var(--accent-2); }
 .nav-cta .btn:hover { background: #B5360F; }
@@ -2516,5 +2535,6 @@
 /* The call-to-action band is cobalt blue with a white button, as on the reference site. */
 .cta-band { background: var(--accent); color: var(--white); }
 .cta-band .display em { color: var(--white); opacity: 0.85; }
-.cta-band .btn { background: var(--white); color: var(--accent); }
-.cta-band .btn:hover { background: var(--paper-2); color: var(--accent-dp); }
+/* .btn.btn: must outrank the filled-button rule above, which would turn this text white. */
+.site .cta-band .btn.btn { background: var(--white); color: var(--accent); }
+.site .cta-band .btn.btn:hover { background: var(--paper-2); color: var(--accent-dp); }
