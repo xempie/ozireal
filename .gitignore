@@ -30,3 +30,6 @@ infra/.prod-login-password
 
 # New-account (310792823958) migration state: ids and secrets, never committed.
 infra/.migration/
+
+# Hand-over bundle for the second PC: keys and server details. Never committed.
+esi/
