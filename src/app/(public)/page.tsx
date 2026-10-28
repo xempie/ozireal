@@ -113,6 +113,31 @@ export default async function HomePage() {
 
       <Zone blocks={doc?.blocks} zone="after_hero" />
 
+      {/* ========================================================= services */}
+      {/*
+        The services as cards with icons, each landing on the page that carries that
+        service's enquiry form. Straight after the hero (owner's request, 2026-10-29), so
+        the first thing below the banner is what the office does.
+      */}
+      <Fixed id="services">
+        <section className="sec" id="services" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">What we do</p>
+                <h2 className="display">
+                  Eight services, <em>one office</em>
+                </h2>
+              </div>
+              <Link className="txtlink" href="/property-services">
+                All Adelaide property services <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
+            <ServiceGrid />
+          </div>
+        </section>
+      </Fixed>
+
       {/* The live home page's "Free book & Gift party" lead form, straight after the hero. */}
       <Fixed id="form">
         <FormSection slug="realestate-gift-adelaide" />
@@ -206,32 +231,6 @@ export default async function HomePage() {
                 Free suburb insight report <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
-          </div>
-        </section>
-      </Fixed>
-
-      {/* ========================================================= services */}
-      {/*
-        The services as cards with icons, each landing on the page that carries that
-        service's enquiry form. The "start here" strip in the hero is the same set of
-        destinations as a compact row; this is the version with room to say what each
-        one actually is.
-      */}
-      <Fixed id="services">
-        <section className="sec" id="services" style={{ background: "var(--paper-2)" }}>
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">What we do</p>
-                <h2 className="display">
-                  Eight services, <em>one office</em>
-                </h2>
-              </div>
-              <Link className="txtlink" href="/property-services">
-                All Adelaide property services <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
-            <ServiceGrid />
           </div>
         </section>
       </Fixed>
