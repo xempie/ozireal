@@ -47,6 +47,80 @@ import {
  * stock, read through src/server/public (rule 8).
  */
 
+const OFFERS = [
+  {
+    tag: "Limited offer",
+    title: "Free Premium Appraisal Report (Valued at $399)",
+    points: [
+      "No obligation, no pressure",
+      "Current market value range",
+      "Comparable recent sales",
+      "Buyer demand score",
+      "Rental yield estimate",
+      "Price-maximisation strategy",
+      "Suburb growth outlook",
+    ],
+    cta: "Get My Free Appraisal",
+    href: "/free-property-appraisal-sa#enquire",
+    image: "photo-1583847268964-b28dc8f51f92",
+    alt: "Living room with a large window",
+  },
+  {
+    tag: null,
+    title: "Book Your Free Property Consultation",
+    points: [
+      "Assess current market value",
+      "Review recent sales in your area",
+      "Analyse buyer and rental demand",
+      "Identify ways to maximise your return",
+      "Answer your key questions",
+    ],
+    cta: "Free Consultation",
+    href: "/book-online#enquire",
+    image: "photo-1570129477492-45c003edd2be",
+    alt: "Sandstone villa with a return verandah",
+  },
+  {
+    tag: "Free Suburb Insight Report",
+    title: "Stay Ahead of the Next Market Shift",
+    points: [
+      "Median prices and recent sales trends",
+      "Rental yields and vacancy rates",
+      "Suburb growth performance",
+      "Buyer and tenant demand levels",
+      "Demographic and population insights",
+      "School catchment zones",
+      "Comparison with surrounding suburbs",
+      "Comparable property analytics",
+      "Market depth and buyer activity data",
+      "Long-term capital growth trends",
+      "Rental performance metrics",
+      "Risk indicators and suburb volatility analysis",
+      "And more …",
+    ],
+    cta: "Unlock My Suburb Insights",
+    href: "/free-suburb-insight-report#enquire",
+    image: "photo-1580587771525-78b9dba3b914",
+    alt: "Terrace homes on a leafy street",
+  },
+  {
+    tag: "Property Rental Report",
+    title: "Smart Rent, Stable Income, Zero Guesswork",
+    points: [
+      "Accurate weekly rent range",
+      "Comparable nearby rental results",
+      "Vacancy & demand insights",
+      "Tenant profile analysis",
+      "Yield and annual income estimate",
+      "Pricing strategy to minimise vacancy",
+    ],
+    cta: "Get Rent Report Now",
+    href: "/property-rental-report#enquire",
+    image: "photo-1600210491892-03d54c0aaf87",
+    alt: "Apartment living room with a fireplace",
+  },
+] as const;
+
 export default async function HomePage() {
   const [listed, site, doc] = await Promise.all([
     onMarket(6),
@@ -154,6 +228,53 @@ export default async function HomePage() {
                 </p>
               }
             />
+          </div>
+        </section>
+      </Fixed>
+
+      {/* ====================================================== free offers */}
+      {/*
+        The four free reports and the consultation, each button landing on the form for
+        it (#enquire is the FormSection anchor). Owner's content, 2026-10-29.
+      */}
+      <Fixed id="offers">
+        <section className="sec" id="offers" style={{ background: "var(--paper-2)" }}>
+          <div className="wrap">
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Free reports &amp; guidance</p>
+                <h2 className="display">
+                  Property value &amp; <em>strategy services</em>
+                </h2>
+              </div>
+            </div>
+            <div className="offer-list">
+              {OFFERS.map((o, i) => (
+                <article className={`offer${i % 2 ? " offer--flip" : ""}`} key={o.title}>
+                  <div className="offer-media">
+                    <Image
+                      src={photo(o.image, 1200)}
+                      alt={o.alt}
+                      fill
+                      sizes="(max-width: 900px) 100vw, 50vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div className="offer-body">
+                    {o.tag && <span className="offer-tag">{o.tag}</span>}
+                    <h3>{o.title}</h3>
+                    <ul className={`offer-points${o.points.length > 8 ? " offer-points--two" : ""}`}>
+                      {o.points.map((p) => (
+                        <li key={p}>{p}</li>
+                      ))}
+                    </ul>
+                    <Link className="btn" href={o.href}>
+                      {o.cta} <span aria-hidden="true">&rarr;</span>
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </section>
       </Fixed>
