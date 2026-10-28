@@ -53,8 +53,23 @@ type NavItem = { href: string; label: string; children?: { href: string; label: 
  * "About Us": a hover/focus dropdown on desktop, an indented list in the drawer.
  */
 const NAV: NavItem[] = [
-  { href: "/property-services", label: "Services" },
-  { href: "/property-strategy-services", label: "Strategy" },
+  {
+    // The eight services, same names and pages as the homepage grid, plus Strategy
+    // Services, which had its own top-level item until 2026-10-29.
+    href: "/property-services",
+    label: "Services",
+    children: [
+      { href: "/sell-property-house-adelaide", label: "Sell My Property" },
+      { href: "/manage-property-adelaide", label: "Manage My Property" },
+      { href: "/rent-out-my-property-adelaide", label: "Rent Out My Property" },
+      { href: "/buyer-agent-adelaide", label: "I Need A Buyer Agent" },
+      { href: "/property-investment", label: "I Want to Invest" },
+      { href: "/land-opportunities-sa-adelaide", label: "Looking For Land" },
+      { href: "/rent-property-house-adelaide", label: "I Need To Rent" },
+      { href: "/sell-my-business-australia", label: "Sell My Business" },
+      { href: "/property-strategy-services", label: "Strategy Services" },
+    ],
+  },
   { href: "/overseas-investment", label: "Oversea Investment" },
   {
     href: "/about-adelaide-land-agent",
