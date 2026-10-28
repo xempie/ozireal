@@ -88,7 +88,7 @@ export const PROMISES = [
 /** Mission, vision and values, from the About page. */
 export const ABOUT = {
   mission:
-    "OziRealty is committed to delivering top-tier real estate services across Australia. We help buyers, sellers, and investors navigate the property market with expert advice, innovative solutions, and a client-first approach.",
+    "OziRealty is committed to delivering top-tier real estate services across Australia. We help buyers, sellers, and investors navigate the property market with expert guidance, innovative solutions, and a client-first approach.",
   vision:
     "To be Australia's most trusted real estate agency, setting industry standards with exceptional property services, market insights, and seamless transactions for homebuyers and investors.",
   values: [
@@ -303,11 +303,11 @@ export const JOURNAL_POSTS = [
     alt: "How much does a property manager cost in Adelaide",
   },
   {
-    title: "Where to Find Investment Property Advice in Adelaide",
+    title: "Where to Find Investment Property Guidance in Adelaide",
     excerpt:
-      "The hardest part is often not finding a property. It is knowing whose advice to trust.",
+      "The hardest part is often not finding a property. It is knowing whose guidance to trust.",
     src: "/brand/post-investment-advice.png",
-    alt: "Where to find investment property advice in Adelaide",
+    alt: "Where to find investment property guidance in Adelaide",
   },
 ] as const;
 

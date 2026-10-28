@@ -31,7 +31,7 @@ const FAQS: { q: string; a: string[] }[] = [
   {
     q: "What services can you help me with?",
     a: [
-      "Buying, selling, renting, property management, property appraisals, and investment guidance. Whether you are planning a move, growing your portfolio, or just exploring your options, you will get practical advice tailored to your goals.",
+      "Buying, selling, renting, property management, property appraisals, and investment guidance. Whether you are planning a move, growing your portfolio, or just exploring your options, you will get practical guidance tailored to your goals.",
     ],
   },
   {
@@ -82,7 +82,7 @@ const FAQS: { q: string; a: string[] }[] = [
   {
     q: "Do you offer help with overseas property investment?",
     a: [
-      "Yes. We work with investors looking at Dubai, and we combine real estate advice with financial advising and finance broking so the property and the finance are handled together.",
+      "Yes. We work with investors looking at Dubai, and we combine real estate guidance with financial advising and finance broking so the property and the finance are handled together.",
       "Cross-border purchases carry approval, tax and currency questions a local purchase does not. Confirm your position with an accountant and a solicitor who know your circumstances.",
     ],
   },

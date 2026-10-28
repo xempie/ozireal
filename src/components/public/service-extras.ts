@@ -277,7 +277,7 @@ export const SERVICE_EXTRAS: Record<string, ServiceExtras> = {
     pitch: {
       heading: "Run the numbers",
       headingEm: "before you commit",
-      body: "Tell us what you are investing for and we will come back with the analysis, in South Australia or overseas. We are paid for the advice, so there is no version of this where the answer is always yes.",
+      body: "Tell us what you are investing for and we will come back with the analysis, in South Australia or overseas. We are paid for the guidance, so there is no version of this where the answer is always yes.",
       bullets: [
         "Whether the goal is growth, yield, a tax position, or a mix",
         "Rental demand for the street rather than the suburb average",
@@ -312,7 +312,7 @@ export const SERVICE_EXTRAS: Record<string, ServiceExtras> = {
     ],
     galleryLead: "Two blocks that look identical from the street",
     galleryBody:
-      "Frontage, easements, services, slope and zoning decide whether a block can be split, and none of them are in the advertisement. The deep block quietly worth twice its listing and the one that will never get approval photograph exactly the same. Knowing which you are standing on is the whole value of the advice.",
+      "Frontage, easements, services, slope and zoning decide whether a block can be split, and none of them are in the advertisement. The deep block quietly worth twice its listing and the one that will never get approval photograph exactly the same. Knowing which you are standing on is the whole value of the guidance.",
     pitch: {
       heading: "Find out what you can",
       headingEm: "actually build",
@@ -360,7 +360,7 @@ export const SERVICE_EXTRAS: Record<string, ServiceExtras> = {
         "A valuation based on the numbers a buyer will underwrite",
         "Buyers qualified before they see anything identifying",
         "Negotiation and contract support through to settlement",
-        "Honest timing advice, including when not to go to market yet",
+        "Honest timing guidance, including when not to go to market yet",
       ],
       cost: "Going to market before the books are clean is the single biggest discount a seller applies to themselves.",
     },
@@ -375,7 +375,7 @@ export const SERVICE_EXTRAS: Record<string, ServiceExtras> = {
       },
       {
         icon: "check",
-        title: "Paid for the advice",
+        title: "Paid for the guidance",
         body: "Not for the transaction, so the recommendation can be that you do nothing for two years. Sometimes it is.",
       },
       {

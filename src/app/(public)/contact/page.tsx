@@ -72,7 +72,7 @@ export default function Page() {
                 <span style={{ color: "var(--muted)" }}>
                   Whether you are planning to sell, invest, or need professional property
                   management, this one-on-one session gives you practical insights based on
-                  the South Australian market. No pressure. Just clear, professional advice.
+                  the South Australian market. No pressure. Just clear, professional guidance.
                 </span>
               </p>
               <Link className="btn" href="/book-online" style={{ marginTop: 8 }}>
@@ -126,7 +126,7 @@ export default function Page() {
                 <p>
                   Located at {AGENCY.office}, we provide personalised service tailored to
                   your needs, whether you are a first-time buyer, an investor exploring
-                  overseas opportunities, or after expert advice on the local market.
+                  overseas opportunities, or after expert guidance on the local market.
                 </p>
               </div>
             </div>

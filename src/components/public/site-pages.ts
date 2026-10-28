@@ -115,7 +115,7 @@ export const SERVICE_PAGES: ServicePage[] = [
       {
         heading: "What it is not",
         body: [
-          "This is property advice. Where a question needs your accountant, your broker or a solicitor, we will say so rather than answer it ourselves.",
+          "This is property guidance. Where a question needs your accountant, your broker or a solicitor, we will say so rather than answer it ourselves.",
         ],
       },
     ],
@@ -273,7 +273,7 @@ export const SERVICE_PAGES: ServicePage[] = [
     lede: "Capital growth, rental yield and tax position pull in different directions. Which one leads decides the shortlist, so that is the first question we ask.",
     metaTitle: "Property investment in Adelaide",
     metaDescription:
-      "Investment property advice for Adelaide and overseas. Yield, growth and holding costs across a full year, with real estate expertise combined with finance broking.",
+      "Investment property guidance for Adelaide and overseas. Yield, growth and holding costs across a full year, with real estate expertise combined with finance broking.",
     image: "photo-1628624747186-a941c476b7ef",
     imageAlt: "Coastal home with established trees",
     facts: ["South Australia and overseas", "Dual expertise", "Written analysis"],
@@ -288,7 +288,7 @@ export const SERVICE_PAGES: ServicePage[] = [
         heading: "The finance and the property together",
         body: [
           "OziRealty blends real estate expertise with financial advising and finance broking. For an investor that matters more than it sounds: the property that suits your borrowing position is not always the one that looks best on the listing.",
-          "We will tell you when a deal does not stack up. That is what being paid for the advice rather than the transaction is for.",
+          "We will tell you when a deal does not stack up. That is what being paid for the guidance rather than the transaction is for.",
         ],
       },
       {
@@ -347,7 +347,7 @@ export const SERVICE_PAGES: ServicePage[] = [
       "A valuation based on the numbers a buyer will actually underwrite",
       "Buyers qualified before they see anything identifying",
       "Negotiation and contract support through to settlement",
-      "Timing advice, including when not to go to market yet",
+      "Timing guidance, including when not to go to market yet",
     ],
     sections: [
       {
@@ -360,7 +360,7 @@ export const SERVICE_PAGES: ServicePage[] = [
       {
         heading: "Get your books in order first",
         body: [
-          "The single biggest thing that moves a business price is clean, verifiable financials. If they are not there yet, the honest advice is to spend a year getting them there rather than going to market now.",
+          "The single biggest thing that moves a business price is clean, verifiable financials. If they are not there yet, the honest guidance is to spend a year getting them there rather than going to market now.",
         ],
       },
     ],
@@ -462,7 +462,7 @@ export const SERVICE_PAGES: ServicePage[] = [
       {
         heading: "Mission",
         body: [
-          "OziRealty is committed to delivering top-tier real estate services across Australia. We help buyers, sellers, and investors navigate the property market with expert advice, innovative solutions, and a client-first approach.",
+          "OziRealty is committed to delivering top-tier real estate services across Australia. We help buyers, sellers, and investors navigate the property market with expert guidance, innovative solutions, and a client-first approach.",
         ],
       },
       {

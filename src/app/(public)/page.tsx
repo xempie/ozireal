@@ -327,7 +327,7 @@ export default async function HomePage() {
                 </h2>
               </div>
               <p className="lede" style={{ margin: 0 }}>
-                No pressure. Just clear, professional advice based on the South Australian
+                No pressure. Just clear, professional guidance based on the South Australian
                 market.
               </p>
             </div>

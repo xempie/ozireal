@@ -36,7 +36,7 @@ import { Fixed } from "@/components/public/fixed";
 export const metadata: Metadata = {
   title: "Free Meeting",
   description:
-    "Book a one-on-one real estate consultation with Esi Dor, Principal of OziRealty (RLA 350 628). Expert property advice, no pressure and no obligation.",
+    "Book a one-on-one real estate consultation with Esi Dor, Principal of OziRealty (RLA 350 628). Expert property guidance, no pressure and no obligation.",
   alternates: { canonical: "/book-online" },
 };
 
@@ -45,7 +45,7 @@ export default function Page() {
     <>
       <PageHero
         eyebrow="Free meeting"
-        title={`Expert property advice with`}
+        title={`Expert property guidance with`}
         titleEm={AGENCY.principal}
         lede={`Book a one-on-one real estate consultation with ${AGENCY.principal}, Principal of ${AGENCY.name} (Licence Number: ${AGENCY.licence}).`}
         image="photo-1600210491892-03d54c0aaf87"

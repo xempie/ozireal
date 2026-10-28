@@ -28,7 +28,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { n } = await params;
   return {
-    title: `Adelaide Property Advice and Guides, page ${n}`,
+    title: `Adelaide Property Tips and Guides, page ${n}`,
     description:
       "More guides on selling, renting out, managing and investing in Adelaide property, written by the agent who does it.",
     alternates: { canonical: `/blog/page/${n}` },

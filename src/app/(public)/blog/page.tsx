@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     count; this describes what somebody searching would be looking for, which is the job
     a title tag is actually doing.
   */
-  title: "Adelaide Property Advice, Guides and Market Insights",
+  title: "Adelaide Property Tips, Guides and Market Insights",
   description:
     "Practical guides on selling, renting out, managing and investing in Adelaide property, written by the agent who does it. Fees, appraisals, suburbs and what the numbers mean.",
   alternates: { canonical: "/blog" },

@@ -28,7 +28,7 @@ export function BlogList({ page }: { page: number }) {
     <>
       <PageHero
         eyebrow="Journal"
-        title="Adelaide property advice,"
+        title="Adelaide property guidance,"
         titleEm="written by the agent"
         lede="Guides on selling, renting out, managing and investing in Adelaide property, from the person who does it rather than a content agency."
         image="photo-1605276374104-dee2a0ed3cd6"
