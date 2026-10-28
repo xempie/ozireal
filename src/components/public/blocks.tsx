@@ -224,6 +224,98 @@ export function BlockView({ b }: { b: Block }) {
   }
 }
 
+/* ------------------------------------------------------------ projects */
+
+type Project = {
+  image: Extract<Block, { type: "image" }>;
+  text: Extract<Block, { type: "text" }>;
+  cta?: Extract<Block, { type: "cta" }>;
+};
+
+export type PageItem = { kind: "block"; b: Block } | { kind: "projects"; items: Project[] };
+
+/**
+ * An image followed by a headed text block (and optionally its CTA) is one project.
+ * Runs of two or more are laid out two to a row instead of stacked full width; a lone
+ * image + text pair, and everything else, renders exactly as before. Derived from the
+ * block order, so the stored page and the editor are unchanged.
+ */
+export function groupProjects(blocks: Block[]): PageItem[] {
+  const out: PageItem[] = [];
+  let run: Project[] = [];
+  const flush = () => {
+    if (run.length >= 2) out.push({ kind: "projects", items: run });
+    else for (const p of run) for (const b of [p.image, p.text, p.cta]) if (b) out.push({ kind: "block", b });
+    run = [];
+  };
+  for (let i = 0; i < blocks.length; i++) {
+    const image = blocks[i];
+    const text = blocks[i + 1];
+    if (image.type === "image" && text?.type === "text" && text.heading) {
+      const next = blocks[i + 2];
+      const cta = next?.type === "cta" ? next : undefined;
+      run.push({ image, text, cta });
+      i += cta ? 2 : 1;
+      continue;
+    }
+    flush();
+    out.push({ kind: "block", b: image });
+  }
+  flush();
+  return out;
+}
+
+export function ProjectGrid({ items }: { items: Project[] }) {
+  return (
+    <section className="sec blk">
+      <div className="wrap">
+        <div className="proj-grid">
+          {items.map(({ image, text, cta }) => (
+            <article className="proj" key={image.id}>
+              <figure className="proj-fig">
+                <Image
+                  src={photo(image.image, 1000)}
+                  alt={image.alt}
+                  width={1000}
+                  height={667}
+                  sizes="(max-width: 900px) 100vw, 600px"
+                />
+              </figure>
+              <div className="proj-body">
+                {text.eyebrow && <p className="eyebrow">{text.eyebrow}</p>}
+                <h3 className="proj-title">
+                  {text.heading}
+                  {text.headingEm ? (
+                    <>
+                      {" "}
+                      <em>{text.headingEm}</em>
+                    </>
+                  ) : null}
+                </h3>
+                {text.paragraphs.map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+                {text.bullets?.length ? (
+                  <ul>
+                    {text.bullets.map((x, i) => (
+                      <li key={i}>{x}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {cta && (
+                  <SmartLink className="btn proj-btn" href={cta.href}>
+                    {cta.label}
+                  </SmartLink>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /** Blocks for one zone of a built-in page. */
 export function Zone({ blocks, zone }: { blocks: Block[] | undefined; zone: string }) {
   const list = (blocks ?? []).filter((b) => (b.zone ?? "end") === zone);

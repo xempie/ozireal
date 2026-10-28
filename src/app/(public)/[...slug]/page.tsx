@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BlockView } from "@/components/public/blocks";
+import { BlockView, ProjectGrid, groupProjects } from "@/components/public/blocks";
 import { CtaBand } from "@/components/public/page-shell";
 import { customPage } from "@/server/public/content";
 
@@ -36,9 +36,13 @@ export default async function Page({ params }: Params) {
   const hasCta = doc.blocks.some((b) => b.type === "cta" || b.type === "form");
   return (
     <>
-      {doc.blocks.map((b) => (
-        <BlockView key={b.id} b={b} />
-      ))}
+      {groupProjects(doc.blocks).map((item) =>
+        item.kind === "projects" ? (
+          <ProjectGrid key={item.items[0].image.id} items={item.items} />
+        ) : (
+          <BlockView key={item.b.id} b={item.b} />
+        ),
+      )}
       {!hasCta && (
         <CtaBand
           heading="Talk to"
