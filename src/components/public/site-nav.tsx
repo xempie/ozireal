@@ -46,17 +46,32 @@ import { usePathname } from "next/navigation";
  * than the 900px a six-item menu needed. Nothing is ever hidden without the burger
  * appearing to reach it, which is the trap the alternative had.
  */
-const NAV = [
+type NavItem = { href: string; label: string; children?: { href: string; label: string }[] };
+
+/*
+ * Since 2026-10-29 (owner's request) Gift Party, FAQ and the privacy policy sit under
+ * "About Us": a hover/focus dropdown on desktop, an indented list in the drawer.
+ */
+const NAV: NavItem[] = [
   { href: "/property-services", label: "Services" },
   { href: "/property-strategy-services", label: "Strategy" },
   { href: "/overseas-investment", label: "Oversea Investment" },
-  { href: "/about-adelaide-land-agent", label: "About" },
+  {
+    href: "/about-adelaide-land-agent",
+    label: "About Us",
+    children: [
+      { href: "/realestate-gift-adelaide", label: "Gift Party" },
+      { href: "/adelaide-property-faq", label: "FAQ" },
+      { href: "/privacy", label: "Privacy Policy" },
+    ],
+  },
   { href: "/contact", label: "Contact" },
   { href: "/book-online", label: "Free Meeting" },
-  { href: "/realestate-gift-adelaide", label: "Gift Party" },
   { href: "/blog", label: "Blog" },
-  { href: "/adelaide-property-faq", label: "FAQ" },
-] as const;
+];
+
+const isCurrent = (pathname: string, href: string) =>
+  pathname === href || pathname.startsWith(href + "/") ? ("page" as const) : undefined;
 
 export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string }) {
   const [open, setOpen] = React.useState(false);
@@ -103,25 +118,42 @@ export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string
         </Link>
 
         <div className="menu" id="site-menu">
-          {NAV.map((n) => (
-            <Link
-              key={n.label}
-              href={n.href}
-              /*
-                Kept alongside the pathname effect above: clicking the item you are
-                already on does not change the pathname, so the effect would not fire and
-                the drawer would stay open over the page.
-              */
-              onClick={() => setOpen(false)}
-              aria-current={
-                pathname === n.href || pathname.startsWith(n.href + "/")
-                  ? "page"
-                  : undefined
-              }
-            >
-              {n.label}
-            </Link>
-          ))}
+          {NAV.map((n) => {
+            const link = (
+              <Link
+                key={n.label}
+                href={n.href}
+                /*
+                  Kept alongside the pathname effect above: clicking the item you are
+                  already on does not change the pathname, so the effect would not fire
+                  and the drawer would stay open over the page.
+                */
+                onClick={() => setOpen(false)}
+                aria-current={isCurrent(pathname, n.href)}
+              >
+                {n.label}
+                {n.children && <span className="menu-caret" aria-hidden="true" />}
+              </Link>
+            );
+            if (!n.children) return link;
+            return (
+              <div className="menu-group" key={n.label}>
+                {link}
+                <div className="submenu">
+                  {n.children.map((c) => (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      onClick={() => setOpen(false)}
+                      aria-current={isCurrent(pathname, c.href)}
+                    >
+                      {c.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
           {/*
             The appraisal CTA is a button in the bar on desktop, where it is the most
             valuable link on the site. In the drawer it becomes the last item rather
