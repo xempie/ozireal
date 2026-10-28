@@ -2500,6 +2500,48 @@
 }
 .preview-bar a { color: #fff; text-decoration: underline; margin-left: 6px; }
 
+/* ---------------------------------------------- free book (home page) ---- */
+.book-layout { display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+.book-pitch { display: grid; grid-template-columns: auto 1fr; gap: clamp(24px, 3.4vw, 44px); align-items: center; }
+/* The cover flat and upright: a soft glow behind, two page edges, a real shadow. */
+.book-art { position: relative; padding: 18px 26px 26px 6px; }
+.book-art::before {
+  content: ""; position: absolute; inset: -10% -20% -6% -24%; z-index: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(242, 128, 79, 0.22), rgba(0, 52, 200, 0.1) 60%, transparent);
+}
+.book-cover { position: relative; z-index: 1; width: clamp(170px, 19vw, 236px); max-width: 100%; }
+.book-cover::before, .book-cover::after {
+  content: ""; position: absolute; inset: 0; background: #F3F1EC; border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.book-cover::before { transform: translate(12px, 10px); background: #E6E2DA; }
+.book-cover::after { transform: translate(6px, 5px); }
+.book-cover img {
+  position: relative; z-index: 1; display: block; width: 100%; height: auto;
+  box-shadow: 0 28px 50px -18px rgba(0, 0, 0, 0.65), 0 8px 18px rgba(0, 0, 0, 0.25);
+}
+.book-sec .display em { color: var(--accent-lt); }
+.book-byline { margin: 14px 0 0; font-size: 15px; color: rgba(255, 255, 255, 0.85); }
+.book-byline b { font-weight: 600; color: var(--white); }
+.book-sec .lede { margin-top: 14px; }
+.book-tagline {
+  margin: 22px 0 0; padding-left: 16px; border-left: 2px solid var(--accent-2);
+  font-family: var(--serif); font-style: italic; font-size: 1.15rem; line-height: 1.4;
+  color: var(--white); max-width: 34ch;
+}
+/* The shared enquiry form, sat in a white card on the navy band. */
+.book-form {
+  background: var(--white); color: var(--ink); min-width: 0;
+  padding: clamp(24px, 3vw, 40px); border-top: 3px solid var(--accent-2);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.45);
+}
+.book-form-title { font-family: var(--serif); font-weight: 600; font-size: clamp(1.5rem, 2.2vw, 1.9rem); margin: 0 0 18px; }
+/* The form's own title and intro repeat the book's, which sits right beside it. */
+.book-form .enq-title, .book-form .enq-intro { display: none; }
+/* .book-form is already the card; the form's own card would nest a box inside it. */
+.book-form .enq { max-width: none; background: none; border: 0; padding: 0; }
+@media (max-width: 960px) { .book-layout { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .book-pitch { grid-template-columns: 1fr; justify-items: start; } }
+
 /* ------------------------------------------- free offers (home page) ---- */
 .offer-list { display: grid; gap: clamp(18px, 2vw, 26px); }
 .offer {

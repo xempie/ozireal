@@ -13,10 +13,22 @@ import { AGENCY } from "../agency";
  *
  * Renders nothing when a slug has no form, so adding a page without one is not an error.
  */
-export async function FormSection({ slug }: { slug: string }) {
+export async function FormSection({ slug, bare = false }: { slug: string; bare?: boolean }) {
   const definition = formForSlug(slug);
   if (!definition) return null;
   const formKey = await publicFormKey();
+
+  // `bare`: just the form, for a section that supplies its own layout (the home page book).
+  if (bare) {
+    return (
+      <EnquiryForm
+        definition={definition}
+        formKey={formKey}
+        phone={AGENCY.phone}
+        phoneHref={AGENCY.phoneHref}
+      />
+    );
+  }
 
   return (
     <section className="sec enq-sec" id="enquire">

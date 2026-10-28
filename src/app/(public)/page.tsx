@@ -308,6 +308,49 @@ export default async function HomePage() {
         </section>
       </Fixed>
 
+      {/* ============================================================= book */}
+      {/*
+        Esi Dor's free book, straight after the testimonials (which render in the
+        "after:why-us" zone above). The form is the existing free-book form, so sign-ups
+        reach the CRM through the same channel and consent wording as before.
+      */}
+      <Fixed id="book">
+        <section className="sec dark book-sec" id="free-book">
+          <div className="wrap book-layout">
+            <div className="book-pitch">
+              <div className="book-art">
+                <div className="book-cover">
+                  <Image
+                    src="/brand/book-cover.png"
+                    alt="Cover of 10 Truths About Finding The Right Home by Esi Dor"
+                    width={603}
+                    height={863}
+                    sizes="(max-width: 560px) 60vw, 240px"
+                  />
+                </div>
+              </div>
+              <div>
+                <p className="eyebrow">Free book</p>
+                <h2 className="display">
+                  10 truths about finding <em>the right home</em>
+                </h2>
+                <p className="book-byline">
+                  By <b>Esi Dor</b>, Ozi Realty founder
+                </p>
+                <p className="lede">A guide to avoid common home buying traps.</p>
+                <p className="book-tagline">
+                  Because the right home isn&rsquo;t just found, it&rsquo;s understood.
+                </p>
+              </div>
+            </div>
+            <div className="book-form">
+              <h3 className="book-form-title">Get your free copy</h3>
+              <FormSection slug="realestate-gift-adelaide" bare />
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
       {/* ========================================================= partners */}
       {/*
         "We Work With the Best" on the live site. Third-party marks the agency already
