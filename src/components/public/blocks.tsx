@@ -284,6 +284,17 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                   height={667}
                   sizes="(max-width: 900px) 100vw, 600px"
                 />
+                {/* The project photos are stock, so the card says so rather than implying them. */}
+                <span className="proj-note">Illustrative image</span>
+                {text.highlights?.length ? (
+                  <div className="proj-pills">
+                    {text.highlights.map((h) => (
+                      <span className="proj-pill" key={h}>
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </figure>
               <div className="proj-body">
                 {text.eyebrow && <p className="eyebrow">{text.eyebrow}</p>}

@@ -2452,8 +2452,26 @@
 /* Image + text (+ CTA) runs from the editor, two to a row. See groupProjects(). */
 .proj-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: clamp(20px, 2.4vw, 34px); }
 .proj { display: flex; flex-direction: column; background: var(--paper-2); border: 1px solid var(--line); }
-.proj-fig { margin: 0; aspect-ratio: 3 / 2; overflow: hidden; }
+.proj-fig { margin: 0; aspect-ratio: 3 / 2; max-width: 100%; overflow: hidden; position: relative; }
 .proj-fig img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.proj-fig::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to top, rgba(10, 24, 46, 0.82) 0%, rgba(10, 24, 46, 0.25) 45%, transparent 70%);
+}
+.proj-note {
+  position: absolute; top: 10px; left: 10px; z-index: 1;
+  font-size: 10px; letter-spacing: 0.04em; color: #fff;
+  background: rgba(10, 24, 46, 0.55); padding: 3px 7px;
+}
+.proj-pills { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; }
+.proj-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 7px 14px 7px 12px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; line-height: 1.2; color: #fff;
+  background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.proj-pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-lt); flex-shrink: 0; }
 .proj-body { display: flex; flex-direction: column; flex: 1; padding: clamp(22px, 2.4vw, 32px); }
 .proj-title {
   font-family: var(--serif);
@@ -2464,8 +2482,12 @@
 }
 .proj-title em { font-style: italic; font-weight: 500; }
 .proj-body p { margin: 0 0 12px; color: var(--muted); font-size: 15px; line-height: 1.62; }
-.proj-body ul { margin: 0 0 20px; padding-left: 1.2em; font-size: 14.5px; line-height: 1.55; }
-.proj-body li { margin-bottom: 0.3em; }
+.proj-body ul { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 8px; font-size: 14.5px; line-height: 1.5; }
+.proj-body li { position: relative; padding-left: 20px; color: var(--ink-2); }
+.proj-body li::before {
+  content: ""; position: absolute; left: 2px; top: 0.6em;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent-2);
+}
 .proj-btn { margin-top: auto; align-self: flex-start; }
 @media (max-width: 900px) { .proj-grid { grid-template-columns: 1fr; } }
 .preview-bar {
