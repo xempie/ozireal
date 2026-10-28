@@ -14,7 +14,6 @@ import {
   AGENCY,
   HERO,
   JOURNAL_POSTS,
-  REPORTS,
   PARTNERS,
   TESTIMONIAL,
   WHY_US,
@@ -155,47 +154,6 @@ export default async function HomePage() {
                 </p>
               }
             />
-          </div>
-        </section>
-      </Fixed>
-
-      {/* ========================================================== reports */}
-      <Fixed id="reports">
-        <section className="sec dark">
-          <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">Limited offer</p>
-                <h2 className="display">
-                  Free premium <em>appraisal report</em>
-                </h2>
-              </div>
-              <p className="lede" style={{ margin: 0 }}>
-                {REPORTS.appraisal.note}
-              </p>
-            </div>
-
-            <div className="report-grid">
-              {[REPORTS.appraisal, REPORTS.consultation, REPORTS.rental].map((r) => (
-                <div className="report-card" key={r.title}>
-                  <h3>{r.title}</h3>
-                  <ul>
-                    {r.items.map((i) => (
-                      <li key={i}>{i}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className="report-cta">
-              <Link className="btn" href="/free-property-appraisal-sa">
-                Get my free report
-              </Link>
-              <Link className="txtlink" href="/free-suburb-insight-report">
-                Free suburb insight report <span aria-hidden="true">&rarr;</span>
-              </Link>
-            </div>
           </div>
         </section>
       </Fixed>
