@@ -1,0 +1,22 @@
+OZIREALTY - NAMESERVERS (GoDaddy > My Products > ozirealty.com.au > DNS > Nameservers)
+
+Change nameservers > "I'll use my own nameservers" > replace ns8/ns9.wixdns.net with:
+
+   ns-49.awsdns-06.com
+   ns-1020.awsdns-63.net
+   ns-1176.awsdns-19.org
+   ns-1690.awsdns-19.co.uk
+
+All records are already set up in AWS Route 53 (zone Z0445983UXAF6MH076UV):
+- ozirealty.com.au     -> website (13.210.78.88)
+- www                  -> website
+- crm                  -> CRM (13.210.78.88)
+- MX                   -> Google email (unchanged)
+- TXT                  -> Google verification, SPF (fixed: one record), DMARC
+- s1/s2._domainkey     -> Wix email signing (unchanged)
+
+NOTES
+- Takes a few minutes to ~24h to spread.
+- Wix site and Wix Bookings stop when this goes live.
+- Zoho Campaigns (zcsend) DKIM: not found publicly - check Wix DNS and send to Claude if present.
+- Tell Claude when done: certificates + checks run then.
