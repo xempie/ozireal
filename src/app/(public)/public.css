@@ -215,11 +215,13 @@
   screen then discards.
 */
 .brand img { height: 30px; width: auto; display: block; mix-blend-mode: multiply; }
-.brand--light img {
-  height: 34px;
-  mix-blend-mode: screen;
-  filter: invert(1) brightness(1.7) contrast(1.05);
-}
+/*
+  The original logo, exactly as in the header, on a white panel so it reads on the dark
+  footer (owner's request, 2026-10-29). Replaces the old invert-and-screen treatment,
+  which changed the logo's colours.
+*/
+.brand--light { display: inline-flex; background: var(--white); padding: 12px 16px; }
+.brand--light img { height: 34px; width: auto; }
 
 .menu { display: flex; align-items: center; gap: 32px; margin-left: auto; flex-wrap: wrap; }
 .menu a {
