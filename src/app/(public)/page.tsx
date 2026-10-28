@@ -318,7 +318,14 @@ export default async function HomePage() {
       <Fixed id="partners">
         <section className="sec sec--tight partners">
           <div className="wrap">
-            <p className="eyebrow solo">We work with the best</p>
+            <div className="sec-head">
+              <div>
+                <p className="eyebrow">Our partners</p>
+                <h2 className="display">
+                  We work with <em>the best</em>
+                </h2>
+              </div>
+            </div>
             <div className="partner-row">
               {PARTNERS.map((b) => (
                 <Image
@@ -327,7 +334,7 @@ export default async function HomePage() {
                   alt={b.name}
                   width={b.w}
                   height={b.h}
-                  sizes="160px"
+                  sizes="240px"
                 />
               ))}
             </div>

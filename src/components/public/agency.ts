@@ -187,14 +187,15 @@ export const PORTRAIT = {
  * sentence as "endorsed by".
  */
 export const PARTNERS = [
-  { name: "realestate.com.au", src: "/brand/partner-rea.png", w: 376, h: 114 },
-  { name: "Domain", src: "/brand/partner-domain.png", w: 360, h: 120 },
-  { name: "CoreLogic", src: "/brand/partner-corelogic.png", w: 360, h: 120 },
-  { name: "Cotality", src: "/brand/partner-cotality.png", w: 360, h: 120 },
-  { name: "REISA", src: "/brand/partner-reisa.png", w: 360, h: 120 },
-  { name: "OnTheHouse", src: "/brand/partner-onthehouse.png", w: 360, h: 120 },
-  { name: "Reapit", src: "/brand/partner-reapit.png", w: 360, h: 120 },
-  { name: "Google", src: "/brand/partner-google.png", w: 360, h: 120 },
+  // Full, uncropped originals since 2026-10-29 (the earlier 360x120 copies were Wix crops).
+  { name: "realestate.com.au", src: "/brand/partner-rea.png", w: 1642, h: 500 },
+  { name: "Domain", src: "/brand/partner-domain.png", w: 1254, h: 283 },
+  { name: "CoreLogic", src: "/brand/partner-corelogic.png", w: 1635, h: 539 },
+  { name: "Cotality", src: "/brand/partner-cotality.png", w: 1135, h: 397 },
+  { name: "REISA", src: "/brand/partner-reisa.png", w: 2730, h: 586 },
+  { name: "OnTheHouse", src: "/brand/partner-onthehouse.png", w: 1069, h: 263 },
+  { name: "Reapit", src: "/brand/partner-reapit.png", w: 952, h: 210 },
+  { name: "Google", src: "/brand/partner-google.png", w: 653, h: 221 },
 ] as const;
 
 /** The free reports the site offers, and what each one contains. */

@@ -1520,15 +1520,13 @@
   gap: clamp(26px, 4vw, 56px);
   margin-top: 26px;
 }
+/* Full colour and never cropped (owner's request, 2026-10-29): fixed height, natural width. */
 .partner-row img {
-  height: 30px;
+  height: 38px;
   width: auto;
+  max-width: 100%;
   object-fit: contain;
-  filter: grayscale(1);
-  opacity: 0.62;
-  transition: filter 0.3s, opacity 0.3s;
 }
-.partner-row img:hover { filter: none; opacity: 1; }
 
 @media (max-width: 900px) {
   .principal { grid-template-columns: 1fr; }
