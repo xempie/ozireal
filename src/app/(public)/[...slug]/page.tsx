@@ -16,6 +16,9 @@ type Params = { params: Promise<{ slug: string[] }> };
 
 const pathOf = (slug: string[]) => "/" + slug.map((s) => s.toLowerCase()).join("/");
 
+/** Pages that close without the footer's appraisal banner (owner's request, 2026-10-29). */
+const NO_FOOTER_CTA = new Set(["/projects-and-opportunities"]);
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const path = pathOf((await params).slug);
   const doc = await customPage(path);
@@ -36,6 +39,8 @@ export default async function Page({ params }: Params) {
   const hasCta = doc.blocks.some((b) => b.type === "cta" || b.type === "form");
   return (
     <>
+      {/* Read by `.site:has(.no-foot-cta) .foot-cta` in public.css; the footer is in the layout. */}
+      {NO_FOOTER_CTA.has(path) && <span className="no-foot-cta" hidden />}
       {groupProjects(doc.blocks).map((item) =>
         item.kind === "projects" ? (
           <ProjectGrid key={item.items[0].image.id} items={item.items} />
