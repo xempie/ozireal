@@ -2449,6 +2449,45 @@
 .blk-card-link { color: inherit; text-decoration: none; transition: transform 0.2s; }
 .blk-card-link:hover { transform: translateY(-2px); }
 
+/* ------------------------------------------- project finder (projects page) */
+.proj[hidden] { display: none; }
+.pf {
+  position: sticky; z-index: 40; background: var(--paper);
+  border-bottom: 1px solid var(--line); padding-block: 14px; margin-bottom: 22px;
+}
+.pf-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.pf-row + .pf-row { margin-top: 12px; }
+.pf-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); min-width: 64px; }
+.pf-search, .pf-select {
+  font: inherit; font-size: 15px; padding: 11px 14px; min-width: 0;
+  border: 1px solid var(--line); background: var(--paper-2); color: var(--ink);
+}
+.pf-search { flex: 1 1 220px; }
+.pf-select { flex: 0 1 230px; }
+.pf-select--sm { flex: none; padding: 8px 10px; font-size: 14px; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.pf-chip {
+  font: inherit; font-size: 13.5px; font-weight: 500; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.pf-chip:hover { border-color: var(--accent); }
+.pf-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.pf-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
+.pf-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
+.pf-bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; margin-top: 12px; }
+.pf-count { font-size: 14px; color: var(--muted); }
+.pf-count b { color: var(--ink); }
+.pf-sort { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.pf-clear { font: inherit; font-size: 13.5px; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.pf-empty { padding: 40px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); }
+.pf-empty b { display: block; color: var(--ink); font-size: 17px; margin-bottom: 6px; }
+@media (max-width: 560px) {
+  .pf { position: static; }
+  .pf-lbl { min-width: 0; width: 100%; }
+  .pf-select { flex: 1 1 100%; }
+}
+
 /* A page can drop the footer's appraisal banner. See NO_FOOTER_CTA in [...slug]/page.tsx. */
 .site:has(.no-foot-cta) .foot-cta { display: none; }
 

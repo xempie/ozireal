@@ -184,6 +184,15 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
        * the price display, the site never formats a number into one).
        */
       price: t(60).optional(),
+      /*
+        Project finder fields (projects page). priceMin/priceMax are numbers used ONLY to
+        filter and sort; the card always shows `price` verbatim (CLAUDE.md §16).
+      */
+      area: t(60).optional(),
+      kind: t(40).optional(),
+      ready: z.boolean().optional(),
+      priceMin: z.number().int().positive().optional(),
+      priceMax: z.number().int().positive().optional(),
       /** Short key facts, shown as pills over the photo when the block is a project card. */
       highlights: z.array(t(60)).max(4).optional(),
     }).strict(),

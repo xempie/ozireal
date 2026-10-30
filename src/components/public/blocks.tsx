@@ -7,6 +7,7 @@ import { ListingCard } from "./listing-card";
 import { toCard } from "./listing-cards";
 import { PageHero } from "./page-shell";
 import { AGENCY, photo } from "./agency";
+import { ProjectFinder } from "./project-finder";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
 
 /**
@@ -270,12 +271,21 @@ export function groupProjects(blocks: Block[]): PageItem[] {
 export function ProjectGrid({ items }: { items: Project[] }) {
   // A card without its own CTA borrows the run's first one, so every card has a button.
   const fallback = items.find((p) => p.cta)?.cta;
-  return (
-    <section className="sec blk">
-      <div className="wrap">
+  const grid = (
         <div className="proj-grid">
-          {items.map(({ image, text, cta = fallback }) => (
-            <article className="proj" key={image.id}>
+          {items.map(({ image, text, cta = fallback }, i) => (
+            <article
+              className="proj"
+              key={image.id}
+              data-proj=""
+              data-order={i}
+              data-name={text.heading ?? ""}
+              data-area={text.area ?? ""}
+              data-kind={text.kind ?? ""}
+              data-ready={text.ready ? "1" : "0"}
+              data-lo={text.priceMin ?? ""}
+              data-hi={text.priceMax ?? text.priceMin ?? ""}
+            >
               <figure className="proj-fig">
                 <Image
                   src={photo(image.image, 1000)}
@@ -354,6 +364,25 @@ export function ProjectGrid({ items }: { items: Project[] }) {
             </article>
           ))}
         </div>
+  );
+
+  // The finder appears once projects carry finder data (area or type); otherwise the grid
+  // renders exactly as before.
+  const finderOn = items.some(({ text }) => text.area || text.kind);
+  const uniq = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))];
+  return (
+    <section className="sec blk">
+      <div className="wrap">
+        {finderOn ? (
+          <ProjectFinder
+            areas={uniq(items.map(({ text }) => text.area))}
+            kinds={uniq(items.map(({ text }) => text.kind))}
+          >
+            {grid}
+          </ProjectFinder>
+        ) : (
+          grid
+        )}
       </div>
     </section>
   );
