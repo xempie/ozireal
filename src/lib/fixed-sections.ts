@@ -89,6 +89,20 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
       "label": "What we will cover"
     }
   ],
+  "/listings": [
+    {
+      "id": "projects-cta",
+      "label": "Projects and opportunities band"
+    },
+    {
+      "id": "listings",
+      "label": "Listings and filters"
+    },
+    {
+      "id": "closing-cta",
+      "label": "Closing call to action"
+    }
+  ],
   "/for-sale": [
     {
       "id": "listings",

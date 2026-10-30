@@ -209,7 +209,7 @@ export default async function HomePage() {
                   Currently <em>advertised</em>
                 </h2>
               </div>
-              <Link className="txtlink" href="/for-sale">
+              <Link className="txtlink" href="/listings">
                 Every listing <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
