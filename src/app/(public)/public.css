@@ -262,6 +262,7 @@
 }
 .menu-group:hover .submenu,
 .menu-group:focus-within .submenu { display: flex; }
+.submenu-toggle { display: none; }
 .submenu a { padding: 9px 0; white-space: nowrap; }
 
 .nav-cta { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
@@ -811,7 +812,10 @@
     transition: max-height 0.4s ease;
     box-shadow: 0 18px 30px -22px rgba(10, 24, 46, 0.45);
   }
-  .nav.open .menu { max-height: 70vh; overflow-y: auto; }
+  /* One column, never wrapping: `flex-wrap: wrap` from desktop split a long drawer into
+     side-by-side columns cut off at the screen edge. */
+  .menu { flex-wrap: nowrap; }
+  .nav.open .menu { max-height: 78vh; overflow-y: auto; overscroll-behavior: contain; }
   .menu a {
     width: 100%;
     padding: 18px 0;
@@ -820,14 +824,33 @@
   }
   .menu a:last-child { border-bottom: 0; }
   .menu a::after { display: none; }
-  .menu-group { width: 100%; }
-  .menu-caret { display: none; }
-  .submenu {
-    display: flex; position: static; min-width: 0;
-    padding: 0 0 0 18px; background: none; border: 0; box-shadow: none;
+  /* A group is the page link plus a +/− toggle on one row, its list collapsed below. */
+  .menu-group {
+    width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: stretch;
+    border-bottom: 1px solid var(--line);
   }
-  .submenu a { font-size: 12px; padding: 14px 0; }
-  .submenu a:last-child { border-bottom: 1px solid var(--line); }
+  .menu-group > a { border-bottom: 0; }
+  .menu-caret { display: none; }
+  .submenu-toggle {
+    display: block; position: relative; width: 52px; border: 0; background: none; cursor: pointer;
+    border-left: 1px solid var(--line);
+  }
+  .submenu-toggle::before, .submenu-toggle::after {
+    content: ""; position: absolute; left: 50%; top: 50%; width: 14px; height: 1.5px;
+    background: var(--ink); transform: translate(-50%, -50%); transition: transform 0.25s;
+  }
+  .submenu-toggle::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .menu-group.is-open .submenu-toggle::after { transform: translate(-50%, -50%) rotate(0deg); }
+  .menu-group:hover .submenu, .menu-group:focus-within .submenu { display: none; }
+  .submenu, .menu-group:hover .submenu, .menu-group:focus-within .submenu {
+    grid-column: 1 / -1; position: static; min-width: 0;
+    padding: 0 0 6px 18px; background: none; border: 0; box-shadow: none;
+    flex-direction: column;
+  }
+  .menu-group:not(.is-open) .submenu { display: none; }
+  .menu-group.is-open .submenu { display: flex; }
+  .submenu a { font-size: 12px; padding: 13px 0; }
+  .submenu a:last-child { border-bottom: 0; }
 }
 @media (max-width: 640px) {
   .grid, .suburbs { grid-template-columns: 1fr; }

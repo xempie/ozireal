@@ -101,6 +101,10 @@ export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string
   /** Navigating from inside the drawer should leave it closed on the new page. */
   React.useEffect(() => setOpen(false), [pathname]);
 
+  /** Which dropdown is expanded in the phone drawer (desktop opens them on hover). */
+  const [expanded, setExpanded] = React.useState<string | null>(null);
+  React.useEffect(() => setExpanded(null), [pathname, open]);
+
   React.useEffect(() => {
     const onScroll = () => setStuck(window.scrollY > 20);
     onScroll();
@@ -157,8 +161,16 @@ export function SiteNav({ logo, agencyName }: { logo: string; agencyName: string
             );
             if (!n.children) return link;
             return (
-              <div className="menu-group" key={n.label}>
+              <div className={`menu-group${expanded === n.label ? " is-open" : ""}`} key={n.label}>
                 {link}
+                {/* Phone drawer only: opens this group's list in place. Hidden on desktop. */}
+                <button
+                  type="button"
+                  className="submenu-toggle"
+                  aria-expanded={expanded === n.label}
+                  aria-label={`${expanded === n.label ? "Hide" : "Show"} ${n.label} pages`}
+                  onClick={() => setExpanded((e) => (e === n.label ? null : n.label))}
+                />
                 <div className="submenu">
                   {n.children.map((c) => (
                     <Link
