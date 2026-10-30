@@ -275,7 +275,7 @@ export const PageDocSchema = z
     meta: z.object({ title: t(70).optional(), description: t(170).optional() }).strict().optional(),
     hero: HeroTextSchema.optional(),
     service: ServiceTextSchema.optional(),
-    blocks: z.array(BlockSchema).max(40).default([]),
+    blocks: z.array(BlockSchema).max(120).default([]),
     /** Built-in sections hidden on this page, by their <Fixed> id. */
     hidden: z.array(z.string().regex(/^[a-z0-9-]{2,40}$/)).max(40).optional(),
     /** A new page taken down. Built-in pages cannot be deleted. */

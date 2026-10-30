@@ -129,7 +129,7 @@ export const createSitePage = defineAction({
     path: pathField,
     title: z.string().trim().max(70).optional(),
     description: z.string().trim().max(170).optional(),
-    blocks: z.array(z.unknown()).min(1).max(40),
+    blocks: z.array(z.unknown()).min(1).max(120),
   }),
   async handler(input, ctx) {
     const problem = newPagePathProblem(input.path);
@@ -169,7 +169,7 @@ export const addSiteBlock = defineAction({
     block: z.unknown(),
     zone: z.string().regex(ZONE_RE).optional(),
     /** 0-based position among the page's blocks; omitted adds at the end. */
-    position: z.number().int().min(0).max(40).optional(),
+    position: z.number().int().min(0).max(120).optional(),
   }),
   async handler(input, ctx) {
     guardPath(input.path);

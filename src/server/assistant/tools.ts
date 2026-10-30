@@ -328,7 +328,7 @@ export const TOOLS = {
       path: z.string().max(80),
       block: BlockInputSchema,
       zone: z.string().max(60).optional(),
-      position: z.number().int().min(0).max(40).optional(),
+      position: z.number().int().min(0).max(120).optional(),
     }),
   },
   website_update_block: {
