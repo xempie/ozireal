@@ -179,38 +179,6 @@ function Benefits({ cards }: { cards: ServiceCard[] }) {
 }
 
 /**
- * Two photographs and the argument that runs with them.
- *
- * The images are placeholders on an allow-listed host; see service-extras.ts for why they
- * are not Freepik and why the agency's own photography should replace them.
- */
-function Gallery({ extras }: { extras: ServiceExtras }) {
-  return (
-    <section className="sec gallery-band">
-      <div className="wrap gallery-layout">
-        <div className="gallery-figs">
-          {extras.gallery.map((g) => (
-            <figure key={g.image}>
-              <Image
-                src={photo(g.image, 900)}
-                alt={g.alt}
-                width={900}
-                height={640}
-                sizes="(max-width: 900px) 50vw, 28vw"
-              />
-            </figure>
-          ))}
-        </div>
-        <div className="gallery-copy">
-          <p className="eyebrow">{extras.galleryLead}</p>
-          <p>{extras.galleryBody}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
  * The block immediately above the form.
  *
  * Its job is to make filling the form the obvious next action, which means being concrete
@@ -312,11 +280,7 @@ export async function ServicePageBody({
         </section>
       </Fixed>
 
-      {extras && (
-        <Fixed id="gallery">
-          <Gallery extras={extras} />
-        </Fixed>
-      )}
+      {/* The two-photo "gallery" band was removed site-wide on 2026-10-31 (owner's request). */}
       {extras && (
         <Fixed id="pitch">
           <Pitch extras={extras} />

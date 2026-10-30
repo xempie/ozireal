@@ -22,10 +22,6 @@ export const SERVICE_SECTIONS: FixedSection[] = [
     "label": "What you get (points and sections)"
   },
   {
-    "id": "gallery",
-    "label": "Photo gallery"
-  },
-  {
     "id": "pitch",
     "label": "Pitch (what waiting costs)"
   },
