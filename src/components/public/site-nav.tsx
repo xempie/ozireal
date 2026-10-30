@@ -49,13 +49,13 @@ import { usePathname } from "next/navigation";
 type NavItem = { href: string; label: string; children?: { href: string; label: string }[] };
 
 /*
- * Since 2026-10-29 (owner's request) Gift Party, FAQ and the privacy policy sit under
+ * Since 2026-10-31 (owner's request) FAQ, the privacy policy and Free Meeting sit under
  * "About Us": a hover/focus dropdown on desktop, an indented list in the drawer.
  */
 const NAV: NavItem[] = [
   {
-    // The eight services, same names and pages as the homepage grid, plus Strategy
-    // Services, which had its own top-level item until 2026-10-29.
+    // The eight services, same names and pages as the homepage grid. Strategy Services
+    // is its own top-level item again since 2026-10-31.
     href: "/property-services",
     label: "Services",
     children: [
@@ -67,7 +67,6 @@ const NAV: NavItem[] = [
       { href: "/land-opportunities-sa-adelaide", label: "Looking For Land" },
       { href: "/rent-property-house-adelaide", label: "I Need To Rent" },
       { href: "/sell-my-business-australia", label: "Sell My Business" },
-      { href: "/property-strategy-services", label: "Strategy Services" },
     ],
   },
   {
@@ -75,6 +74,7 @@ const NAV: NavItem[] = [
     label: "Opportunities",
     children: [{ href: "/projects-and-opportunities", label: "Projects & Opportunities" }],
   },
+  { href: "/property-strategy-services", label: "Strategy Services" },
   { href: "/overseas-investment", label: "Oversea Investment" },
   {
     href: "/about-adelaide-land-agent",
@@ -82,10 +82,10 @@ const NAV: NavItem[] = [
     children: [
       { href: "/adelaide-property-faq", label: "FAQ" },
       { href: "/privacy", label: "Privacy Policy" },
+      { href: "/book-online", label: "Free Meeting" },
     ],
   },
   { href: "/contact", label: "Contact" },
-  { href: "/book-online", label: "Free Meeting" },
   { href: "/blog", label: "Blog" },
 ];
 
