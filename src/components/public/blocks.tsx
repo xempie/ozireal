@@ -322,6 +322,28 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                     {cta.label}
                   </SmartLink>
                 )}
+                {/*
+                  Finance referral to Smart Loanz, an associated business (owner's request,
+                  2026-10-31). "Associated" and "subject to lender approval" stay: credit
+                  advertising must not imply guaranteed or instant approval.
+                */}
+                <div className="proj-loan">
+                  <div className="proj-loan-copy">
+                    <b>
+                      Need a loan, <em>fast?</em>
+                    </b>
+                    <span>Talk to Smart Loanz, our associated broker.</span>
+                    <small>Subject to lender approval.</small>
+                  </div>
+                  <a
+                    className="proj-loan-btn"
+                    href="https://www.smartloanz.com.au/book-online"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Book a free finance chat <span aria-hidden="true">&rarr;</span>
+                  </a>
+                </div>
               </div>
             </article>
           ))}
