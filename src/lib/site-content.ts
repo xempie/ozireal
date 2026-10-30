@@ -47,6 +47,17 @@ export const GALLERY = {
   "photo-1600645174997-bea67efe2fd1": "Two-storey townhouse with timber cladding",
   "photo-1666000346172-8e7e87547d2a": "Brick house behind a white picket fence",
   "photo-1598249467153-963a1ef910cf": "House with a green roof among trees",
+  // Brand-new homes, added 2026-10-31 for the projects page.
+  "photo-1692133188474-8c5591e6a6a8": "New single-storey home with a double garage",
+  "photo-1666004095305-300183c896ed": "New brick and glass home",
+  "photo-1647579350413-a6ada4e480ed": "New two-storey family home with garages",
+  "photo-1662505899914-1000c566477b": "New white two-storey home",
+  "photo-1771366260867-7e07094579d7": "New white home with a glass garage door",
+  "photo-1771558969707-45e93dfd2570": "New two-storey rendered home",
+  "photo-1785554330278-5e1b24c73832": "New home with cladding and render",
+  "photo-1631458325834-8f678e48912c": "Entrance of a new home",
+  "photo-1769780510442-60d4d6391a91": "New home at dusk",
+  "photo-1789683024055-eeb663e30036": "New home with a stone feature wall",
 } as const;
 export const IMAGE_IDS = Object.keys(GALLERY) as [keyof typeof GALLERY, ...(keyof typeof GALLERY)[]];
 
