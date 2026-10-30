@@ -371,7 +371,7 @@ export function ProjectGrid({ items }: { items: Project[] }) {
   const finderOn = items.some(({ text }) => text.area || text.kind);
   const uniq = (xs: (string | undefined)[]) => [...new Set(xs.filter((x): x is string => !!x))];
   return (
-    <section className="sec blk">
+    <section className={`sec blk${finderOn ? " proj-sec--finder" : ""}`}>
       <div className="wrap">
         {finderOn ? (
           <ProjectFinder
