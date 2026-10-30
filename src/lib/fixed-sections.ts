@@ -199,7 +199,6 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
       "label": "Enquiry form (property-strategy-services)"
     }
   ],
-  "/realestate-gift-adelaide": "service",
   "/rent-out-my-property-adelaide": "service",
   "/rent-property-house-adelaide": "service",
   "/sell-my-business-australia": "service",

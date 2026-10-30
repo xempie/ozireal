@@ -87,7 +87,6 @@ export const BUILTIN_PAGES: { path: string; label: string }[] = [
   { path: "/about-adelaide-land-agent", label: "About" },
   { path: "/contact", label: "Contact" },
   { path: "/book-online", label: "Free meeting" },
-  { path: "/realestate-gift-adelaide", label: "Gift party" },
   { path: "/blog", label: "Blog" },
   { path: "/adelaide-property-faq", label: "FAQ" },
   { path: "/privacy", label: "Privacy policy" },

@@ -80,7 +80,6 @@ const NAV: NavItem[] = [
     href: "/about-adelaide-land-agent",
     label: "About Us",
     children: [
-      { href: "/realestate-gift-adelaide", label: "Gift Party" },
       { href: "/adelaide-property-faq", label: "FAQ" },
       { href: "/privacy", label: "Privacy Policy" },
     ],

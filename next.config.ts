@@ -68,6 +68,9 @@ const nextConfig: NextConfig = {
       { source: "/inquiry-services-page", destination: "/contact", statusCode: 301 },
       { source: "/service-page/:slug*", destination: "/book-online", statusCode: 301 },
       { source: "/booking-calendar/:slug*", destination: "/book-online", statusCode: 301 },
+      // The Gift Party page was retired on 2026-10-31 (owner's request). Its form lives on as
+      // the home page's free-book section, which is where old links and search results go.
+      { source: "/realestate-gift-adelaide", destination: "/#free-book", statusCode: 301 },
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],

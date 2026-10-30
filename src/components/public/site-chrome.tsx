@@ -122,7 +122,6 @@ export function SiteFooter() {
             <ul>
               <li><Link href="/contact">Contact Us</Link></li>
               <li><Link href="/book-online">Free Meeting</Link></li>
-              <li><Link href="/realestate-gift-adelaide">Gift Party</Link></li>
               <li><Link href="/blog">Blog</Link></li>
               <li><Link href="/adelaide-property-faq">FAQ</Link></li>
               <li><Link href="/sold">Recently sold</Link></li>

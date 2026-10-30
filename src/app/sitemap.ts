@@ -34,7 +34,6 @@ const PAGES = [
   "/about-adelaide-land-agent",
   "/contact",
   "/book-online",
-  "/realestate-gift-adelaide",
   "/blog",
   "/adelaide-property-faq",
   "/privacy",
