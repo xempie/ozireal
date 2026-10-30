@@ -7,7 +7,8 @@ import { onMarket } from "@/server/public/listings";
 import { Fixed } from "@/components/public/fixed";
 
 /**
- * Every advertised listing, sale and lease together.
+ * Every advertised listing, sale and lease together. At /all-listings because /listings
+ * is the CRM's own route (route groups cannot share a path).
  *
  * The home page's "Every listing" link used to land on /for-sale, which filters to sales,
  * so with only lease stock live it showed next to nothing. This page is what that link
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   title: "Every listing: homes for sale and lease in Adelaide",
   description:
     "Every property Ozi Realty is advertising for sale or lease across Adelaide, plus new-home projects and buying opportunities.",
-  alternates: { canonical: "/listings" },
+  alternates: { canonical: "/all-listings" },
 };
 
 export default async function Page() {

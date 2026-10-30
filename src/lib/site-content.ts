@@ -66,7 +66,7 @@ export const IMAGE_IDS = Object.keys(GALLERY) as [keyof typeof GALLERY, ...(keyo
 /** Built-in public pages. Their layout is code; text and added blocks are editable. */
 export const BUILTIN_PAGES: { path: string; label: string }[] = [
   { path: "/", label: "Home" },
-  { path: "/listings", label: "Every listing" },
+  { path: "/all-listings", label: "Every listing" },
   { path: "/for-sale", label: "For sale" },
   { path: "/sold", label: "Sold and leased" },
   { path: "/suburbs", label: "Suburbs" },
@@ -108,7 +108,7 @@ const RESERVED_PREFIXES = [
   "/post",
   "/blog",
   "/suburbs",
-  "/listings",
+  "/all-listings",
   "/for-sale",
   "/sold",
   "/brand",

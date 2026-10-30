@@ -13,7 +13,7 @@ export const revalidate = 3600;
 
 const PAGES = [
   "",
-  "/listings",
+  "/all-listings",
   "/for-sale",
   "/sold",
   "/suburbs",
