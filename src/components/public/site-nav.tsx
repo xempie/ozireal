@@ -70,12 +70,12 @@ const NAV: NavItem[] = [
       { href: "/property-strategy-services", label: "Strategy Services" },
     ],
   },
-  { href: "/overseas-investment", label: "Oversea Investment" },
   {
     href: "/projects-and-opportunities",
     label: "Opportunities",
     children: [{ href: "/projects-and-opportunities", label: "Projects & Opportunities" }],
   },
+  { href: "/overseas-investment", label: "Oversea Investment" },
   {
     href: "/about-adelaide-land-agent",
     label: "About Us",
