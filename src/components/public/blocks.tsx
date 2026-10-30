@@ -6,7 +6,7 @@ import { FormSection } from "./forms/form-section";
 import { ListingCard } from "./listing-card";
 import { toCard } from "./listing-cards";
 import { PageHero } from "./page-shell";
-import { photo } from "./agency";
+import { AGENCY, photo } from "./agency";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
 
 /**
@@ -339,7 +339,7 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                       Need a loan, <em>fast?</em>
                     </b>
                     <span>Talk to Smart Loanz, our associated broker.</span>
-                    <small>Subject to lender approval.</small>
+                    <small>Subject to lender approval. {AGENCY.licence}</small>
                   </div>
                   <a
                     className="proj-loan-btn"
