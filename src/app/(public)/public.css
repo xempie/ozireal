@@ -2461,11 +2461,32 @@
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(to top, rgba(10, 24, 46, 0.82) 0%, rgba(10, 24, 46, 0.25) 45%, transparent 70%);
 }
+/*
+  "Illustrative image" as a holographic watermark across the photo (owner's request,
+  2026-10-30): large, tilted, see-through, with an iridescent sheen, so the disclosure
+  is unmissable without hiding the house. Sits above the photo, below the pills.
+*/
 .proj-note {
-  position: absolute; top: 10px; left: 10px; z-index: 1;
-  font-size: 10px; letter-spacing: 0.04em; color: #fff;
-  background: rgba(10, 24, 46, 0.55); padding: 3px 7px;
+  position: absolute; z-index: 1; left: 50%; top: 42%;
+  transform: translate(-50%, -50%) rotate(-14deg);
+  white-space: nowrap; pointer-events: none; user-select: none;
+  font-family: var(--sans); font-weight: 700; text-transform: uppercase;
+  font-size: clamp(18px, 3.1vw, 30px); letter-spacing: 0.22em;
+  padding: 6px 18px;
+  color: transparent;
+  background:
+    linear-gradient(115deg, #9EE7FF 0%, #E3B8FF 22%, #FFFFFF 38%, #A8FFD8 54%, #FFD6A5 72%, #9EE7FF 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-stroke: 0.6px rgba(255, 255, 255, 0.55);
+  opacity: 0.72;
+  filter: drop-shadow(0 0 6px rgba(158, 231, 255, 0.45)) drop-shadow(0 1px 1px rgba(10, 24, 46, 0.35));
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  animation: proj-holo 6s ease-in-out infinite alternate;
 }
+@keyframes proj-holo { from { background-position: 0% 50%; } to { background-position: 100% 50%; } }
+@media (prefers-reduced-motion: reduce) { .proj-note { animation: none; } }
 .proj-pills { position: absolute; left: 16px; right: 16px; bottom: 16px; z-index: 1; display: flex; flex-wrap: wrap; gap: 8px; }
 .proj-pill {
   display: inline-flex; align-items: center; gap: 8px;
