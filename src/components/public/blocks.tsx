@@ -307,6 +307,12 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                     </>
                   ) : null}
                 </h3>
+                {text.price && (
+                  <p className="proj-price">
+                    <span>Price</span>
+                    {text.price}
+                  </p>
+                )}
                 {text.paragraphs.map((p, i) => (
                   <p key={i}>{p}</p>
                 ))}

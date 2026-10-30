@@ -179,6 +179,11 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
       headingEm: t(120).optional(),
       paragraphs: z.array(t(2000)).max(12).default([]),
       bullets: z.array(t(300)).max(16).optional(),
+      /**
+       * Price wording for a project card, rendered verbatim (CLAUDE.md §16: the agent writes
+       * the price display, the site never formats a number into one).
+       */
+      price: t(60).optional(),
       /** Short key facts, shown as pills over the photo when the block is a project card. */
       highlights: z.array(t(60)).max(4).optional(),
     }).strict(),
