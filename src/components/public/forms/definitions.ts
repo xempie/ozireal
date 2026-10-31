@@ -207,7 +207,7 @@ export const FORMS: FormDefinition[] = [
     roles: ["buyer"],
     title: "Looking for land",
     intro: "Tell us the area and what it is for, and we will send what is available and what is coming.",
-    submitLabel: "Submit",
+    submitLabel: "Find me the right block",
     fields: [
       ...IDENTITY(),
       { id: "area", label: "Preferred area or suburbs", kind: "textarea", required: true },

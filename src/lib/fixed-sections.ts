@@ -149,7 +149,15 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
       "label": "Closing call to action: Unlock my suburb insights"
     }
   ],
-  "/land-opportunities-sa-adelaide": "service",
+  "/land-opportunities-sa-adelaide": [
+    { "id": "what-you-get", "label": "What you get" },
+    { "id": "how", "label": "How it works" },
+    { "id": "why", "label": "Why it matters" },
+    { "id": "finance", "label": "Smart Loanz land and construction finance" },
+    { "id": "form", "label": "Land form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Land questions" }
+  ],
   "/manage-property-adelaide": [
     { "id": "what-you-get", "label": "What you get (2.99%, care, maintenance, disputes)" },
     { "id": "plans", "label": "Four plans (Risk Shield recommended)" },
