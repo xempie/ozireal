@@ -101,7 +101,7 @@ const IDENTITY = (phoneRequired = true): FormField[] => [
   { id: "phone", label: "Phone", kind: "tel", required: phoneRequired, half: true },
 ];
 
-export const FORMS: FormDefinition[] = [
+const DEFINED: FormDefinition[] = [
   {
     slug: "manage-property-adelaide",
     formName: "Property management enquiry",
@@ -387,10 +387,10 @@ export const FORMS: FormDefinition[] = [
         options: ["Selling", "Renting out", "Buying", "Investing", "Property management", "Something else"] },
       { id: "when", label: "When generally suits?", kind: "checkbox", required: true,
         options: ["Weekday morning", "Weekday afternoon", "Weekday evening", "Saturday morning"] },
-      { id: "preferredDate", label: "Preferred date, if you have one", kind: "date", half: true },
+      { id: "preferredDate", label: "Preferred date", kind: "date", half: true },
       { id: "where", label: "Where", kind: "radio", required: true,
         options: ["At the office", "At my property", "Video call", "By phone"] },
-      { id: "address", label: "Property address, if the meeting is about one", kind: "text" },
+      { id: "address", label: "Property address or suburb", kind: "text" },
       { id: "notes", label: "Anything we should know beforehand?", kind: "textarea" },
     ],
   },
@@ -460,5 +460,14 @@ export const FORMS: FormDefinition[] = [
     ],
   },
 ];
+
+/**
+ * Every field on every public form is required (owner's request, 2026-10-31). Applied here
+ * rather than field by field so a new form or field cannot slip through optional.
+ */
+export const FORMS: FormDefinition[] = DEFINED.map((f) => ({
+  ...f,
+  fields: f.fields.map((x) => ({ ...x, required: true })),
+}));
 
 export const formForSlug = (slug: string) => FORMS.find((f) => f.slug === slug);
