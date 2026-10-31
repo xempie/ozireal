@@ -218,7 +218,14 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     { "id": "strategy", "label": "Not sure? Strategy Services" },
     { "id": "faq", "label": "Renting questions" }
   ],
-  "/sell-my-business-australia": "service",
+  "/sell-my-business-australia": [
+    { "id": "what-you-get", "label": "What you get" },
+    { "id": "how", "label": "How it works" },
+    { "id": "why", "label": "Why it matters" },
+    { "id": "form", "label": "Confidential form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Business sale questions" }
+  ],
   "/sell-property-house-adelaide": [
     { "id": "how", "label": "How a sale runs" },
     { "id": "why", "label": "Why sell with OziRealty" },

@@ -247,7 +247,7 @@ export const FORMS: FormDefinition[] = [
     roles: ["business_vendor"],
     title: "Selling a business",
     intro: "Confidential. Nothing is advertised or discussed with a buyer without your say-so.",
-    submitLabel: "Submit",
+    submitLabel: "Start a confidential conversation",
     fields: [
       ...IDENTITY(false),
       { id: "businessName", label: "Business name", kind: "text", required: true, half: true },
