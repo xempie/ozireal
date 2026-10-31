@@ -2934,5 +2934,6 @@
 .site .ba-loan h2 em { color: #fff; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
 .site .ba-loan p { margin: 12px 0 0; max-width: 56ch; font-size: clamp(15.5px,1.25vw,17.5px); color: rgba(255,255,255,.92); }
 .site .ba-loan small { display: block; margin-top: 10px; font-size: 12px; color: rgba(255,255,255,.75); }
-.site .ba-loan-btn { background: #fff; color: var(--accent-2); box-shadow: 0 14px 30px -12px rgba(0,0,0,.45); font-size: 14px; padding: 18px 28px; }
-.site .ba-loan-btn:hover { background: var(--ink); color: #fff; }
+/* Outranks the filled-button rule (.site .btn:not():not()), which forced the text white. */
+.site .ba-loan .btn.ba-loan-btn { background: #fff; color: var(--accent-2); box-shadow: 0 14px 30px -12px rgba(0,0,0,.45); font-size: 14px; padding: 18px 28px; }
+.site .ba-loan .btn.ba-loan-btn:hover { background: var(--ink); color: #fff; }
