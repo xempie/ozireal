@@ -4,12 +4,8 @@ import { BlogList } from "@/components/public/blog-list";
 /**
  * The journal, page one.
  *
- * `/blog` mirrors the live Wix path, and every card links to `/post/<slug>`, which is the
- * live post pattern kept verbatim. Between them every indexed blog URL survives cutover
- * without a redirect.
- *
- * Pages two and up live at `/blog/page/<n>`; both routes render the same component so
- * they cannot drift apart.
+ * `/blog` mirrors the live Wix path. Posts live at `/blog/<slug>` since 2026-10-31, and the
+ * old `/post/<slug>` addresses permanently redirect there.
  */
 
 export const metadata: Metadata = {
@@ -20,10 +16,10 @@ export const metadata: Metadata = {
   */
   title: "Adelaide Property Tips, Guides and Market Insights",
   description:
-    "Practical guides on selling, renting out, managing and investing in Adelaide property, written by the agent who does it. Fees, appraisals, suburbs and what the numbers mean.",
+    "Practical guides on selling, renting out, managing and investing in Adelaide property. Search by topic: property management, selling, appraisals, buying, investment and suburbs.",
   alternates: { canonical: "/blog" },
 };
 
 export default function Page() {
-  return <BlogList page={1} />;
+  return <BlogList />;
 }
