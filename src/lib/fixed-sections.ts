@@ -186,22 +186,11 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
   ],
   "/property-rental-report": "service",
   "/property-services": [
-    {
-      "id": "form",
-      "label": "Enquiry form (property-services)"
-    },
-    {
-      "id": "eight-services-one-office",
-      "label": "Seven services, one office"
-    },
-    {
-      "id": "start-with-the-numbers",
-      "label": "Start with the numbers"
-    },
-    {
-      "id": "one-team-across-the-whole-journey",
-      "label": "One team across the whole journey"
-    }
+    { "id": "eight-services-one-office", "label": "Service cards (with I am… picker)" },
+    { "id": "one-team-across-the-whole-journey", "label": "How we work" },
+    { "id": "finance", "label": "Smart Loanz free finance chat" },
+    { "id": "form", "label": "General form with Esi photo" },
+    { "id": "faq", "label": "Services questions" }
   ],
   "/property-strategy-services": [
     { "id": "form", "label": "Picked report and its enquiry form" },

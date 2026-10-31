@@ -265,7 +265,7 @@ export const FORMS: FormDefinition[] = [
     roleFrom: { field: "need", map: SERVICE_ROLES },
     title: "Not sure which service you need?",
     intro:
-      "Describe the situation and we will point you at the right one. It is a faster route than reading eight pages to work out which applies.",
+      "Describe the situation and we will point you at the right one.",
     submitLabel: "Send my enquiry",
     fields: [
       ...IDENTITY(),
