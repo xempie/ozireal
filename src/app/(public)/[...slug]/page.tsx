@@ -17,7 +17,7 @@ type Params = { params: Promise<{ slug: string[] }> };
 const pathOf = (slug: string[]) => "/" + slug.map((s) => s.toLowerCase()).join("/");
 
 /** Pages that close without the footer's appraisal banner (owner's request, 2026-10-29). */
-const NO_FOOTER_CTA = new Set(["/projects-and-opportunities"]);
+const NO_FOOTER_CTA = new Set(["/new-homes-adelaide"]);
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const path = pathOf((await params).slug);

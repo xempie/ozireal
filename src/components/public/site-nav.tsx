@@ -69,11 +69,8 @@ const NAV: NavItem[] = [
       { href: "/sell-my-business-australia", label: "Sell My Business" },
     ],
   },
-  {
-    href: "/projects-and-opportunities",
-    label: "Opportunities",
-    children: [{ href: "/projects-and-opportunities", label: "Projects & Opportunities" }],
-  },
+  // Was "Opportunities" at /projects-and-opportunities until 2026-10-31; renamed for search.
+  { href: "/new-homes-adelaide", label: "New Homes" },
   { href: "/property-strategy-services", label: "Strategy Services" },
   { href: "/overseas-investment", label: "Oversea Investment" },
   {

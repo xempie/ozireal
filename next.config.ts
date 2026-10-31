@@ -71,6 +71,8 @@ const nextConfig: NextConfig = {
       // The Gift Party page was retired on 2026-10-31 (owner's request). Its form lives on as
       // the home page's free-book section, which is where old links and search results go.
       { source: "/realestate-gift-adelaide", destination: "/#free-book", statusCode: 301 },
+      // Renamed for search on 2026-10-31: "new homes" and "Adelaide" are what people type.
+      { source: "/projects-and-opportunities", destination: "/new-homes-adelaide", statusCode: 301 },
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],

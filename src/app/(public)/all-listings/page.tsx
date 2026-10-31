@@ -51,7 +51,7 @@ export default async function Page() {
                 prices, grants and build timelines on every project.
               </p>
             </div>
-            <Link className="btn listings-projects-btn" href="/projects-and-opportunities">
+            <Link className="btn listings-projects-btn" href="/new-homes-adelaide">
               See projects &amp; opportunities <span aria-hidden="true">&rarr;</span>
             </Link>
           </div>
