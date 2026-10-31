@@ -2472,6 +2472,44 @@
 .blk-card-link { color: inherit; text-decoration: none; transition: transform 0.2s; }
 .blk-card-link:hover { transform: translateY(-2px); }
 
+/* ------------------------------------------- home: New Homes band ---- */
+.nh-band { background: var(--ink); color: var(--white); position: relative; overflow: hidden; padding-block: clamp(34px, 4.5vw, 56px); }
+.nh-band::before, .nh-band::after { content: ""; position: absolute; border-radius: 50%; pointer-events: none; }
+.nh-band::before { left: -160px; bottom: -220px; width: 560px; height: 560px; background: radial-gradient(closest-side, rgba(0, 52, 200, 0.45), transparent); }
+.nh-band::after { right: -140px; top: -180px; width: 520px; height: 520px; background: radial-gradient(closest-side, rgba(242, 128, 79, 0.22), transparent); }
+.nh-band-in { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: clamp(28px, 4.5vw, 64px); align-items: center; }
+.nh-band .eyebrow { color: var(--accent-lt); }
+.nh-band .eyebrow::after { background: var(--accent-lt); }
+.nh-band .display { font-size: clamp(1.8rem, 3.2vw, 2.6rem); text-wrap: balance; }
+.nh-band .display em { color: var(--accent-lt); }
+.nh-band-lede { margin: 12px 0 0; max-width: 46ch; color: rgba(255, 255, 255, 0.78); font-size: clamp(15px, 1.2vw, 17px); line-height: 1.6; }
+.nh-band-act { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.site .nh-band-btn { background: var(--accent-2); padding: 15px 26px; box-shadow: 0 10px 24px -8px rgba(216, 67, 21, 0.7); }
+.site .nh-band-btn:hover { background: #B5360F; }
+.nh-band-note { font-size: 13px; color: rgba(255, 255, 255, 0.6); }
+.nh-teasers { display: grid; gap: 8px; }
+.nh-teaser {
+  display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 14px; align-items: center; padding: 8px;
+  background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.14);
+  transition: background 0.2s, border-color 0.2s;
+}
+.nh-teaser:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
+.nh-teaser-ph { position: relative; display: block; aspect-ratio: 4 / 3; max-width: 100%; overflow: hidden; }
+.nh-teaser-ph i {
+  position: absolute; left: 50%; top: 50%; z-index: 1; transform: translate(-50%, -50%) rotate(-14deg);
+  font-style: normal; font-size: 7.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85); white-space: nowrap; text-shadow: 0 1px 2px rgba(10, 24, 46, 0.6);
+}
+.nh-teaser-name { display: block; font-family: var(--serif); font-weight: 600; font-size: 1.15rem; line-height: 1.2; }
+.nh-teaser-kind { display: block; margin-top: 2px; font-size: 12.5px; color: rgba(255, 255, 255, 0.65); }
+.nh-teaser-tag {
+  display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+  background: rgba(242, 128, 79, 0.18); color: var(--accent-lt);
+}
+.nh-more { justify-self: end; margin-top: 2px; font-size: 13px; color: rgba(255, 255, 255, 0.75); }
+.nh-more:hover { color: var(--white); }
+@media (max-width: 960px) { .nh-band-in { grid-template-columns: 1fr; } .nh-more { justify-self: start; } }
+
 /* ------------------------------------- /listings: band to the projects page */
 .listings-projects {
   background: var(--ink); color: var(--white); position: relative; overflow: hidden;

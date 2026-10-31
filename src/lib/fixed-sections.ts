@@ -225,6 +225,10 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
   ],
   "/": [
     {
+      "id": "new-homes",
+      "label": "New homes band (links to /new-homes-adelaide)"
+    },
+    {
       "id": "form",
       "label": "Free book form (10 truths about finding the right home)"
     },

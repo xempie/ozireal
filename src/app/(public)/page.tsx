@@ -8,7 +8,7 @@ import { PrincipalCard } from "@/components/public/principal";
 import { ServiceGrid } from "@/components/public/service-grid";
 import { FormSection } from "@/components/public/forms/form-section";
 import { Zone } from "@/components/public/blocks";
-import { pageContent } from "@/server/public/content";
+import { customPage, pageContent } from "@/server/public/content";
 import { Fixed } from "@/components/public/fixed";
 import {
   AGENCY,
@@ -121,12 +121,38 @@ const OFFERS = [
   },
 ] as const;
 
+/** The projects the home page's New Homes band previews, in this order when present. */
+const NEW_HOMES_PATH = "/new-homes-adelaide";
+const NEW_HOMES_TEASERS = ["elizabeth-grove", "christies-beach", "mile-end"];
+
+/**
+ * Three project teasers read live from the New Homes page, so the band never disagrees
+ * with it. No prices or counts (owner's request); the tag is "Ready now" or a highlight
+ * that is neither the project type nor dated, so it cannot go stale.
+ */
+function newHomesTeasers(doc: Awaited<ReturnType<typeof customPage>>) {
+  if (!doc) return [];
+  const byId = new Map(doc.blocks.map((b) => [b.id, b]));
+  const pick = (slug: string) => {
+    const text = byId.get(`${slug}-text`);
+    const image = byId.get(`${slug}-img`);
+    if (text?.type !== "text" || image?.type !== "image" || !text.heading) return null;
+    const tag = text.ready
+      ? "Ready now"
+      : text.highlights?.find((h) => h !== text.kind && !/\d/.test(h));
+    return { slug, name: text.heading, kind: text.kind, tag, image: image.image, alt: image.alt };
+  };
+  return NEW_HOMES_TEASERS.map(pick).filter((t): t is NonNullable<typeof t> => t !== null);
+}
+
 export default async function HomePage() {
-  const [listed, site, doc] = await Promise.all([
+  const [listed, site, doc, newHomes] = await Promise.all([
     onMarket(6),
     publicSiteSettings(),
     pageContent("/"),
+    customPage(NEW_HOMES_PATH),
   ]);
+  const teasers = newHomesTeasers(newHomes);
   const advertised = listed.map(toCard);
   // Hero text edited in the website editor, falling back to the agency's own copy.
   const hero = {
@@ -189,6 +215,54 @@ export default async function HomePage() {
               </Link>
             </div>
             <ServiceGrid />
+          </div>
+        </section>
+      </Fixed>
+
+      {/* ======================================================== new homes */}
+      {/*
+        The strongest route into the New Homes page (owner's request, 2026-10-31): high on
+        the page, navy against the white sections either side, no numbers by request.
+      */}
+      <Fixed id="new-homes">
+        <section className="nh-band">
+          <div className="wrap nh-band-in">
+            <div>
+              <p className="eyebrow">New homes in Adelaide</p>
+              <h2 className="display">
+                Brand-new homes <em>across Adelaide and beyond.</em>
+              </h2>
+              <p className="nh-band-lede">
+                House and land packages, townhouses and apartments, each with its price, grants
+                and build timeline on show. Find one that fits, then talk to Esi.
+              </p>
+              <div className="nh-band-act">
+                <Link className="btn nh-band-btn" href={NEW_HOMES_PATH}>
+                  Browse new homes <span aria-hidden="true">&rarr;</span>
+                </Link>
+                <span className="nh-band-note">Filter by area, type and budget.</span>
+              </div>
+            </div>
+            {teasers.length > 0 && (
+              <div className="nh-teasers">
+                {teasers.map((t) => (
+                  <Link className="nh-teaser" href={NEW_HOMES_PATH} key={t.slug}>
+                    <span className="nh-teaser-ph">
+                      <Image src={photo(t.image, 240)} alt={t.alt} fill sizes="76px" style={{ objectFit: "cover" }} />
+                      <i aria-hidden="true">Illustrative</i>
+                    </span>
+                    <span>
+                      <span className="nh-teaser-name">{t.name}</span>
+                      {t.kind && <span className="nh-teaser-kind">{t.kind}</span>}
+                      {t.tag && <span className="nh-teaser-tag">{t.tag}</span>}
+                    </span>
+                  </Link>
+                ))}
+                <Link className="nh-more" href={NEW_HOMES_PATH}>
+                  More projects on the New Homes page <span aria-hidden="true">&rarr;</span>
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       </Fixed>
