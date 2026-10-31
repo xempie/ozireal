@@ -34,7 +34,7 @@ export function BlogList({ topic }: { topic?: string } = {}) {
         lede="Practical guides on selling, buying, renting out, managing and investing in Adelaide and South Australian property."
         image="photo-1605276374104-dee2a0ed3cd6"
         imageAlt="Suburban house exterior"
-        facts={[`${POSTS.length} guides`, "South Australia", "Updated regularly"]}
+        facts={["South Australia", "Updated regularly"]}
       />
       <BlogFilter
         cards={cards}

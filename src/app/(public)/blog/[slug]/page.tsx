@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   POSTS,
+  TOPICS,
   formatDate,
   postBySeoSlug,
   postHref,
@@ -109,14 +110,19 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
               return <p key={i}>{b.text}</p>;
             })}
 
-            <p className="post-topics">
-              Topics:{" "}
-              {topicsOf(post).map((k) => (
-                <Link key={k} className="bf-tag" href={`/blog/topic/${k}`}>
+            {/* Every journal topic, this post's own first and highlighted (owner's request, 2026-10-31). */}
+            <nav className="post-topics" aria-label="Journal topics">
+              <span className="post-topics-lbl">Topics</span>
+              {[...topicsOf(post), ...TOPICS.map((t) => t.key).filter((k) => !topicsOf(post).includes(k))].map((k) => (
+                <Link
+                  key={k}
+                  className={topicsOf(post).includes(k) ? "bf-tag bf-tag--lead" : "bf-tag"}
+                  href={`/blog/topic/${k}`}
+                >
                   {topicLabel(k)}
                 </Link>
               ))}
-            </p>
+            </nav>
           </div>
         </div>
       </article>

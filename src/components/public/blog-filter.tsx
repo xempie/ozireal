@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
  * The journal's search, topic and sort filter (2026-10-31).
  *
  * Every card is server-rendered into the props, so the full archive is in the HTML for
- * crawlers; this only decides which are visible. Topic chips show live counts.
+ * crawlers; this only decides which are visible. Topics with no posts are hidden; no counts are shown (owner's request).
  */
 
 export type BlogCard = {
@@ -88,7 +88,7 @@ export function BlogFilter({
           </div>
           <div className="bf-chips" role="group" aria-label="Topic">
             <button type="button" className="pf-chip" aria-pressed={topic === ""} onClick={() => setTopic("")}>
-              All topics <b>{cards.length}</b>
+             All topics
             </button>
             {topics
               .filter((t) => counts.get(t.key))
@@ -100,13 +100,10 @@ export function BlogFilter({
                   aria-pressed={topic === t.key}
                   onClick={() => setTopic(t.key)}
                 >
-                  {t.label} <b>{counts.get(t.key)}</b>
+                  {t.label}
                 </button>
               ))}
           </div>
-          <span className="pf-count" aria-live="polite">
-            Showing <b>{shown.length}</b> of {cards.length} guides
-          </span>
         </div>
       </div>
 
