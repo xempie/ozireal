@@ -189,7 +189,7 @@ export const FORMS: FormDefinition[] = [
     roles: ["investor"],
     title: "What are you investing for?",
     intro: "Yield, growth and tax position pull in different directions. Which one leads decides the shortlist.",
-    submitLabel: "Submit",
+    submitLabel: "Talk about my goals",
     fields: [
       ...IDENTITY(),
       { id: "goal", label: "Investment goal", kind: "checkbox", required: true,

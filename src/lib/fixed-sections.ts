@@ -159,7 +159,15 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     { "id": "faq", "label": "Property management questions" }
   ],
   "/overseas-investment": "service",
-  "/property-investment": "service",
+  "/property-investment": [
+    { "id": "what-you-get", "label": "What you get" },
+    { "id": "how", "label": "How it works" },
+    { "id": "why", "label": "Why it matters" },
+    { "id": "finance", "label": "Smart Loanz free finance chat" },
+    { "id": "form", "label": "Investment form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Investment questions" }
+  ],
   "/property-rental-report": "service",
   "/property-services": [
     {
