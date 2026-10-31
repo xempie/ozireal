@@ -50,7 +50,7 @@ export default async function Page({ params }: Params) {
       )}
       {path === "/new-homes-adelaide" && (
         // Owner's request, 2026-10-31: anyone who has not found a fit goes to the buyer's agent brief.
-        <section className="sec">
+        <section className="sec" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <div className="nh-ba">
               <div>
