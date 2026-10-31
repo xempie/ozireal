@@ -139,7 +139,10 @@ function newHomesTeasers(doc: Awaited<ReturnType<typeof customPage>>) {
     if (text?.type !== "text" || image?.type !== "image" || !text.heading) return null;
     const tag = text.ready
       ? "Ready now"
-      : text.highlights?.find((h) => h !== text.kind && !/\d/.test(h));
+      : text.highlights?.find(
+          // Not the type again ("Apartments" restates "Apartment"), and nothing dated.
+          (h) => !(text.kind && h.toLowerCase().startsWith(text.kind.toLowerCase())) && !/\d/.test(h),
+        );
     return { slug, name: text.heading, kind: text.kind, tag, image: image.image, alt: image.alt };
   };
   return NEW_HOMES_TEASERS.map(pick).filter((t): t is NonNullable<typeof t> => t !== null);
