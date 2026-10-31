@@ -25,7 +25,6 @@ const PAGES = [
   "/property-rental-report",
   "/manage-property-adelaide",
   "/sell-property-house-adelaide",
-  "/rent-out-my-property-adelaide",
   "/rent-property-house-adelaide",
   "/buyer-agent-adelaide",
   "/property-investment",

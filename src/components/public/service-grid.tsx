@@ -48,15 +48,6 @@ const Manage = (p: IconProps) => (
   </svg>
 );
 
-const RentOut = (p: IconProps) => (
-  <svg viewBox="0 0 24 24" aria-hidden="true" {...p}>
-    <path d="M3 11.5 12 4l9 7.5" />
-    <path d="M5.5 10.5V20h13v-9.5" />
-    <circle cx="10" cy="15" r="1.8" />
-    <path d="M11.8 15H16M14.5 15v2" />
-  </svg>
-);
-
 const BuyerAgent = (p: IconProps) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" {...p}>
     <circle cx="10.5" cy="10.5" r="6" />
@@ -126,13 +117,6 @@ export const SERVICES: Service[] = [
     blurb: "From 2.99%, capped, with 100 days risk-free and no middle man between you and the principal.",
     href: "/manage-property-adelaide",
     Icon: Manage,
-    form: true,
-  },
-  {
-    label: "Rent Out My Property",
-    blurb: "A rental appraisal, a pricing strategy that minimises vacancy, and careful tenant screening.",
-    href: "/rent-out-my-property-adelaide",
-    Icon: RentOut,
     form: true,
   },
   {

@@ -73,6 +73,8 @@ const nextConfig: NextConfig = {
       { source: "/realestate-gift-adelaide", destination: "/#free-book", statusCode: 301 },
       // Renamed for search on 2026-10-31: "new homes" and "Adelaide" are what people type.
       { source: "/projects-and-opportunities", destination: "/new-homes-adelaide", statusCode: 301 },
+      // "Rent Out My Property" retired 2026-10-31 (owner's request); management covers it.
+      { source: "/rent-out-my-property-adelaide", destination: "/manage-property-adelaide", statusCode: 301 },
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],

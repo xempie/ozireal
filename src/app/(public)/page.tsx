@@ -210,7 +210,7 @@ export default async function HomePage() {
               <div>
                 <p className="eyebrow">What we do</p>
                 <h2 className="display">
-                  Eight services, <em>one office</em>
+                  Seven services, <em>one office</em>
                 </h2>
               </div>
               <Link className="txtlink" href="/property-services">

@@ -78,7 +78,6 @@ export const BUILTIN_PAGES: { path: string; label: string }[] = [
   { path: "/property-rental-report", label: "Rental report" },
   { path: "/manage-property-adelaide", label: "Property management" },
   { path: "/sell-property-house-adelaide", label: "Sell my property" },
-  { path: "/rent-out-my-property-adelaide", label: "Rent out my property" },
   { path: "/rent-property-house-adelaide", label: "Rent a property" },
   { path: "/buyer-agent-adelaide", label: "Buyer agent" },
   { path: "/property-investment", label: "Property investment" },

@@ -160,7 +160,7 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     },
     {
       "id": "eight-services-one-office",
-      "label": "Eight services, one office"
+      "label": "Seven services, one office"
     },
     {
       "id": "start-with-the-numbers",
@@ -177,7 +177,6 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     { "id": "esi", "label": "Esi Dor card" },
     { "id": "faq", "label": "Quick questions" }
   ],
-  "/rent-out-my-property-adelaide": "service",
   "/rent-property-house-adelaide": "service",
   "/sell-my-business-australia": "service",
   "/sell-property-house-adelaide": [
@@ -231,7 +230,7 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     },
     {
       "id": "services",
-      "label": "Services: Eight services, one office"
+      "label": "Services: Seven services, one office"
     },
     {
       "id": "why-us",

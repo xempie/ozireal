@@ -54,14 +54,13 @@ type NavItem = { href: string; label: string; children?: { href: string; label: 
  */
 const NAV: NavItem[] = [
   {
-    // The eight services, same names and pages as the homepage grid. Strategy Services
+    // The seven services, same names and pages as the homepage grid. Strategy Services
     // is its own top-level item again since 2026-10-31.
     href: "/property-services",
     label: "Services",
     children: [
       { href: "/sell-property-house-adelaide", label: "Sell My Property" },
       { href: "/manage-property-adelaide", label: "Manage My Property" },
-      { href: "/rent-out-my-property-adelaide", label: "Rent Out My Property" },
       { href: "/buyer-agent-adelaide", label: "I Need A Buyer Agent" },
       { href: "/property-investment", label: "I Want to Invest" },
       { href: "/land-opportunities-sa-adelaide", label: "Looking For Land" },
