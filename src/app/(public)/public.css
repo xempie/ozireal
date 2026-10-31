@@ -2938,3 +2938,20 @@
 /* Outranks the filled-button rule (.site .btn:not():not()), which forced the text white. */
 .site .ba-loan .btn.ba-loan-btn { background: #fff; color: var(--accent-2); box-shadow: 0 14px 30px -12px rgba(0,0,0,.45); font-size: 14px; padding: 18px 28px; }
 .site .ba-loan .btn.ba-loan-btn:hover { background: var(--ink); color: #fff; }
+
+/* New Homes: buyer's agent referrals (2026-10-31) */
+.site .pf-ask { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; font-size: 13px; font-weight: 700; color: var(--accent-2); border: 1.5px solid var(--accent-2); background: #FFF4EF; white-space: nowrap; transition: background .2s, color .2s; }
+.site .pf-ask:hover { background: var(--accent-2); color: #fff; }
+@media (max-width: 760px) { .site .pf-meta { margin-left: 0; width: 100%; justify-content: space-between; flex-wrap: wrap; } }
+.site .pf-empty-ba { display: block; margin-top: 10px; }
+.site .pf-empty .btn { margin-top: 16px; }
+.site .nh-ba { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 20px 40px; align-items: center; background: var(--ink); color: #fff; padding: clamp(24px,4vw,44px); position: relative; overflow: hidden; }
+.site .nh-ba::after { content: ""; position: absolute; right: -120px; top: -160px; width: 420px; height: 420px; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,128,79,.25), transparent); pointer-events: none; }
+.site .nh-ba > * { position: relative; }
+@media (max-width: 760px) { .site .nh-ba { grid-template-columns: 1fr; } }
+.site .nh-ba .eyebrow { color: var(--accent-lt); }
+.site .nh-ba h2 { margin: 0; color: #fff; }
+.site .nh-ba h2 em { color: var(--accent-lt); }
+.site .nh-ba p { color: rgba(255,255,255,.78); margin: 10px 0 0; max-width: 56ch; }
+.site .nh-ba ul { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: rgba(255,255,255,.85); }
+.site .nh-ba li::before { content: "✓ "; color: var(--accent-lt); font-weight: 700; }

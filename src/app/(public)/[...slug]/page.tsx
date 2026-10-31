@@ -48,6 +48,33 @@ export default async function Page({ params }: Params) {
           <BlockView key={item.b.id} b={item.b} />
         ),
       )}
+      {path === "/new-homes-adelaide" && (
+        // Owner's request, 2026-10-31: anyone who has not found a fit goes to the buyer's agent brief.
+        <section className="sec">
+          <div className="wrap">
+            <div className="nh-ba">
+              <div>
+                <p className="eyebrow">Haven&rsquo;t found the one?</p>
+                <h2 className="display">
+                  Let a buyer&rsquo;s agent <em>find it for you.</em>
+                </h2>
+                <p>
+                  Tell us your suburbs, budget and must-haves. We search on-market,
+                  pre-market and off-market, check every property before you visit, and
+                  negotiate on your side.
+                </p>
+                <ul>
+                  <li>Off-market access</li>
+                  <li>You pay after you settle</li>
+                </ul>
+              </div>
+              <a className="btn" href="/buyer-agent-adelaide#enquire">
+                Send us your brief &rarr;
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
       {!hasCta && (
         <CtaBand
           heading="Talk to"

@@ -167,6 +167,9 @@ export function ProjectFinder({
             <button type="button" className="pf-clear" onClick={clear}>
               Clear
             </button>
+            <a className="pf-ask" href="/buyer-agent-adelaide#enquire">
+              <span aria-hidden="true">🔎</span> Not here? We&rsquo;ll search for you &rarr;
+            </a>
           </span>
         </div>
       </div>
@@ -181,6 +184,12 @@ export function ProjectFinder({
             clear filters
           </button>
           .
+          <span className="pf-empty-ba">
+            Or let our buyer&rsquo;s agent find it, including homes that never reach the portals.
+          </span>
+          <a className="btn" href="/buyer-agent-adelaide#enquire">
+            Find it for me &rarr;
+          </a>
         </div>
       )}
     </>
