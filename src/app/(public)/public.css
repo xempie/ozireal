@@ -247,7 +247,8 @@
 .menu a[aria-current="page"] { color: var(--accent); }
 
 /* About Us dropdown. Hover or keyboard focus opens it; the drawer shows it inline. */
-.menu-group { position: relative; }
+/* Flex so a group's link sits on the same line as the plain links (a block div dropped it). */
+.menu-group { position: relative; display: flex; align-items: center; }
 .menu-caret {
   display: inline-block; width: 6px; height: 6px; margin-left: 7px; vertical-align: 2px;
   border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
