@@ -194,7 +194,14 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
   "/rent-out-my-property-adelaide": "service",
   "/rent-property-house-adelaide": "service",
   "/sell-my-business-australia": "service",
-  "/sell-property-house-adelaide": "service",
+  "/sell-property-house-adelaide": [
+    { "id": "how", "label": "How a sale runs" },
+    { "id": "why", "label": "Why sell with OziRealty" },
+    { "id": "report", "label": "Free appraisal report" },
+    { "id": "form", "label": "Enquiry form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Selling questions" }
+  ],
   "/sold": [
     {
       "id": "results",
