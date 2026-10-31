@@ -74,7 +74,15 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
       "label": "What the consultation covers"
     }
   ],
-  "/buyer-agent-adelaide": "service",
+  "/buyer-agent-adelaide": [
+    { "id": "what-you-get", "label": "What you get" },
+    { "id": "how", "label": "How it works" },
+    { "id": "why", "label": "Why use a buyer's agent" },
+    { "id": "finance", "label": "Smart Loanz free finance chat" },
+    { "id": "form", "label": "Brief form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Buyer's agent questions" }
+  ],
   "/contact": [
     {
       "id": "form",

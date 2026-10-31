@@ -2912,3 +2912,27 @@
 .site .mg-pillars i { font-style: normal; display: inline-block; font-weight: 700; font-size: 13px; color: var(--accent); background: #EAF0FF; padding: 6px 10px; }
 .site .mg-pillars b { display: block; font-family: var(--serif); font-size: 1.2rem; margin: 12px 0 6px; }
 .site .mg-pillars p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+/* Buyer's agent page (2026-10-31) */
+.site .sl-hero--compact { padding-block: clamp(30px,4vw,56px); }
+.site .sl-hero--compact h1 { font-size: clamp(1.9rem,4vw,3rem); max-width: 20ch; }
+.site .sl-hero--compact .sl-acts { margin-top: 20px; }
+.site .ba-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 26px; }
+@media (max-width: 760px) { .site .ba-vs { grid-template-columns: 1fr; } }
+.site .ba-vs > div { padding: 22px; border: 1px solid rgba(255,255,255,.16); }
+.site .ba-vs .ba-us { background: rgba(255,255,255,.08); border-color: var(--accent-lt); }
+.site .ba-vs h3 { font-family: var(--serif); font-size: 1.25rem; margin: 0; color: #fff; }
+.site .ba-vs ul { list-style: none; padding: 0; margin: 12px 0 0; }
+.site .ba-vs li { padding: 5px 0 5px 24px; position: relative; color: rgba(255,255,255,.8); font-size: 15px; }
+.site .ba-vs li::before { content: "–"; position: absolute; left: 4px; color: rgba(255,255,255,.5); }
+.site .ba-vs .ba-us li::before { content: "✓"; left: 0; color: var(--accent-lt); font-weight: 700; }
+.site .ba-loan { background: linear-gradient(115deg, var(--accent-2) 0%, #B5360F 100%); color: #fff; padding-block: clamp(32px,4.5vw,56px); }
+.site .ba-loan-in { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 24px 40px; align-items: center; }
+@media (max-width: 760px) { .site .ba-loan-in { grid-template-columns: 1fr; } }
+.site .ba-loan .eyebrow { color: #FFE2D3; }
+.site .ba-loan h2 { margin: 0; font-size: clamp(1.9rem,3.6vw,2.9rem); color: #fff; }
+.site .ba-loan h2 em { color: #fff; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+.site .ba-loan p { margin: 12px 0 0; max-width: 56ch; font-size: clamp(15.5px,1.25vw,17.5px); color: rgba(255,255,255,.92); }
+.site .ba-loan small { display: block; margin-top: 10px; font-size: 12px; color: rgba(255,255,255,.75); }
+.site .ba-loan-btn { background: #fff; color: var(--accent-2); box-shadow: 0 14px 30px -12px rgba(0,0,0,.45); font-size: 14px; padding: 18px 28px; }
+.site .ba-loan-btn:hover { background: var(--ink); color: #fff; }

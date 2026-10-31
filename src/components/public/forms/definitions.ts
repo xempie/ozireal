@@ -168,9 +168,11 @@ export const FORMS: FormDefinition[] = [
     roles: ["buyer"],
     title: "Tell us what you are looking for",
     intro: "The brief is where a buyer agent engagement starts. The more specific it is, the less of your Saturday it costs.",
-    submitLabel: "Submit",
+    submitLabel: "Send my brief",
     fields: [
       ...IDENTITY(false),
+      { id: "purpose", label: "What are you buying?", kind: "radio", required: true,
+        options: ["A home to live in", "An investment"] },
       { id: "suburbs", label: "What suburbs are you considering?", kind: "textarea", required: true },
       { id: "budget", label: "What is your budget?", kind: "radio", required: true,
         options: ["$400,000 to $800,000", "$800,000 to $1,000,000", "$1,000,000 to $1,500,000", "More than $1,500,000"] },
