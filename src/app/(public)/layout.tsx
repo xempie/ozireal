@@ -3,6 +3,7 @@ import { Newsreader, Instrument_Sans } from "next/font/google";
 import "./public.css";
 import { SiteHeader, SiteFooter, AGENCY } from "@/components/public/site-chrome";
 import { Breadcrumbs } from "@/components/public/breadcrumbs";
+import { MobileDock } from "@/components/public/mobile-dock";
 import { Zone } from "@/components/public/blocks";
 import { currentPath, currentPageContent, isPreview, themeContent } from "@/server/public/content";
 import { isBuiltinPath, themeCss } from "@/lib/site-content";
@@ -140,6 +141,7 @@ export default async function PublicLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agencyJsonLd()) }}
       />
       <SiteFooter />
+      <MobileDock mobile={AGENCY.mobile} mobileHref={AGENCY.mobileHref} />
     </div>
   );
 }

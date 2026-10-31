@@ -24,6 +24,9 @@ export const AGENCY = {
   principalTitle: "Founder & CEO",
   phone: "1800 400 333",
   phoneHref: "tel:1800400333",
+  /** The principal's mobile, for the phone call bar (owner's request, 2026-10-31). */
+  mobile: "0422 271 293",
+  mobileHref: "tel:0422271293",
   office: "308 Prospect Rd, Prospect SA 5082",
   /** The office address in parts, for schema.org markup. */
   street: "308 Prospect Rd",

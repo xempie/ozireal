@@ -2836,10 +2836,7 @@
 .site .ss-faq p { margin: 8px 0 0; color: var(--muted); }
 .site .ss-sticky { display: none; }
 @media (max-width: 760px) {
-  .site .ss-sticky { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: flex; gap: 8px; background: #fff; border-top: 1px solid var(--line); padding: 10px 16px calc(10px + env(safe-area-inset-bottom,0px)); }
-  .site .ss-sticky .btn { flex: 1; padding: 13px 10px; justify-content: center; }
-  .site .ss-sticky .ss-ghost { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
-  .site:has(.ss-sticky) { padding-bottom: 72px; }
+  .site .ss-sticky { display: none; }
 }
 
 /* Sell page (2026-10-31); shares .ss-* pieces with Strategy Services */
@@ -3008,3 +3005,69 @@
 .site .ps-pillars i { font-style: normal; font-weight: 700; font-size: 13px; color: var(--accent-lt); }
 .site .ps-pillars b { display: block; font-family: var(--serif); font-size: 1.2rem; margin: 10px 0 6px; }
 .site .ps-pillars p { margin: 0; color: rgba(255,255,255,.72); font-size: 14.5px; }
+
+/* ------------------------------------------------ Mobile dock, back to top, phone polish (2026-10-31) */
+.site .to-top {
+  position: fixed; right: 16px; bottom: 24px; z-index: 45;
+  width: 46px; height: 46px; border-radius: 50%; border: 0; cursor: pointer;
+  display: grid; place-items: center; color: #fff; background: var(--ink);
+  box-shadow: 0 10px 24px -8px rgba(10,24,46,.55);
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity .25s, transform .25s, background .2s;
+}
+.site .to-top.is-on { opacity: 1; transform: none; pointer-events: auto; }
+.site .to-top:hover { background: var(--accent); }
+.site .to-top:focus-visible { outline: 3px solid var(--accent-lt); outline-offset: 2px; }
+.site .m-dock { display: none; }
+
+@media (max-width: 760px) {
+  /* The dock: call Esi, plus the page's main action. */
+  .site .m-dock {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 44;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba(255,255,255,.97); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--line); box-shadow: 0 -8px 24px -16px rgba(10,24,46,.35);
+  }
+  .site .m-dock a {
+    min-height: 50px; display: flex; align-items: center; justify-content: center; gap: 8px;
+    font-weight: 700; font-size: 14px; text-align: center; line-height: 1.15; padding: 6px 10px;
+  }
+  .site .m-dock-call { background: #1B7F4B; color: #fff; }
+  .site .m-dock-call small { display: block; font-size: 11.5px; font-weight: 600; opacity: .85; letter-spacing: .02em; }
+  .site .m-dock-cta { background: var(--accent-2); color: #fff; }
+  .site { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  .site .to-top { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); right: 12px; width: 44px; height: 44px; }
+
+  /* No sideways scroll from any wide element. */
+  .site { overflow-x: clip; }
+
+  /* iOS zooms into any field under 16px; keep every input at 16. */
+  .site input, .site select, .site textarea { font-size: 16px; }
+
+  /* Comfortable tap targets. */
+  .site .btn { min-height: 48px; justify-content: center; }
+  .site .pf-chip, .site .ps-who button { min-height: 42px; }
+  .site .ss-faq summary { padding-block: 4px; font-size: 16px; line-height: 1.35; }
+
+  /* Hero: tighter, buttons full width and stacked. */
+  .site .sl-hero, .site .ss-hero { padding-block: 28px 32px; }
+  .site .sl-hero h1, .site .ss-hero h1 { font-size: clamp(1.75rem, 8vw, 2.2rem); }
+  .site .ss-lede { font-size: 15.5px; }
+  .site .sl-acts { flex-direction: column; align-items: stretch; }
+  .site .sl-acts .btn { width: 100%; }
+  .site .ss-trust { gap: 6px 14px; font-size: 13px; }
+
+  /* Sections breathe less on a phone. */
+  .site .sec { padding-block: 40px; }
+  .site .display { font-size: clamp(1.6rem, 7vw, 2.1rem); }
+
+  /* Cards and bands. */
+  .site .sl-unsure, .site .nh-ba, .site .ss-esi { padding: 22px; }
+  .site .sl-unsure .btn, .site .nh-ba .btn, .site .ba-loan-btn { width: 100%; }
+  .site .ss-form { padding: 16px; }
+  .site .sl-esi { margin-top: 16px; }
+
+  /* The cookie-cutter step lists read better as a compact timeline. */
+  .site .sl-steps > div { padding-top: 12px; }
+}
