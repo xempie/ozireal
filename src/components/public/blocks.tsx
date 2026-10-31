@@ -334,7 +334,11 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                   </ul>
                 ) : null}
                 {cta && (
-                  <SmartLink className="btn proj-btn" href={cta.href}>
+                  // A "Talk to Esi" to the buyer's agent page lands on its brief form itself (2026-10-31).
+                  <SmartLink
+                    className="btn proj-btn"
+                    href={/buyer-agent-adelaide\/?$/.test(cta.href) ? `${cta.href.replace(/\/$/, "")}#brief` : cta.href}
+                  >
                     {cta.label}
                   </SmartLink>
                 )}

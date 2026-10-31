@@ -3071,3 +3071,4 @@
   /* The cookie-cutter step lists read better as a compact timeline. */
   .site .sl-steps > div { padding-top: 12px; }
 }
+.site #brief { scroll-margin-top: 90px; }

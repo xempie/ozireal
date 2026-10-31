@@ -68,7 +68,7 @@ export default async function Page({ params }: Params) {
                   <li>You pay after you settle</li>
                 </ul>
               </div>
-              <a className="btn" href="/buyer-agent-adelaide#enquire">
+              <a className="btn" href="/buyer-agent-adelaide#brief">
                 Send us your brief &rarr;
               </a>
             </div>

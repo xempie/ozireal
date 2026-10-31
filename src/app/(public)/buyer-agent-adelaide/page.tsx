@@ -197,7 +197,7 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="ss-form">
+            <div className="ss-form" id="brief">
               <FormSection slug="buyer-agent-adelaide" bare />
             </div>
           </div>
