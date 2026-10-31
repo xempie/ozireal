@@ -25,6 +25,8 @@ export function BlogList({ topic }: { topic?: string } = {}) {
 
   return (
     <>
+      {/* Hides the footer's appraisal banner on the journal (owner's request, 2026-10-31). */}
+      <span className="no-foot-cta" hidden />
       <PageHero
         eyebrow="Journal"
         title={topic ? `${topicLabel(topic)} in Adelaide:` : "Adelaide property guides,"}

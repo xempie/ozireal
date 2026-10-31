@@ -61,6 +61,8 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 
   return (
     <>
+      {/* Hides the footer's appraisal banner on every post (owner's request, 2026-10-31). */}
+      <span className="no-foot-cta" hidden />
       <article className="post-page">
         <header className="post-head">
           <div className="wrap">
