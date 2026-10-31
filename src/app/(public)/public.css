@@ -2823,7 +2823,7 @@
 .site .ss-how p { margin: 0; color: var(--muted); font-size: 15px; }
 .site .ss-esi { display: grid; grid-template-columns: 110px minmax(0,1fr) auto; gap: 24px; align-items: center; background: var(--ink); color: #fff; padding: clamp(20px,3vw,32px); }
 @media (max-width: 760px) { .site .ss-esi { grid-template-columns: 1fr; } }
-.site .ss-ph { width: 110px; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(135deg,#3a4a6b,#13254A); display: grid; place-items: center; font-family: var(--serif); font-size: 2rem; }
+.site .ss-ph { object-fit: cover; object-position: center top; width: 110px; height: 110px; aspect-ratio: 1; border-radius: 50%; background: linear-gradient(135deg,#3a4a6b,#13254A); display: grid; place-items: center; font-family: var(--serif); font-size: 2rem; }
 .site .ss-esi h3 { font-family: var(--serif); font-size: 1.6rem; margin: 0; }
 .site .ss-esi p { margin: 6px 0 0; color: rgba(255,255,255,.75); max-width: 52ch; }
 .site .ss-cta { background: var(--accent-2); }

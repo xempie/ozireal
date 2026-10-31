@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { FormSection } from "@/components/public/forms/form-section";
 import { servicePageBySlug } from "@/components/public/site-pages";
-import { REPORTS } from "@/components/public/agency";
+import Image from "next/image";
+import { PORTRAIT, REPORTS } from "@/components/public/agency";
 import { GoalPicker } from "@/components/public/goal-picker";
 
 import { Fixed } from "@/components/public/fixed";
@@ -67,6 +68,20 @@ const GOALS = [
     form: "book-online",
   },
 ] as const;
+
+/** Also emitted as FAQPage JSON-LD: plain, self-contained answers AI search engines can quote. */
+const FAQS = [
+  { q: "What is a property strategy service?", a: "A property strategy service uses real sales, rental and demand data to plan your next move, whether that is selling, buying, investing or leasing, so the decision rests on evidence rather than guesswork. At OziRealty in Adelaide it starts with a free report on your property or suburb." },
+  { q: "Is the property appraisal really free?", a: "Yes. The Premium Appraisal Report, the Suburb Insight Report, the Rental Report and the consultation are all free and carry no obligation to list, buy or sign anything." },
+  { q: "How much is my house worth in Adelaide?", a: "Value depends on recent comparable sales in your street and suburb, land size, condition and current buyer demand. The free appraisal gives a current market value range built from comparable sales, rather than an automated online estimate." },
+  { q: "Which Adelaide suburbs are good to buy or invest in?", a: "It depends on your budget, goals and timeframe. The free Suburb Insight Report compares median prices, rental yields, vacancy rates, growth performance and buyer demand, so you can weigh suburbs side by side before committing." },
+  { q: "How much rent can I get for my property in Adelaide?", a: "The free Rental Report gives an accurate weekly rent range from comparable nearby rentals, plus vacancy and tenant demand insights and a pricing strategy to minimise vacancy." },
+  { q: "Do I need a property strategy if I only own one home?", a: "It helps. Owner-occupiers use a strategy to decide when to sell, whether to renovate, or whether to keep the home and rent it out. The questions are the same; only the scale differs." },
+  { q: "Can overseas buyers get property guidance in South Australia?", a: "Yes. OziRealty helps overseas investors understand the South Australian market and the steps involved in buying. Start with a free consultation to discuss your situation." },
+  { q: "Who prepares the reports?", a: "Esi Dor, the founder and principal of OziRealty, a licensed real estate agency in South Australia. You deal with the principal directly, not a call centre." },
+  { q: "Will I be pressured to sell or list?", a: "No. The report is yours to use however you like." },
+  { q: "Which report should I pick?", a: "Choose the question closest to yours at the top of this page. If none fits, pick \"I'm not sure yet\" and Esi will point you to the right one." },
+];
 
 export default function Page() {
   return (
@@ -157,7 +172,7 @@ export default function Page() {
         <section className="sec" style={{ paddingTop: 0 }}>
           <div className="wrap">
             <div className="ss-esi">
-              <div className="ss-ph" aria-hidden="true">ED</div>
+              <Image className="ss-ph" src={PORTRAIT.src} alt={PORTRAIT.alt} width={220} height={220} />
               <div>
                 <h3>You deal with Esi Dor, directly.</h3>
                 <p>The principal reads every request and prepares every report. Prefer to talk first? Book a free consultation.</p>
@@ -174,23 +189,28 @@ export default function Page() {
         <section className="sec" style={{ paddingTop: 0 }}>
           <div className="wrap" style={{ maxWidth: 820 }}>
             <h2 className="display">
-              Quick <em>questions</em>
+              Property strategy in Adelaide: <em>common questions</em>
             </h2>
-            <details className="ss-faq">
-              <summary>Is it really free?</summary>
-              <p>Yes. Every report and the consultation are free and carry no obligation to list, buy or sign anything.</p>
-            </details>
-            <details className="ss-faq">
-              <summary>Will I be pressured to sell?</summary>
-              <p>No. The report is yours to use however you like.</p>
-            </details>
-            <details className="ss-faq">
-              <summary>Which report should I pick?</summary>
-              <p>
-                Choose the question closest to yours above. If none fits, pick
-                {" "}&ldquo;I&rsquo;m not sure yet&rdquo; and Esi will point you to the right one.
-              </p>
-            </details>
+            {FAQS.map((f) => (
+              <details className="ss-faq" key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  mainEntity: FAQS.map((f) => ({
+                    "@type": "Question",
+                    name: f.q,
+                    acceptedAnswer: { "@type": "Answer", text: f.a },
+                  })),
+                }).replace(/</g, "\\u003c"),
+              }}
+            />
           </div>
         </section>
       </Fixed>
