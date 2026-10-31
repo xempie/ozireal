@@ -1,116 +1,97 @@
 import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
 import { FormSection } from "@/components/public/forms/form-section";
-import { PageHero, Points, CtaBand } from "@/components/public/page-shell";
-import { MANAGEMENT_PLANS, REPORTS } from "@/components/public/agency";
-
+import { MANAGEMENT_PLANS, PORTRAIT, photo } from "@/components/public/agency";
 import { Fixed } from "@/components/public/fixed";
+
 /**
  * Property management.
  *
  * `/manage-property-adelaide` mirrors the live Wix page, "Manage My Property" in the
- * site's services row. `/rent-out-my-property-adelaide` and `/property-rental-report`
- * also market management on the live site; both now have their own pages and forms
- * and link here for the plans.
+ * site's services row. Rebuilt 2026-10-31 on the Sell page's structure: the service
+ * (what you get, the four plans with Income & Risk Shield recommended, how we work),
+ * then the form, then a hand-off to Strategy Services, and the FAQ last.
  *
- * Bespoke rather than a `ServicePageBody`, because this is the one page with a tier
- * comparison on it and three plans do not fit the shared points-and-prose layout.
- *
- * Every claim here is the live site's: 2.99%, 100 days risk-free, no middle man, two
- * months free on signing and another two on a referral, and the plan contents. They are
- * commercial terms rather than performance figures, which is what makes them publishable
- * without substantiation of past results, and they still need the licensee to confirm
- * they are current before cutover.
+ * The commercial terms (from 2.99%, 100 days risk-free, no middle man, two months free
+ * on a referral, the plan contents) are the agency's own, confirmed by the owner.
  */
 
 export const metadata: Metadata = {
   title: "Property Management From 2.99%",
   description:
-    "Adelaide property management from 2.99% with 100 days risk-free. Proactive management, careful tenant selection, and rental strategy based on current South Australian market data.",
+    "Adelaide property management from 2.99% with 100 days risk-free. Four plans, cost-effective maintenance, professional tenancy dispute handling, and your property cared for as your most important asset.",
   alternates: { canonical: "/manage-property-adelaide" },
 };
+
+const GETS = [
+  { hi: "From 2.99%", t: " commission", d: "Full management from 2.99%, with the full fee schedule in writing before you sign." },
+  { pre: "Cared for as ", hi: "your most important asset", t: "", d: "Careful tenant screening, routine inspections and a close eye on condition, because for most owners it is." },
+  { hi: "Cost-effective", t: " maintenance", d: "Repairs handled early with quotes that make sense, so small issues stay small and costs stay down." },
+  { hi: "Professional", t: " tenancy dispute resolution", d: "Arrears, bond claims and disputes handled calmly and properly, through to the tribunal if needed." },
+];
+
+const PILLARS = [
+  { t: "Deal directly with the business owner", d: "Your investment gets full attention. There is no middle man." },
+  { t: "Compliance, completely", d: "Every compliance obligation handled in full." },
+  { t: "Trust account", d: "We use a trust account for all client funds." },
+  { t: "REISA standards", d: "We operate under the REISA standards." },
+];
+
+/** Also emitted as FAQPage JSON-LD: plain, self-contained answers AI search engines can quote. */
+const FAQS = [
+  { q: "How much does a property manager cost in Adelaide?", a: "Fees vary by agency and by what is included. OziRealty's property management in Adelaide starts from 2.99%, with the full fee schedule in writing before you sign." },
+  { q: "Which management plan should I choose?", a: "Most owners are best covered by Income & Risk Shield: it adds tribunal attendance, end-to-end maintenance, insurance claim support and after-hours emergencies to everything in the other plans." },
+  { q: "How do you handle tenancy disputes?", a: "Professionally and on the record: clear communication first, then the arrears and bond processes, and tribunal attendance where needed." },
+  { q: "How do you keep maintenance costs down?", a: "Issues are dealt with early, before they become expensive, using tradespeople and quotes that make sense for the job." },
+  { q: "Can I switch from my current agency?", a: "Yes. Tell us who manages the property now and we will explain how the handover works." },
+  { q: "How are my rent and funds held?", a: "All client funds are held in a trust account, and OziRealty operates under the REISA standards." },
+];
 
 export default function Page() {
   return (
     <>
-      <PageHero
-        eyebrow="Property management"
-        title="More care,"
-        titleEm="less cost"
-        lede="Flexible property management plans designed to protect your rental income, reduce risks, and maximise long-term returns."
-        image="photo-1605146769289-440113cc3d00"
-        imageAlt="Grey and white contemporary home"
-        facts={["From 2.99%", "100 days risk-free", "No middle man"]}
-      />
-
-      <Fixed id="form">
-        <FormSection slug="manage-property-adelaide" />
-      </Fixed>
-
-      <Fixed id="designed-to-maximise-your-investment">
-        <section className="sec">
-          <div className="wrap page-cols">
-            <Points
-              title="What the service includes"
-              items={[
-                "Strategic rent pricing and market monitoring",
-                "Careful tenant screening and leasing management",
-                "Routine inspections and maintenance coordination",
-                "Fast response to tenant issues and compliance matters",
-                "Direct communication with your dedicated property manager",
-              ]}
-            />
-            <div className="prose-stack">
-              <div className="prose">
-                <h2>Designed to maximise your investment</h2>
-                <p>
-                  Our approach focuses on proactive management, careful tenant selection, and
-                  smart rental strategies based on current market data across South
-                  Australia.
-                </p>
-                <p>
-                  With transparent fees, clear communication, and professional oversight,
-                  landlords always know how their property is performing. Whether you own one
-                  property or a growing portfolio, the goal is simple: protect your asset,
-                  optimise your income, and make property ownership easier.
-                </p>
-              </div>
-              <div className="prose">
-                <h2>Bring a friend</h2>
-                <p>
-                  On all packages, refer another landlord who signs with us and you both earn
-                  two months of management fee-free.
-                </p>
-              </div>
-            </div>
+      <section className="sl-hero">
+        <Image className="sl-hero-bg" src={photo("photo-1605146769289-440113cc3d00", 1600)} alt="" fill priority sizes="100vw" />
+        <div className="wrap">
+          <p className="eyebrow">Property management in Adelaide</p>
+          <h1 className="display">
+            More care, <em>less cost.</em>
+          </h1>
+          <p className="ss-lede">
+            Management from <b style={{ color: "#fff" }}>2.99%</b>, run directly by the
+            business owner. We look after your rental as your most important asset: the
+            right tenants, cost-effective maintenance, and professional handling when a
+            tenancy dispute comes up.
+          </p>
+          <div className="sl-acts">
+            <a className="btn" href="#enquire">Get my management quote →</a>
+            <a className="btn sl-line" href="#plans">Compare plans</a>
           </div>
-        </section>
-      </Fixed>
+          <ul className="ss-trust">
+            <li><b>From 2.99%</b> management fee</li>
+            <li>100 days risk-free</li>
+            <li>No middle man</li>
+          </ul>
+        </div>
+      </section>
 
-      <Fixed id="three-ways-to-manage-it">
-        <section className="sec dark">
+      <Fixed id="what-you-get">
+        <section className="sec">
           <div className="wrap">
-            <div className="sec-head">
-              <div>
-                <p className="eyebrow">Plans</p>
-                <h2 className="display">
-                  Three ways to <em>manage it</em>
-                </h2>
-              </div>
-              <p className="lede" style={{ margin: 0 }}>
-                Each plan builds on the one before it. Ask for the full fee schedule in
-                writing before you sign anything, here or anywhere else.
-              </p>
-            </div>
-
-            <div className="report-grid">
-              {MANAGEMENT_PLANS.map((plan) => (
-                <div className="report-card" key={plan.name}>
-                  <h3>{plan.name}</h3>
-                  <ul>
-                    {plan.points.map((p) => (
-                      <li key={p}>{p}</li>
-                    ))}
-                  </ul>
+            <p className="eyebrow">What you get</p>
+            <h2 className="display">
+              Your property, <em>treated as your biggest asset</em>
+            </h2>
+            <div className="sl-steps mg-gets">
+              {GETS.map((g) => (
+                <div key={g.hi}>
+                  <b>
+                    {g.pre}
+                    <strong className="mg-hi">{g.hi}</strong>
+                    {g.t}
+                  </b>
+                  <p>{g.d}</p>
                 </div>
               ))}
             </div>
@@ -118,37 +99,140 @@ export default function Page() {
         </section>
       </Fixed>
 
-      <Fixed id="smart-rent-stable-income-zero-guesswork">
-        <section className="sec" style={{ background: "var(--paper-2)" }}>
-          <div className="wrap page-cols">
-            <Points title={REPORTS.rental.title} items={[...REPORTS.rental.items]} />
-            <div className="prose-stack">
-              <div className="prose">
-                <h2>Smart rent, stable income, zero guesswork</h2>
-                <p>
-                  Before you set a rent, it is worth knowing what comparable properties
-                  actually leased for, how long they sat vacant, and what tenant profile the
-                  property attracts. The rental report covers all of it.
-                </p>
-                <p>
-                  Pricing a rental too high costs more in vacancy than the extra rent
-                  recovers. That is the calculation the report is there to settle.
-                </p>
-              </div>
+      <Fixed id="plans">
+        <section className="sec dark" id="plans">
+          <div className="wrap">
+            <p className="eyebrow">Plans</p>
+            <h2 className="display">
+              Choose your level of <em>protection</em>
+            </h2>
+            <div className="mg-plans">
+              {MANAGEMENT_PLANS.map((p) => {
+                const rec = "recommended" in p && p.recommended;
+                return (
+                  <div className={rec ? "mg-plan mg-rec" : "mg-plan"} key={p.name}>
+                    {rec && <span className="mg-rb">★ Recommended</span>}
+                    <h3>{p.name}</h3>
+                    <p className="mg-who">{p.who}</p>
+                    <ul>
+                      {p.points.map((x) => (
+                        <li key={x}>{x}</li>
+                      ))}
+                    </ul>
+                    <a className="btn" href="#enquire">
+                      {rec ? "Choose Risk Shield →" : p.name === "Owner-Designed Plan" ? "Design my plan" : `Choose ${p.name.replace("Income ", "")}`}
+                    </a>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mg-ref">On every plan: refer another landlord who signs with us and you both get two months fee-free.</p>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="how-we-work">
+        <section className="sec">
+          <div className="wrap">
+            <p className="eyebrow">How we work</p>
+            <h2 className="display">
+              Run properly, <em>by the owner</em>
+            </h2>
+            <div className="mg-pillars">
+              {PILLARS.map((p, i) => (
+                <div key={p.t}>
+                  <i>0{i + 1}</i>
+                  <b>{p.t}</b>
+                  <p>{p.d}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
       </Fixed>
 
-
-      <Fixed id="closing-cta">
-        <CtaBand
-          heading="Get your"
-          headingEm="rent report"
-          label="Talk to the office"
-          href="/contact"
-        />
+      <Fixed id="form">
+        <section className="sec sl-enq" id="enquire">
+          <div className="wrap ss-pick-in">
+            <div>
+              <p className="eyebrow">Start here</p>
+              <h2 className="display">
+                Get your <em>management quote</em>
+              </h2>
+              <p className="ss-for">
+                Tell us about the property and we will come back with what management would
+                cost, what it would earn, and a free rental appraisal if you want one.
+              </p>
+              <div className="sl-esi">
+                <Image className="sl-ph" src={PORTRAIT.src} alt={PORTRAIT.alt} width={144} height={144} />
+                <div>
+                  <b>Esi Dor</b>
+                  <span>Founder and principal, manages directly</span>
+                </div>
+              </div>
+            </div>
+            <div className="ss-form">
+              <FormSection slug="manage-property-adelaide" bare />
+            </div>
+          </div>
+        </section>
       </Fixed>
+
+      <Fixed id="strategy">
+        <section className="sec">
+          <div className="wrap">
+            <div className="sl-unsure">
+              <div>
+                <p className="eyebrow">Not sure how to start?</p>
+                <h2 className="display">
+                  Rent it out, sell, <em>or hold?</em>
+                </h2>
+                <p>
+                  If you are still deciding what to do with the property, our Strategy
+                  Services help you weigh it up, with free reports on rent, value and suburbs.
+                </p>
+              </div>
+              <Link className="btn" href="/property-strategy-services">
+                Explore strategy services →
+              </Link>
+            </div>
+          </div>
+        </section>
+      </Fixed>
+
+      <Fixed id="faq">
+        <section className="sec" style={{ paddingTop: 0 }}>
+          <div className="wrap" style={{ maxWidth: 820 }}>
+            <h2 className="display">
+              Property management in Adelaide: <em>common questions</em>
+            </h2>
+            {FAQS.map((f) => (
+              <details className="ss-faq" key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  mainEntity: FAQS.map((f) => ({
+                    "@type": "Question",
+                    name: f.q,
+                    acceptedAnswer: { "@type": "Answer", text: f.a },
+                  })),
+                }).replace(/</g, "\\u003c"),
+              }}
+            />
+          </div>
+        </section>
+      </Fixed>
+
+      <div className="ss-sticky">
+        <a className="btn" href="#enquire">Get my management quote</a>
+      </div>
     </>
   );
 }

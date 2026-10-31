@@ -143,26 +143,12 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
   ],
   "/land-opportunities-sa-adelaide": "service",
   "/manage-property-adelaide": [
-    {
-      "id": "form",
-      "label": "Enquiry form (manage-property-adelaide)"
-    },
-    {
-      "id": "designed-to-maximise-your-investment",
-      "label": "Designed to maximise your investment"
-    },
-    {
-      "id": "three-ways-to-manage-it",
-      "label": "Three ways to manage it"
-    },
-    {
-      "id": "smart-rent-stable-income-zero-guesswork",
-      "label": "Smart rent, stable income, zero guesswork"
-    },
-    {
-      "id": "closing-cta",
-      "label": "Closing call to action: Get your rent report"
-    }
+    { "id": "what-you-get", "label": "What you get (2.99%, care, maintenance, disputes)" },
+    { "id": "plans", "label": "Four plans (Risk Shield recommended)" },
+    { "id": "how-we-work", "label": "How we work (owner, compliance, trust account, REISA)" },
+    { "id": "form", "label": "Enquiry form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Property management questions" }
   ],
   "/overseas-investment": "service",
   "/property-investment": "service",

@@ -256,10 +256,11 @@ export const REPORTS = {
   },
 } as const;
 
-/** The three management plans, from the property management page. */
+/** The four management plans, from the owner's plan cards (2026-10-31). Risk Shield is the recommended one. */
 export const MANAGEMENT_PLANS = [
   {
     name: "Income Protect",
+    who: "The essentials, done properly.",
     points: [
       "Rent collection and disbursement",
       "Professional tenant communication",
@@ -269,9 +270,10 @@ export const MANAGEMENT_PLANS = [
   },
   {
     name: "Income Optimise",
+    who: "More inspections, better rent.",
     points: [
       "Everything in Income Protect",
-      "Four routine inspections per year",
+      "4 routine inspections per year",
       "Annual rent review aligned to market data",
       "Priority maintenance for plumbing and gardening",
       "Vacancy minimisation strategy",
@@ -279,12 +281,22 @@ export const MANAGEMENT_PLANS = [
   },
   {
     name: "Income & Risk Shield",
+    who: "Full cover: income, property and risk.",
+    recommended: true,
     points: [
       "Everything in Income Optimise",
-      "Arrears and default management",
-      "Compliance and legislation monitoring",
-      "Tribunal representation where required",
+      "Tribunal attendance included",
+      "End-to-end maintenance handling",
+      "Insurance claim support",
+      "After-hours emergency management",
+      "Annual property performance report",
+      "5% discount on letting fees",
     ],
+  },
+  {
+    name: "Owner-Designed Plan",
+    who: "Build your own.",
+    points: ["Select services from across all our packages to build your own management plan"],
   },
 ] as const;
 
