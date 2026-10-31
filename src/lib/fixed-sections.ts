@@ -186,18 +186,10 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     }
   ],
   "/property-strategy-services": [
-    {
-      "id": "intro",
-      "label": "Introduction paragraph"
-    },
-    {
-      "id": "four-ways-to-start",
-      "label": "Four ways to start"
-    },
-    {
-      "id": "form",
-      "label": "Enquiry form (property-strategy-services)"
-    }
+    { "id": "form", "label": "Picked report and its enquiry form" },
+    { "id": "how", "label": "How it works" },
+    { "id": "esi", "label": "Esi Dor card" },
+    { "id": "faq", "label": "Quick questions" }
   ],
   "/rent-out-my-property-adelaide": "service",
   "/rent-property-house-adelaide": "service",
