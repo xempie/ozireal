@@ -201,7 +201,15 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     { "id": "esi", "label": "Esi Dor card" },
     { "id": "faq", "label": "Quick questions" }
   ],
-  "/rent-property-house-adelaide": "service",
+  "/rent-property-house-adelaide": [
+    { "id": "what-you-get", "label": "What you get" },
+    { "id": "how", "label": "How it works" },
+    { "id": "ready", "label": "Before you apply (documents)" },
+    { "id": "finance", "label": "Smart Loanz: could you buy instead?" },
+    { "id": "form", "label": "Rental form with Esi photo" },
+    { "id": "strategy", "label": "Not sure? Strategy Services" },
+    { "id": "faq", "label": "Renting questions" }
+  ],
   "/sell-my-business-australia": "service",
   "/sell-property-house-adelaide": [
     { "id": "how", "label": "How a sale runs" },

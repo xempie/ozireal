@@ -227,7 +227,7 @@ export const FORMS: FormDefinition[] = [
     roles: ["tenant"],
     title: "Register your rental requirements",
     intro: "So we can tell you about the right properties before the open, rather than after.",
-    submitLabel: "Submit",
+    submitLabel: "Register my requirements",
     fields: [
       ...IDENTITY(false),
       { id: "occupants", label: "Total number of occupants", kind: "text", required: true },

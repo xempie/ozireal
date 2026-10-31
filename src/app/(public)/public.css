@@ -2955,3 +2955,9 @@
 .site .nh-ba p { color: rgba(255,255,255,.78); margin: 10px 0 0; max-width: 56ch; }
 .site .nh-ba ul { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: rgba(255,255,255,.85); }
 .site .nh-ba li::before { content: "✓ "; color: var(--accent-lt); font-weight: 700; }
+
+/* Rental page checklist (2026-10-31) */
+.site .rt-docs { list-style: none; padding: 0; margin: 26px 0 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+@media (max-width: 760px) { .site .rt-docs { grid-template-columns: 1fr; } }
+.site .rt-docs li { display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; padding: 18px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); color: rgba(255,255,255,.85); font-size: 15px; }
+.site .rt-docs li::before { content: "✓"; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-lt); color: var(--ink); font-weight: 700; display: grid; place-items: center; }
