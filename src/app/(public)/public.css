@@ -2499,44 +2499,48 @@
 }
 
 /* ------------------------------------------- project finder (projects page) */
+/* A page with the finder gets a compact hero, so the first projects show without scrolling. */
+.site:has(.pf) .phero-inner { padding-block: clamp(26px, 3vw, 36px) clamp(22px, 2.6vw, 30px); }
+.site:has(.pf) .phero .eyebrow { margin-bottom: 8px; }
+.site:has(.pf) .phero h1 { font-size: clamp(1.9rem, 3.2vw, 2.6rem); line-height: 1.05; max-width: none; }
+.site:has(.pf) .phero .lede { margin-top: 8px; max-width: 70ch; font-size: 15px; }
 .proj[hidden] { display: none; }
 /* The finder sits right under the hero, not a full section's padding below it. */
 .sec.proj-sec--finder { padding-top: clamp(14px, 1.8vw, 24px); }
 .pf {
   position: sticky; z-index: 40; background: var(--paper);
-  border-bottom: 1px solid var(--line); padding-block: 14px; margin-bottom: 22px;
+  border-bottom: 1px solid var(--line); padding-block: 12px; margin-bottom: 18px;
+  display: grid; gap: 10px;
 }
-.pf-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
-.pf-row + .pf-row { margin-top: 12px; }
+/* Row 1: search, area, budget, sort. Row 2: type chips, ready now, count and clear. */
+.pf-r1 { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .9fr); gap: 10px; }
+.pf-r2 { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.pf-meta { margin-left: auto; display: flex; gap: 14px; align-items: center; }
 .pf-lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); min-width: 64px; }
 .pf-search, .pf-select {
-  font: inherit; font-size: 15px; padding: 11px 14px; min-width: 0;
+  font: inherit; font-size: 14px; padding: 9px 12px; min-width: 0; width: 100%; box-sizing: border-box;
   border: 1px solid var(--line); background: var(--paper-2); color: var(--ink);
 }
-.pf-search { flex: 1 1 220px; }
-.pf-select { flex: 0 1 230px; }
-.pf-select--sm { flex: none; padding: 8px 10px; font-size: 14px; }
 .pf-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .pf-chip {
-  font: inherit; font-size: 13.5px; font-weight: 500; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 500; padding: 5px 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--line); background: var(--paper); color: var(--ink);
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .pf-chip:hover { border-color: var(--accent); }
 .pf-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--white); }
-.pf-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; }
-.pf-toggle input { width: 18px; height: 18px; accent-color: var(--accent); }
-.pf-bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; justify-content: space-between; margin-top: 12px; }
-.pf-count { font-size: 14px; color: var(--muted); }
+.pf-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.pf-toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+.pf-count { font-size: 13px; color: var(--muted); }
 .pf-count b { color: var(--ink); }
-.pf-sort { display: flex; gap: 8px; align-items: center; font-size: 14px; }
-.pf-clear { font: inherit; font-size: 13.5px; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.pf-clear { font: inherit; font-size: 13px; background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; }
 .pf-empty { padding: 40px 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line); }
 .pf-empty b { display: block; color: var(--ink); font-size: 17px; margin-bottom: 6px; }
 @media (max-width: 560px) {
   .pf { position: static; }
-  .pf-lbl { min-width: 0; width: 100%; }
-  .pf-select { flex: 1 1 100%; }
+  .pf-r1 { grid-template-columns: 1fr 1fr; }
+  .pf-search { grid-column: 1 / -1; }
+  .pf-meta { margin-left: 0; }
 }
 
 /* A page can drop the footer's appraisal banner. See NO_FOOTER_CTA in [...slug]/page.tsx. */

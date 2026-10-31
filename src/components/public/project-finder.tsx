@@ -3,10 +3,11 @@
 import * as React from "react";
 
 /**
- * The projects page's finder: search, area, type, budget, "ready now" and sort.
+ * The projects page's finder: search, area, budget, sort, type, "ready now".
  *
- * The cards stay server-rendered (they are `children`); this only reads the data-*
- * attributes ProjectGrid puts on each one and hides or reorders them. So a visitor
+ * Two compact rows (owner's request, 2026-10-31) so the first projects show without
+ * scrolling. The cards stay server-rendered (they are `children`); this only reads the
+ * data-* attributes ProjectGrid puts on each one and hides or reorders them. So a visitor
  * without JavaScript still sees every project, and nothing here touches prices other than
  * the numeric priceMin/priceMax, which exist for filtering only.
  */
@@ -33,7 +34,7 @@ export function ProjectFinder({
   const [q, setQ] = React.useState("");
   const [area, setArea] = React.useState("");
   const [types, setTypes] = React.useState<Set<string>>(new Set());
-  const [budgets, setBudgets] = React.useState<Set<string>>(new Set());
+  const [budget, setBudget] = React.useState("");
   const [ready, setReady] = React.useState(false);
   const [sort, setSort] = React.useState<Sort>("feat");
   const [shown, setShown] = React.useState<number | null>(null);
@@ -55,6 +56,7 @@ export function ProjectFinder({
     if (!grid) return;
     const cards = Array.from(grid.querySelectorAll<HTMLElement>("[data-proj]"));
     const needle = q.trim().toLowerCase();
+    const band = BUDGETS.find(([label]) => label === budget);
     let count = 0;
     const visible: { el: HTMLElement; lo: number | null; order: number }[] = [];
 
@@ -62,10 +64,8 @@ export function ProjectFinder({
       const d = el.dataset;
       const lo = d.lo ? Number(d.lo) : null;
       const hi = d.hi ? Number(d.hi) : lo;
-      const inBudget =
-        budgets.size === 0 ||
-        (lo !== null &&
-          BUDGETS.some(([label, min, max]) => budgets.has(label) && lo <= max && (hi ?? lo) >= min));
+      // A project matches a budget when any part of its price range falls inside it.
+      const inBudget = !band || (lo !== null && lo <= band[2] && (hi ?? lo) >= band[1]);
       const ok =
         (!needle || (d.name ?? "").toLowerCase().includes(needle)) &&
         (!area || d.area === area) &&
@@ -93,19 +93,19 @@ export function ProjectFinder({
     }
     setShown(count);
     setTotal(cards.length);
-  }, [q, area, types, budgets, ready, sort]);
+  }, [q, area, types, budget, ready, sort]);
 
-  const toggle = (set: Set<string>, setter: (s: Set<string>) => void, v: string) => {
-    const next = new Set(set);
-    if (next.has(v)) next.delete(v);
-    else next.add(v);
-    setter(next);
+  const toggleType = (k: string) => {
+    const next = new Set(types);
+    if (next.has(k)) next.delete(k);
+    else next.add(k);
+    setTypes(next);
   };
   const clear = () => {
     setQ("");
     setArea("");
     setTypes(new Set());
-    setBudgets(new Set());
+    setBudget("");
     setReady(false);
     setSort("feat");
   };
@@ -113,7 +113,7 @@ export function ProjectFinder({
   return (
     <>
       <div className="pf" style={{ top }}>
-        <div className="pf-row">
+        <div className="pf-r1">
           <input
             id="pf-q"
             className="pf-search"
@@ -129,35 +129,26 @@ export function ProjectFinder({
               <option key={a}>{a}</option>
             ))}
           </select>
-        </div>
-        <div className="pf-row">
-          <span className="pf-lbl">Type</span>
-          <div className="pf-chips">
-            {kinds.map((k) => (
-              <button
-                key={k}
-                type="button"
-                className="pf-chip"
-                aria-pressed={types.has(k)}
-                onClick={() => toggle(types, setTypes, k)}
-              >
-                {k}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="pf-row">
-          <span className="pf-lbl">Budget</span>
-          <div className="pf-chips">
+          <select id="pf-budget" className="pf-select" aria-label="Budget" value={budget} onChange={(e) => setBudget(e.target.value)}>
+            <option value="">Any budget</option>
             {BUDGETS.map(([label]) => (
-              <button
-                key={label}
-                type="button"
-                className="pf-chip"
-                aria-pressed={budgets.has(label)}
-                onClick={() => toggle(budgets, setBudgets, label)}
-              >
-                {label}
+              <option key={label}>{label}</option>
+            ))}
+          </select>
+          <select id="pf-sort" className="pf-select" aria-label="Sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+            <option value="feat">Sort: Featured</option>
+            <option value="lo">Price: low to high</option>
+            <option value="hi">Price: high to low</option>
+          </select>
+        </div>
+        <div className="pf-r2">
+          <div className="pf-chips" role="group" aria-label="Property type">
+            <button type="button" className="pf-chip" aria-pressed={types.size === 0} onClick={() => setTypes(new Set())}>
+              All types
+            </button>
+            {kinds.map((k) => (
+              <button key={k} type="button" className="pf-chip" aria-pressed={types.has(k)} onClick={() => toggleType(k)}>
+                {k}
               </button>
             ))}
           </div>
@@ -165,25 +156,17 @@ export function ProjectFinder({
             <input id="pf-ready" type="checkbox" checked={ready} onChange={(e) => setReady(e.target.checked)} />
             Ready now
           </label>
-        </div>
-        <div className="pf-bar">
-          <span className="pf-count" aria-live="polite">
-            {shown === null ? null : (
-              <>
-                Showing <b>{shown}</b> of {total} projects
-              </>
-            )}
-          </span>
-          <span className="pf-sort">
+          <span className="pf-meta">
+            <span className="pf-count" aria-live="polite">
+              {shown === null ? null : (
+                <>
+                  Showing <b>{shown}</b> of {total}
+                </>
+              )}
+            </span>
             <button type="button" className="pf-clear" onClick={clear}>
-              Clear filters
+              Clear
             </button>
-            <label htmlFor="pf-sort">Sort</label>
-            <select id="pf-sort" className="pf-select pf-select--sm" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-              <option value="feat">Featured</option>
-              <option value="lo">Price: low to high</option>
-              <option value="hi">Price: high to low</option>
-            </select>
           </span>
         </div>
       </div>
