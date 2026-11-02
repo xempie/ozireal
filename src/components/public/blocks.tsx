@@ -344,8 +344,8 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                 )}
                 {/*
                   Finance referral to Smart Loanz, an associated business (owner's request,
-                  2026-10-31). "Associated" and "subject to lender approval" stay: credit
-                  advertising must not imply guaranteed or instant approval.
+                  2026-10-31). The "subject to lender approval" line was removed from these cards at the owner's
+                  request (2026-11-02).
                 */}
                 <div className="proj-loan">
                   <div className="proj-loan-copy">
@@ -353,7 +353,6 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                       Need a loan, <em>fast?</em>
                     </b>
                     <span>Talk to Smart Loanz, our associated broker.</span>
-                    <small>Subject to lender approval. {AGENCY.licence}</small>
                   </div>
                   <a
                     className="proj-loan-btn"
