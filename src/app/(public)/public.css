@@ -3200,3 +3200,26 @@
 }
 .site .bk-strip .enq-grid { align-items: end; } /* a wrapping label no longer pushes its box down */
 .site .bf { position: static; } /* owner's request 2026-11-02: the journal filter scrolls with the page */
+
+/* Contact Us, merged with Free Meeting (2026-11-02) */
+.site .ct-ways { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 24px; }
+@media (max-width: 900px) { .site .ct-ways { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 420px) { .site .ct-ways { grid-template-columns: 1fr; } }
+.site .ct-way { display: flex; gap: 12px; align-items: center; padding: 14px; min-height: 64px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); color: #fff; transition: background .2s; }
+.site .ct-way:hover { background: rgba(255,255,255,.14); }
+.site .ct-i { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-2); flex: none; font-size: 17px; }
+.site .ct-way--call .ct-i { background: #1B7F4B; }
+.site .ct-way b { display: block; font-size: 14.5px; }
+.site .ct-way small { display: block; font-size: 12.5px; color: rgba(255,255,255,.72); word-break: break-word; }
+.site .ct-forms { scroll-margin-top: 90px; }
+.site .ct-tabs { display: inline-flex; background: #fff; border: 1px solid var(--line); padding: 4px; gap: 4px; margin-bottom: 14px; max-width: 100%; }
+.site .ct-tabs button { padding: 11px 16px; border: 0; background: none; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; color: var(--muted); min-height: 44px; }
+.site .ct-tabs button[aria-selected="true"] { background: var(--ink); color: #fff; }
+.site .ct-forms [role="tabpanel"][hidden] { display: none; }
+.site .ct-note { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+.site .ct-covers { grid-template-columns: 1fr; }
+.site .ct-visit { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 20px; margin-top: 22px; }
+@media (max-width: 760px) { .site .ct-visit { grid-template-columns: 1fr; } }
+.site .ct-box { border: 1px solid var(--line); padding: 20px; }
+.site .ct-box h3 { font-family: var(--serif); font-size: 1.25rem; margin: 0 0 8px; }
+.site .ct-box p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }

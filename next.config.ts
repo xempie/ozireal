@@ -66,8 +66,8 @@ const nextConfig: NextConfig = {
       // Wix URLs found in the live sitemap on 2026-10-26 with no page of their own here.
       { source: "/blog/categories/:slug*", destination: "/blog", statusCode: 301 },
       { source: "/inquiry-services-page", destination: "/contact", statusCode: 301 },
-      { source: "/service-page/:slug*", destination: "/book-online", statusCode: 301 },
-      { source: "/booking-calendar/:slug*", destination: "/book-online", statusCode: 301 },
+      { source: "/service-page/:slug*", destination: "/contact#meeting", statusCode: 301 },
+      { source: "/booking-calendar/:slug*", destination: "/contact#meeting", statusCode: 301 },
       // The Gift Party page was retired on 2026-10-31 (owner's request). Its form lives on as
       // the home page's free-book section, which is where old links and search results go.
       { source: "/realestate-gift-adelaide", destination: "/#free-book", statusCode: 301 },
@@ -75,6 +75,8 @@ const nextConfig: NextConfig = {
       { source: "/projects-and-opportunities", destination: "/new-homes-adelaide", statusCode: 301 },
       // "Rent Out My Property" retired 2026-10-31 (owner's request); management covers it.
       { source: "/rent-out-my-property-adelaide", destination: "/manage-property-adelaide", statusCode: 301 },
+      // Free Meeting merged into Contact Us (2026-11-02); lands on the meeting tab.
+      { source: "/book-online", destination: "/contact#meeting", statusCode: 301 },
     ];
   },
   serverExternalPackages: ["postgres", "bullmq", "ioredis"],

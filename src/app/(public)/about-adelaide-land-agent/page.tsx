@@ -47,7 +47,7 @@ export default function Page() {
               </div>
             </div>
 
-            <PrincipalCard cta={{ label: "Book a free consultation", href: "/book-online" }}>
+            <PrincipalCard cta={{ label: "Book a free consultation", href: "/contact#meeting" }}>
               <p>
                 Esi leads OziRealty and holds the agency&rsquo;s licence. When the site says
                 there is no middle man between you and the principal, this is who it means.

@@ -84,7 +84,7 @@ const OFFERS = [
       "Identify ways to maximise your return",
     ],
     cta: "Book a free consultation",
-    href: "/book-online#enquire",
+    href: "/contact#meeting",
     image: "photo-1570129477492-45c003edd2be",
     alt: "Sandstone villa with a return verandah",
     feat: false,
@@ -509,7 +509,7 @@ export default async function HomePage() {
             </div>
 
             <div className="wy-act">
-              <Link className="btn" href="/book-online#enquire">
+              <Link className="btn" href="/contact#meeting">
                 Book a free consultation &rarr;
               </Link>
               <a className="wy-call" href={AGENCY.mobileHref}>
@@ -687,7 +687,7 @@ export default async function HomePage() {
                 market.
               </p>
             </div>
-            <PrincipalCard cta={{ label: "Book a free consultation", href: "/book-online" }}>
+            <PrincipalCard cta={{ label: "Book a free consultation", href: "/contact#meeting" }}>
               <p>
                 Whether you are planning to sell, invest, or need professional property
                 management, this one-on-one session gives you practical insight into your

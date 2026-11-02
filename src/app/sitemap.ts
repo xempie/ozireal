@@ -32,7 +32,6 @@ const PAGES = [
   "/sell-my-business-australia",
   "/about-adelaide-land-agent",
   "/contact",
-  "/book-online",
   "/blog",
   "/adelaide-property-faq",
   "/privacy",

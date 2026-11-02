@@ -148,7 +148,7 @@ export default function Page() {
           heading="Cannot find what you are"
           headingEm="looking for?"
           label="Book a free consultation"
-          href="/book-online"
+          href="/contact#meeting"
         />
       </Fixed>
     </>

@@ -78,7 +78,6 @@ const NAV: NavItem[] = [
     children: [
       { href: "/adelaide-property-faq", label: "FAQ" },
       { href: "/privacy", label: "Privacy Policy" },
-      { href: "/book-online", label: "Free Meeting" },
       { href: "/contact", label: "Contact" },
     ],
   },

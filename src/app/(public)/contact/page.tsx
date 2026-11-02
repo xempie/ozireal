@@ -1,138 +1,173 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { FormSection } from "@/components/public/forms/form-section";
-import { PageHero } from "@/components/public/page-shell";
-import { PrincipalCard } from "@/components/public/principal";
-import { AGENCY, EMAILS, REPORTS } from "@/components/public/agency";
-
+import { ContactTabs } from "@/components/public/contact-tabs";
+import { AGENCY, PORTRAIT, REPORTS, photo } from "@/components/public/agency";
 import { Fixed } from "@/components/public/fixed";
+
 /**
- * Contact.
+ * Contact Us: the old /contact and /book-online merged (owner's request, 2026-11-02).
  *
- * The live site spells this `/contact-adelaide-realestae-agency`. Corrected here, with a
- * 301 from the old spelling in next.config.ts, per rule 6 of the redirect plan: fix the
- * typo on the new site, never drop the indexed URL.
+ * The live site spells contact `/contact-adelaide-realestae-agency`; that and /book-online
+ * both 301 here (next.config.ts), /book-online to #meeting so the meeting tab opens.
  *
- * No enquiry form yet, on purpose. A form that takes a name and a phone number and stores
- * nothing is worse than a phone number that works, and the real one needs the
- * consent-provenance path described in free-property-appraisal-sa/page.tsx. Until then
- * this page gives people what they came for: how to reach the office, and which desk.
+ * The meeting form is a REQUEST, not a booking: nothing is held in the diary until the
+ * office confirms, and the page says so. There is no calendar behind it yet (Phase 3).
  */
 
 export const metadata: Metadata = {
   title: "Contact Us",
   description:
-    "Speak directly with Esi Dor, Principal of OziRealty (RLA 350 628). Our office at 308 Prospect Rd, phone, and a direct email for each department.",
+    "Contact OziRealty in Prospect, Adelaide: call Esi Dor on 0422 271 293, send a message, or request a free one-on-one property consultation. 308 Prospect Rd, Prospect SA 5082.",
   alternates: { canonical: "/contact" },
 };
+
+const MAPS = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(AGENCY.office)}`;
+
+/** Also emitted as FAQPage JSON-LD. */
+const FAQS = [
+  { q: "How do I contact a real estate agent in Prospect, Adelaide?", a: `Call Esi Dor on ${AGENCY.mobile}, the office on ${AGENCY.phone}, email ${AGENCY.email}, or visit OziRealty at ${AGENCY.office}.` },
+  { q: "Is the property consultation really free?", a: "Yes. The one-on-one consultation with OziRealty's principal is free and carries no obligation." },
+  { q: "Can we meet at my property or by video?", a: "Yes. Meetings can be at the office, at your property, by video call or by phone." },
+  { q: "How quickly will I hear back?", a: "Messages go straight to Esi Dor. For the fastest answer, call." },
+];
 
 export default function Page() {
   return (
     <>
-      <PageHero
-        eyebrow="Contact us"
-        title="Free property"
-        titleEm="strategy consultation"
-        lede={`Speak directly with ${AGENCY.principal}, Principal of ${AGENCY.name} (${AGENCY.licence}), and get clear guidance about your property.`}
-        image="photo-1600596542815-ffad4c1539a9"
-        imageAlt="White rendered home under a blue sky"
-        facts={[AGENCY.licence, "No pressure", "One-on-one"]}
-      />
+      <section className="sl-hero sl-hero--compact">
+        <Image className="sl-hero-bg" src={photo("photo-1600596542815-ffad4c1539a9", 1600)} alt="" fill priority sizes="100vw" />
+        <div className="wrap">
+          <p className="eyebrow">Contact us</p>
+          <h1 className="display">
+            Talk to Esi, <em>directly.</em>
+          </h1>
+          <p className="ss-lede">
+            Send a message or request a free one-on-one property consultation with{" "}
+            {AGENCY.principal}, Principal of {AGENCY.name} ({AGENCY.licence}). No pressure, no
+            queue.
+          </p>
+          <div className="ct-ways">
+            <a className="ct-way ct-way--call" href={AGENCY.mobileHref}>
+              <span className="ct-i" aria-hidden="true">📞</span>
+              <span><b>Call Esi</b><small>{AGENCY.mobile}</small></span>
+            </a>
+            <a className="ct-way" href={AGENCY.phoneHref}>
+              <span className="ct-i" aria-hidden="true">☎</span>
+              <span><b>Office</b><small>{AGENCY.phone}</small></span>
+            </a>
+            <a className="ct-way" href={`mailto:${AGENCY.email}`}>
+              <span className="ct-i" aria-hidden="true">✉</span>
+              <span><b>Email</b><small>{AGENCY.email}</small></span>
+            </a>
+            <a className="ct-way" href="#visit">
+              <span className="ct-i" aria-hidden="true">📍</span>
+              <span><b>Visit</b><small>{AGENCY.office}</small></span>
+            </a>
+          </div>
+        </div>
+      </section>
 
       <Fixed id="form">
-        <FormSection slug="contact" />
-      </Fixed>
-
-      <Fixed id="principal">
-        <section className="sec">
-          <div className="wrap">
-            <PrincipalCard />
-          </div>
-        </section>
-      </Fixed>
-
-      <Fixed id="what-we-will-cover">
-        <section className="sec" style={{ background: "var(--paper-2)" }}>
-          <div className="wrap page-cols">
-            <div className="points">
-              <h2 className="display">What we will cover</h2>
-              <ul className="report">
-                {[
-                  "Your property's current market value",
-                  "Rental income potential",
-                  "Selling strategies to maximise price",
-                  "Property management options",
-                ].map((p, i) => (
-                  <li key={p}>
-                    <em>{String(i + 1).padStart(2, "0")}</em> {p}
-                  </li>
+        <section className="sec sl-enq" id="enquire">
+          <div className="wrap ss-pick-in">
+            <div>
+              <p className="eyebrow">Start here</p>
+              <h2 className="display">
+                How can we <em>help?</em>
+              </h2>
+              <p className="ss-for">
+                A quick question, or a proper sit-down about your property. Pick one; both reach
+                Esi.
+              </p>
+              <div className="sl-esi">
+                <Image className="sl-ph" src={PORTRAIT.src} alt={PORTRAIT.alt} width={144} height={144} />
+                <div>
+                  <b>{AGENCY.principal}</b>
+                  <span>Founder and principal, reads every message</span>
+                </div>
+              </div>
+              <p className="eyebrow" style={{ marginTop: 26 }}>In a free consultation we cover</p>
+              <ul className="ss-items ct-covers">
+                {REPORTS.consultation.items.map((p) => (
+                  <li key={p}>{p}</li>
                 ))}
               </ul>
-              <p className="prose" style={{ marginTop: 24 }}>
-                <span style={{ color: "var(--muted)" }}>
-                  Whether you are planning to sell, invest, or need professional property
-                  management, this one-on-one session gives you practical insights based on
-                  the South Australian market. No pressure. Just clear, professional guidance.
-                </span>
-              </p>
-              <Link className="btn" href="/book-online" style={{ marginTop: 8 }}>
-                Book your free consultation
-              </Link>
             </div>
+            <ContactTabs
+              message={<FormSection slug="contact" bare />}
+              meeting={<FormSection slug="book-online" bare />}
+            />
+          </div>
+        </section>
+      </Fixed>
 
-            <div className="contact-cols">
-              <div className="contact-block">
-                <h2>The office</h2>
-                <p>{AGENCY.office}</p>
+      <Fixed id="visit">
+        <section className="sec" id="visit">
+          <div className="wrap">
+            <p className="eyebrow">Visit the office</p>
+            <h2 className="display">{AGENCY.office}</h2>
+            <div className="ct-visit">
+              <div className="ct-box">
+                <h3>Meet where it suits you</h3>
+                <p>At the office, at your property, or by video call.</p>
                 <p>
-                  <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
+                  Licence number: {AGENCY.licence} · ABN: {AGENCY.abn}
                 </p>
                 <p>
-                  Licence Number: {AGENCY.licence}
-                  <br />
-                  ABN: {AGENCY.abn}
+                  <a className="txtlink" href={MAPS} target="_blank" rel="noopener noreferrer">
+                    Get directions <span aria-hidden="true">&rarr;</span>
+                  </a>
                 </p>
               </div>
-
-              {/*
-                Five addresses, one per department, exactly as the live site lists them.
-                Routing an enquiry to the right desk at the point of contact is cheaper than
-                forwarding it afterwards.
-              */}
-              <div className="contact-block">
-                <h2>Email the right desk</h2>
-                <ul className="plain-list">
-                  {EMAILS.map((e) => (
-                    <li key={e.address}>
-                      {e.label}:{" "}
-                      <a href={`mailto:${e.address}`}>{e.address}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="contact-block">
-                <h2>Free reports</h2>
+              <div className="ct-box">
+                <h3>About a valuation?</h3>
+                <p>Request the {REPORTS.appraisal.title} instead. {REPORTS.appraisal.note}</p>
                 <p>
-                  {REPORTS.appraisal.title}, {REPORTS.appraisal.note.toLowerCase()}
-                </p>
-                <Link className="txtlink" href="/free-property-appraisal-sa">
-                  Request the report <span aria-hidden="true">&rarr;</span>
-                </Link>
-              </div>
-
-              <div className="contact-block">
-                <h2>Looking to buy, sell or rent</h2>
-                <p>
-                  Located at {AGENCY.office}, we provide personalised service tailored to
-                  your needs, whether you are a first-time buyer, an investor exploring
-                  overseas opportunities, or after expert guidance on the local market.
+                  <Link className="btn" href="/free-property-appraisal-sa">
+                    Get my free report &rarr;
+                  </Link>
                 </p>
               </div>
             </div>
           </div>
         </section>
       </Fixed>
+
+      <Fixed id="faq">
+        <section className="sec" style={{ paddingTop: 0 }}>
+          <div className="wrap" style={{ maxWidth: 820 }}>
+            <h2 className="display">
+              Contacting OziRealty: <em>common questions</em>
+            </h2>
+            {FAQS.map((f) => (
+              <details className="ss-faq" key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "FAQPage",
+                  mainEntity: FAQS.map((f) => ({
+                    "@type": "Question",
+                    name: f.q,
+                    acceptedAnswer: { "@type": "Answer", text: f.a },
+                  })),
+                }).replace(/</g, "\\u003c"),
+              }}
+            />
+          </div>
+        </section>
+      </Fixed>
+
+      <div className="ss-sticky">
+        <a className="btn" href="#enquire">Send a message</a>
+      </div>
     </>
   );
 }

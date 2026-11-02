@@ -121,7 +121,7 @@ export function SiteFooter() {
             <h4>More</h4>
             <ul>
               <li><Link href="/contact">Contact Us</Link></li>
-              <li><Link href="/book-online">Free Meeting</Link></li>
+              <li><Link href="/contact#meeting">Free Meeting</Link></li>
               <li><Link href="/blog">Blog</Link></li>
               <li><Link href="/adelaide-property-faq">FAQ</Link></li>
               <li><Link href="/sold">Recently sold</Link></li>

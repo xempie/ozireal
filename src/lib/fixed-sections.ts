@@ -60,20 +60,6 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
       "label": "Closing call to action: Cannot find what you are looking for?"
     }
   ],
-  "/book-online": [
-    {
-      "id": "form",
-      "label": "Enquiry form (book-online)"
-    },
-    {
-      "id": "principal",
-      "label": "Principal card (Esi Dor)"
-    },
-    {
-      "id": "what-we-cover",
-      "label": "What the consultation covers"
-    }
-  ],
   "/buyer-agent-adelaide": [
     { "id": "what-you-get", "label": "What you get" },
     { "id": "how", "label": "How it works" },
@@ -84,18 +70,9 @@ const PAGES: Record<string, FixedSection[] | "service"> = {
     { "id": "faq", "label": "Buyer's agent questions" }
   ],
   "/contact": [
-    {
-      "id": "form",
-      "label": "Enquiry form (contact)"
-    },
-    {
-      "id": "principal",
-      "label": "Principal card (Esi Dor)"
-    },
-    {
-      "id": "what-we-will-cover",
-      "label": "What we will cover"
-    }
+    { "id": "form", "label": "Message and free meeting forms (tabs)" },
+    { "id": "visit", "label": "Visit the office" },
+    { "id": "faq", "label": "Contact questions" }
   ],
   "/all-listings": [
     {
