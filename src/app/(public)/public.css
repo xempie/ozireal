@@ -3198,3 +3198,4 @@
   .site .bk-strip .enq-field:nth-child(3), .site .bk-strip .enq-field:nth-child(5) { grid-column: 1 / -1; }
   .site .bk-strip .enq-submit .btn { width: 100%; justify-content: center; }
 }
+.site .bk-strip .enq-grid { align-items: end; } /* a wrapping label no longer pushes its box down */
