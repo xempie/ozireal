@@ -3199,3 +3199,4 @@
   .site .bk-strip .enq-submit .btn { width: 100%; justify-content: center; }
 }
 .site .bk-strip .enq-grid { align-items: end; } /* a wrapping label no longer pushes its box down */
+.site .bf { position: static; } /* owner's request 2026-11-02: the journal filter scrolls with the page */
