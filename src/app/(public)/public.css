@@ -3235,3 +3235,4 @@
 .site .ct-forms .enq-submit { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .site .ct-forms .enq-reassure { margin: 0; flex: 1 1 220px; }
 .site .ct-forms .ct-tabs { margin-bottom: 10px; }
+@media (max-width: 640px) { .utility .u-right .u-promo { display: none; } } /* as the old span was */

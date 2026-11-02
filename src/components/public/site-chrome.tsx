@@ -47,7 +47,7 @@ export function SiteHeader() {
             Licence Number: {AGENCY.licence}
           </div>
           <div className="u-right">
-            <span>Property Management From 2.99%</span>
+            <Link className="u-promo" href="/manage-property-adelaide">Property Management From 2.99%</Link>
             <a href={AGENCY.phoneHref}>{AGENCY.phone}</a>
           </div>
         </div>
