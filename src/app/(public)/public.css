@@ -3236,3 +3236,4 @@
 .site .ct-forms .enq-reassure { margin: 0; flex: 1 1 220px; }
 .site .ct-forms .ct-tabs { margin-bottom: 10px; }
 @media (max-width: 640px) { .utility .u-right .u-promo { display: none; } } /* as the old span was */
+.site .utility .u-promo { color: var(--accent-lt); } .site .utility .u-promo:hover { color: #fff; }
