@@ -449,7 +449,7 @@ export default async function HomePage() {
                   Exclusive, available, <em>flexible.</em>
                 </h2>
                 <p className="wy-lede">
-                  A small Adelaide office where the owner handles your property personally:
+                  An Adelaide office where the owner handles your property personally:
                   tailored to you, easy to reach, and shaped around your schedule.
                 </p>
               </div>
