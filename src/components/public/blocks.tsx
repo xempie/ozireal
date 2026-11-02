@@ -6,7 +6,7 @@ import { FormSection } from "./forms/form-section";
 import { ListingCard } from "./listing-card";
 import { toCard } from "./listing-cards";
 import { PageHero } from "./page-shell";
-import { AGENCY, photo } from "./agency";
+import { photo } from "./agency";
 import { ProjectFinder } from "./project-finder";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
 
