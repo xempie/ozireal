@@ -3237,3 +3237,33 @@
 .site .ct-forms .ct-tabs { margin-bottom: 10px; }
 @media (max-width: 640px) { .utility .u-right .u-promo { display: none; } } /* as the old span was */
 .site .utility .u-promo { color: var(--accent-lt); } .site .utility .u-promo:hover { color: #fff; }
+
+/* Client reviews (2026-11-02) */
+.site .rv-head { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 20px 40px; align-items: end; }
+@media (max-width: 860px) { .site .rv-head { grid-template-columns: 1fr; } }
+.site .rv-head h2 { margin: 0; }
+.site .rv-sum { display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: var(--ink); color: #fff; }
+.site .rv-big { font-family: var(--serif); font-size: 2.6rem; line-height: 1; font-weight: 600; }
+.site .rv-sum small { display: block; font-size: 12.5px; color: rgba(255,255,255,.7); margin-top: 4px; }
+.site .rv-stars { display: inline-flex; gap: 2px; color: #F5A623; }
+.site .rv-stars svg { width: 18px; height: 18px; }
+.site .rv-trust { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 16px 0 0; padding: 0; list-style: none; font-size: 13.5px; color: var(--muted); }
+.site .rv-trust li { display: inline-flex; align-items: center; gap: 6px; }
+.site .rv-trust li::before { content: "✓"; width: 18px; height: 18px; border-radius: 50%; background: #E7F5EE; color: #1B7F4B; font-size: 11px; font-weight: 700; display: grid; place-items: center; }
+.site .rv-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 28px; }
+@media (max-width: 960px) { .site .rv-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 640px) {
+  .site .rv-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter, 16px)); padding: 2px var(--gutter, 16px) 8px; }
+  .site .rv-grid::-webkit-scrollbar { display: none; }
+  .site .rv-card { flex: 0 0 86%; scroll-snap-align: center; }
+}
+.site .rv-card { position: relative; background: #fff; border: 1px solid var(--line); padding: 22px; display: flex; flex-direction: column; box-shadow: 0 16px 34px -28px rgba(10,24,46,.45); }
+.site .rv-card::before { content: "\201C"; position: absolute; right: 16px; top: 2px; font-family: var(--serif); font-size: 5rem; line-height: 1; color: #EEF1F6; pointer-events: none; }
+.site .rv-card h3 { position: relative; font-family: var(--serif); font-weight: 600; font-size: 1.25rem; line-height: 1.2; margin: 12px 0 0; }
+.site .rv-card p { position: relative; margin: 10px 0 0; color: var(--muted); font-size: 15px; flex: 1; }
+.site .rv-who { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.site .rv-av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; flex: none; }
+.site .rv-who b { display: block; font-size: 15px; }
+.site .rv-who small { font-size: 12.5px; color: var(--muted); }
+.site .rv-cta { margin-top: 26px; }
+.site .rv-cta .btn { background: var(--accent-2); }

@@ -97,6 +97,73 @@ async function ListingsBlock({ b }: { b: Extract<Block, { type: "listings" }> })
   );
 }
 
+const STAR = (
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z" />
+  </svg>
+);
+const FiveStars = () => (
+  <span className="rv-stars" role="img" aria-label="5 out of 5 stars">
+    {STAR}
+    {STAR}
+    {STAR}
+    {STAR}
+    {STAR}
+  </span>
+);
+const AVATAR = ["#0034C8", "#D84315", "#1B7F4B", "#13254A", "#7A4FD0", "#0E7C86"];
+
+/** Client reviews: rating summary, trust ticks, starred cards; a swipe row on phones. */
+function Reviews({ b }: { b: Extract<Block, { type: "cards" }> }) {
+  return (
+    <section className={`${sectionClass(b)} rv`} style={sectionStyle(b)}>
+      <div className="wrap">
+        <div className="rv-head">
+          <div>
+            <p className="eyebrow">Client reviews</p>
+            <h2 className="display">{b.heading}</h2>
+            <ul className="rv-trust">
+              <li>Real clients, real words</li>
+              <li>Licensed agency, RLA 350 628</li>
+              <li>Owner-run, no middle man</li>
+            </ul>
+          </div>
+          <div className="rv-sum">
+            <span className="rv-big">5.0</span>
+            <span>
+              <FiveStars />
+              <small>From client reviews</small>
+            </span>
+          </div>
+        </div>
+        <div className="rv-grid">
+          {b.items.map((c, i) => (
+            <article className="rv-card" key={i}>
+              <FiveStars />
+              {c.highlight && <h3>{c.highlight}</h3>}
+              <p>{c.body}</p>
+              <div className="rv-who">
+                <span className="rv-av" style={{ background: AVATAR[i % AVATAR.length] }} aria-hidden="true">
+                  {c.title.charAt(0)}
+                </span>
+                <span>
+                  <b>{c.title}</b>
+                  <small>OziRealty client</small>
+                </span>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="rv-cta">
+          <SmartLink className="btn" href="/contact#meeting">
+            Book a free consultation &rarr;
+          </SmartLink>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function BlockView({ b }: { b: Block }) {
   switch (b.type) {
     case "hero":
@@ -197,6 +264,9 @@ export function BlockView({ b }: { b: Block }) {
       );
 
     case "cards":
+      // A cards block headed "…clients say…" or "…reviews…" renders as review cards with
+      // five stars (owner's request, 2026-11-02). The owner vouches for the ratings.
+      if (/clients say|review/i.test(b.heading ?? "")) return <Reviews b={b} />;
       return (
         <section className={sectionClass(b)} style={sectionStyle(b)}>
           <div className="wrap">
