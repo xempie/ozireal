@@ -3223,3 +3223,15 @@
 .site .ct-box { border: 1px solid var(--line); padding: 20px; }
 .site .ct-box h3 { font-family: var(--serif); font-size: 1.25rem; margin: 0 0 8px; }
 .site .ct-box p { margin: 8px 0 0; color: var(--muted); font-size: 15px; }
+/* Contact Us forms, compacted (2026-11-02): one card, not two, and tighter spacing. */
+.site .ct-forms .ss-form { padding: clamp(16px,2.2vw,22px); }
+.site .ct-forms .enq { max-width: none; background: none; border: 0; padding: 0; box-shadow: none; }
+.site .ct-forms .enq-title { font-size: 1.45rem; margin: 0 0 4px; }
+.site .ct-forms .enq-intro { display: none; }
+.site .ct-forms .enq-grid { gap: 12px 12px; margin-top: 10px; }
+.site .ct-forms .enq-field textarea { min-height: 84px; }
+.site .ct-forms .enq-consent { margin-top: 12px; }
+.site .ct-forms .enq-consent .enq-check { padding: 12px 14px; }
+.site .ct-forms .enq-submit { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.site .ct-forms .enq-reassure { margin: 0; flex: 1 1 220px; }
+.site .ct-forms .ct-tabs { margin-bottom: 10px; }
