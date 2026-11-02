@@ -10,6 +10,7 @@ import { FormSection } from "@/components/public/forms/form-section";
 import { Zone } from "@/components/public/blocks";
 import { customPage, pageContent } from "@/server/public/content";
 import { Fixed } from "@/components/public/fixed";
+import { OfferDots } from "@/components/public/offer-dots";
 import {
   AGENCY,
   HERO,
@@ -47,42 +48,51 @@ import {
  * stock, read through src/server/public (rule 8).
  */
 
+/**
+ * The four free offers, each led by the visitor's question (redesigned 2026-11-02). Three
+ * points show; the rest open from "+ N more inside". `feat` is the highlighted card.
+ */
 const OFFERS = [
   {
-    tag: "Limited offer",
-    title: "Free Premium Appraisal Report (Valued at $399)",
+    tag: "Valued at $399 · free",
+    title: "What's my home worth?",
+    sub: "Free Premium Appraisal Report",
     points: [
-      "No obligation, no pressure",
       "Current market value range",
       "Comparable recent sales",
       "Buyer demand score",
       "Rental yield estimate",
       "Price-maximisation strategy",
       "Suburb growth outlook",
+      "No obligation, no pressure",
     ],
-    cta: "Get My Free Appraisal",
+    cta: "Get my free appraisal",
     href: "/free-property-appraisal-sa#enquire",
     image: "photo-1583847268964-b28dc8f51f92",
     alt: "Living room with a large window",
+    feat: true,
   },
   {
-    tag: null,
-    title: "Book Your Free Property Consultation",
+    tag: "One-on-one with Esi",
+    title: "Not sure where to start?",
+    sub: "Free Property Consultation",
     points: [
       "Assess current market value",
       "Review recent sales in your area",
+      "Answer your key questions",
       "Analyse buyer and rental demand",
       "Identify ways to maximise your return",
-      "Answer your key questions",
     ],
-    cta: "Free Consultation",
+    cta: "Book a free consultation",
     href: "/book-online#enquire",
     image: "photo-1570129477492-45c003edd2be",
     alt: "Sandstone villa with a return verandah",
+    feat: false,
   },
   {
-    tag: "Free Suburb Insight Report",
-    title: "Stay Ahead of the Next Market Shift",
+    tag: "Stay ahead of the market",
+    title: "Where should I buy?",
+    sub: "Free Suburb Insight Report",
     points: [
       "Median prices and recent sales trends",
       "Rental yields and vacancy rates",
@@ -96,28 +106,31 @@ const OFFERS = [
       "Long-term capital growth trends",
       "Rental performance metrics",
       "Risk indicators and suburb volatility analysis",
-      "And more …",
+      "And more",
     ],
-    cta: "Unlock My Suburb Insights",
+    cta: "Unlock my suburb insights",
     href: "/free-suburb-insight-report#enquire",
     image: "photo-1580587771525-78b9dba3b914",
     alt: "Terrace homes on a leafy street",
+    feat: false,
   },
   {
-    tag: "Property Rental Report",
-    title: "Smart Rent, Stable Income, Zero Guesswork",
+    tag: "For landlords",
+    title: "What will it rent for?",
+    sub: "Property Rental Report",
     points: [
       "Accurate weekly rent range",
       "Comparable nearby rental results",
-      "Vacancy & demand insights",
+      "Vacancy and demand insights",
       "Tenant profile analysis",
       "Yield and annual income estimate",
       "Pricing strategy to minimise vacancy",
     ],
-    cta: "Get Rent Report Now",
+    cta: "Get my rent report",
     href: "/property-rental-report#enquire",
     image: "photo-1600210491892-03d54c0aaf87",
     alt: "Apartment living room with a fireplace",
+    feat: false,
   },
 ] as const;
 
@@ -317,41 +330,56 @@ export default async function HomePage() {
       <Fixed id="offers">
         <section className="sec" id="offers" style={{ background: "var(--paper-2)" }}>
           <div className="wrap">
-            <div className="sec-head">
+            <div className="of-head">
               <div>
                 <p className="eyebrow">Free reports &amp; guidance</p>
                 <h2 className="display">
-                  Property value &amp; <em>strategy services</em>
+                  Know your numbers <em>before you decide.</em>
                 </h2>
+                <p className="of-lede">Four free, no-obligation reports. Pick the question you&rsquo;re weighing up.</p>
               </div>
+              <span className="of-free">✓ All free · No obligation</span>
             </div>
-            <div className="offer-list">
-              {OFFERS.map((o, i) => (
-                <article className={`offer${i % 2 ? " offer--flip" : ""}`} key={o.title}>
-                  <div className="offer-media">
+            {/* Four across on desktop, two on tablets, a swipe row with dots on phones. */}
+            <div className="of-track" id="of-track">
+              {OFFERS.map((o) => (
+                <article className={o.feat ? "of-card of-feat" : "of-card"} key={o.title}>
+                  <div className="of-media">
                     <Image
-                      src={photo(o.image, 1200)}
+                      src={photo(o.image, 800)}
                       alt={o.alt}
                       fill
-                      sizes="(max-width: 900px) 100vw, 50vw"
+                      sizes="(max-width: 760px) 84vw, (max-width: 960px) 50vw, 25vw"
                       style={{ objectFit: "cover" }}
                     />
+                    <span className="of-tag">{o.tag}</span>
                   </div>
-                  <div className="offer-body">
-                    {o.tag && <span className="offer-tag">{o.tag}</span>}
+                  <div className="of-body">
                     <h3>{o.title}</h3>
-                    <ul className={`offer-points${o.points.length > 8 ? " offer-points--two" : ""}`}>
-                      {o.points.map((p) => (
+                    <p className="of-sub">{o.sub}</p>
+                    <ul className="of-points">
+                      {o.points.slice(0, 3).map((p) => (
                         <li key={p}>{p}</li>
                       ))}
                     </ul>
-                    <Link className="btn" href={o.href}>
+                    {o.points.length > 3 && (
+                      <details className="of-more">
+                        <summary>+ {o.points.length - 3} more inside</summary>
+                        <ul className="of-points">
+                          {o.points.slice(3).map((p) => (
+                            <li key={p}>{p}</li>
+                          ))}
+                        </ul>
+                      </details>
+                    )}
+                    <Link className="btn of-btn" href={o.href}>
                       {o.cta} <span aria-hidden="true">&rarr;</span>
                     </Link>
                   </div>
                 </article>
               ))}
             </div>
+            <OfferDots count={OFFERS.length} trackId="of-track" />
           </div>
         </section>
       </Fixed>
