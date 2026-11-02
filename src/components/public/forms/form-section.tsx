@@ -13,7 +13,18 @@ import { AGENCY } from "../agency";
  *
  * Renders nothing when a slug has no form, so adding a page without one is not an error.
  */
-export async function FormSection({ slug, bare = false }: { slug: string; bare?: boolean }) {
+export async function FormSection({
+  slug,
+  bare = false,
+  phone = AGENCY.phone,
+  phoneHref = AGENCY.phoneHref,
+}: {
+  slug: string;
+  bare?: boolean;
+  /** The number in the reassurance line; defaults to the office line. */
+  phone?: string;
+  phoneHref?: string;
+}) {
   const definition = formForSlug(slug);
   if (!definition) return null;
   const formKey = await publicFormKey();
@@ -24,8 +35,8 @@ export async function FormSection({ slug, bare = false }: { slug: string; bare?:
       <EnquiryForm
         definition={definition}
         formKey={formKey}
-        phone={AGENCY.phone}
-        phoneHref={AGENCY.phoneHref}
+        phone={phone}
+        phoneHref={phoneHref}
       />
     );
   }
@@ -36,8 +47,8 @@ export async function FormSection({ slug, bare = false }: { slug: string; bare?:
         <EnquiryForm
           definition={definition}
           formKey={formKey}
-          phone={AGENCY.phone}
-          phoneHref={AGENCY.phoneHref}
+          phone={phone}
+          phoneHref={phoneHref}
         />
       </div>
     </section>

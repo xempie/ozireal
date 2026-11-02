@@ -527,37 +527,52 @@ export default async function HomePage() {
         reach the CRM through the same channel and consent wording as before.
       */}
       <Fixed id="book">
-        <section className="sec dark book-sec" id="free-book">
-          <div className="wrap book-layout">
-            <div className="book-pitch">
-              <div className="book-art">
-                <div className="book-cover">
+        {/* Redesigned 2026-11-02: the cover is the centrepiece, the form one strip below. */}
+        <section className="sec bk" id="free-book">
+          <div className="wrap">
+            <div className="bk-top">
+              <div className="bk-stage">
+                <div className="bk-book">
                   <Image
                     src="/brand/book-cover.png"
                     alt="Cover of 10 Truths About Finding The Right Home by Esi Dor"
                     width={603}
                     height={863}
-                    sizes="(max-width: 560px) 60vw, 240px"
+                    sizes="(max-width: 860px) 72vw, 340px"
                   />
                 </div>
+                <span className="bk-free" aria-hidden="true">
+                  <span>
+                    <b>Free</b>copy
+                  </span>
+                </span>
               </div>
               <div>
-                <p className="eyebrow">Free book</p>
+                <p className="eyebrow">Free book by Esi Dor</p>
                 <h2 className="display">
-                  10 truths about finding <em>the right home</em>
+                  10 truths about finding <em>the right home.</em>
                 </h2>
-                <p className="book-byline">
-                  By <b>Esi Dor</b>, Ozi Realty founder
+                <p className="bk-by">
+                  By <b>Esi Dor</b>, OziRealty founder
                 </p>
-                <p className="lede">A guide to avoid common home buying traps.</p>
-                <p className="book-tagline">
+                <ul className="bk-inside">
+                  <li>A guide to avoid common home buying traps</li>
+                  <li>Written from real Adelaide buying experience</li>
+                  <li>Free, sent straight to your inbox</li>
+                </ul>
+                <p className="bk-quote">
                   Because the right home isn&rsquo;t just found, it&rsquo;s understood.
                 </p>
               </div>
             </div>
-            <div className="book-form">
-              <h3 className="book-form-title">Get your free copy</h3>
-              <FormSection slug="realestate-gift-adelaide" bare />
+            <div className="bk-strip">
+              <h3 className="bk-strip-title">Get your free copy</h3>
+              <FormSection
+                slug="realestate-gift-adelaide"
+                bare
+                phone={AGENCY.mobile}
+                phoneHref={AGENCY.mobileHref}
+              />
             </div>
           </div>
         </section>
