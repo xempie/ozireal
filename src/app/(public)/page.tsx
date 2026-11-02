@@ -16,8 +16,8 @@ import {
   HERO,
   JOURNAL_POSTS,
   PARTNERS,
+  PORTRAIT,
   TESTIMONIAL,
-  WHY_US,
   photo,
 } from "@/components/public/agency";
 
@@ -133,6 +133,59 @@ const OFFERS = [
     feat: false,
   },
 ] as const;
+
+/** "Exclusive, available, flexible": the agency's own points, three up front, bold key word. */
+const WHY_CARDS = [
+  {
+    k: "Exclusive",
+    tone: "orange",
+    title: "Tailored to you, not a template",
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2l3 6.5 7 .9-5.1 4.8 1.3 7-6.2-3.5-6.2 3.5 1.3-7L2 9.4l7-.9z" />
+      </svg>
+    ),
+    points: [
+      ["Personalised", " property search and targeting"],
+      ["Data-driven", " insights for smarter decisions"],
+      ["Digital marketing", " that attracts the right buyers"],
+    ],
+    more: ["Tailored real estate experience", "Expert support for buying, selling and investing", "Focused on measurable results"],
+  },
+  {
+    k: "Available",
+    tone: "blue",
+    title: "Easy to reach, always in the loop",
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+    points: [
+      ["Fast, clear", " communication"],
+      ["Timely updates", " at every stage"],
+      ["Proactive", " problem solving"],
+    ],
+    more: ["Accurate market insights", "Strategic expert guidance", "A smooth, stress-free experience"],
+  },
+  {
+    k: "Flexible",
+    tone: "green",
+    title: "Shaped around your schedule",
+    icon: (
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+    points: [
+      ["Virtual", " consultations available"],
+      ["Evening", " showings available"],
+      ["Customised", " negotiation strategies"],
+    ],
+    more: ["Every client has different goals", "We adapt to your schedule and preferences", "We tailor the process to fit you"],
+  },
+];
 
 /** The projects the home page's New Homes band previews, in this order when present. */
 const NEW_HOMES_PATH = "/new-homes-adelaide";
@@ -386,28 +439,82 @@ export default async function HomePage() {
 
       {/* =========================================================== why us */}
       <Fixed id="why-us">
-        <section className="sec" id="why-us">
+        {/* Redesigned 2026-11-02: principal's quote, three promise cards, trust badges. */}
+        <section className="sec wy" id="why-us">
           <div className="wrap">
-            <div className="sec-head">
+            <div className="wy-top">
               <div>
                 <p className="eyebrow">Why work with us</p>
                 <h2 className="display">
-                  Exclusive, available, <em>flexible</em>
+                  Exclusive, available, <em>flexible.</em>
                 </h2>
+                <p className="wy-lede">
+                  A small Adelaide office where the owner handles your property personally:
+                  tailored to you, easy to reach, and shaped around your schedule.
+                </p>
+              </div>
+              <div className="wy-esi">
+                <Image className="sl-ph" src={PORTRAIT.src} alt={PORTRAIT.alt} width={128} height={128} />
+                <div>
+                  <q>You deal with me directly, from first call to settlement.</q>
+                  <span>
+                    {AGENCY.principal} · Founder and principal
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="why-grid">
-              {WHY_US.map((g) => (
-                <div className="why-card" key={g.name}>
-                  <h3>{g.name}</h3>
+            <div className="wy-cards">
+              {WHY_CARDS.map((c) => (
+                <article className={`wy-card wy-card--${c.tone}`} key={c.k}>
+                  <span className="wy-ic" aria-hidden="true">
+                    {c.icon}
+                  </span>
+                  <p className="wy-k">{c.k}</p>
+                  <h3>{c.title}</h3>
                   <ul>
-                    {g.points.map((p) => (
-                      <li key={p}>{p}</li>
+                    {c.points.map(([b, rest]) => (
+                      <li key={b + rest}>
+                        <b>{b}</b>
+                        {rest}
+                      </li>
                     ))}
                   </ul>
+                  <details className="wy-more">
+                    <summary>+ {c.more.length} more</summary>
+                    <p>{c.more.join(" · ")}</p>
+                  </details>
+                </article>
+              ))}
+            </div>
+
+            <div className="wy-badges">
+              {[
+                ["Licensed agency", AGENCY.licence],
+                ["Owner-run", "No middle man"],
+                ["Trust account", "All client funds"],
+                ["REISA standards", "How we operate"],
+              ].map(([b, s]) => (
+                <div className="wy-badge" key={b}>
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z" />
+                    <path d="M8.5 12l2.5 2.5 4.5-5" />
+                  </svg>
+                  <span>
+                    <b>{b}</b>
+                    <small>{s}</small>
+                  </span>
                 </div>
               ))}
+            </div>
+
+            <div className="wy-act">
+              <Link className="btn" href="/book-online#enquire">
+                Book a free consultation &rarr;
+              </Link>
+              <a className="wy-call" href={AGENCY.mobileHref}>
+                Or call Esi on {AGENCY.mobile}
+              </a>
             </div>
           </div>
         </section>

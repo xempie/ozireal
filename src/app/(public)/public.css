@@ -3111,3 +3111,46 @@
   .site .of-dots button::before { content: ""; width: 8px; height: 8px; border-radius: 999px; background: #C8CDD5; transition: width .25s, background .25s; }
   .site .of-dots button[aria-current="true"]::before { width: 22px; background: var(--accent-2); }
 }
+
+/* Home: why us, redesigned (2026-11-02) */
+.site .wy { background: var(--ink); color: #fff; position: relative; overflow: hidden; }
+.site .wy::before { content: ""; position: absolute; left: -200px; top: -220px; width: 600px; height: 600px; border-radius: 50%; background: radial-gradient(closest-side, rgba(0,52,200,.45), transparent); pointer-events: none; }
+.site .wy .wrap { position: relative; }
+.site .wy .eyebrow { color: var(--accent-lt); }
+.site .wy h2 { margin: 0; color: #fff; }
+.site .wy h2 em { color: var(--accent-lt); }
+.site .wy-top { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 24px 48px; align-items: end; }
+@media (max-width: 860px) { .site .wy-top { grid-template-columns: 1fr; } }
+.site .wy-lede { margin: 12px 0 0; color: rgba(255,255,255,.78); max-width: 50ch; font-size: clamp(15.5px,1.25vw,17.5px); }
+.site .wy-esi { display: flex; gap: 14px; align-items: center; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); padding: 14px 16px; }
+.site .wy-esi .sl-ph { width: 64px; height: 64px; }
+.site .wy-esi q { font-family: var(--serif); font-style: italic; font-size: 1.1rem; line-height: 1.3; }
+.site .wy-esi span { display: block; margin-top: 4px; font-size: 13px; color: rgba(255,255,255,.65); }
+.site .wy-cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 34px; }
+@media (max-width: 860px) { .site .wy-cards { grid-template-columns: 1fr; } }
+.site .wy-card { background: #fff; color: var(--ink); padding: 24px; display: flex; flex-direction: column; border-top: 4px solid var(--accent-2); }
+.site .wy-card--blue { border-top-color: var(--accent); }
+.site .wy-card--green { border-top-color: #1B7F4B; }
+.site .wy-ic { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; background: #FFF1EA; color: var(--accent-2); }
+.site .wy-card--blue .wy-ic { background: #EAF0FF; color: var(--accent); }
+.site .wy-card--green .wy-ic { background: #E7F5EE; color: #1B7F4B; }
+.site .wy-k { margin: 16px 0 0; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.site .wy-card h3 { font-family: var(--serif); font-size: 1.5rem; margin: 4px 0 0; color: var(--ink); }
+.site .wy-card ul { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; }
+.site .wy-card li { padding-left: 26px; position: relative; font-size: 15px; }
+.site .wy-card li::before { content: "✓"; position: absolute; left: 0; top: 1px; width: 18px; height: 18px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 10.5px; display: grid; place-items: center; font-weight: 700; }
+.site .wy-more { margin-top: 10px; font-size: 14px; color: var(--muted); }
+.site .wy-more summary { cursor: pointer; color: var(--accent); font-weight: 600; list-style: none; padding-top: 4px; }
+.site .wy-more summary::-webkit-details-marker { display: none; }
+.site .wy-more[open] summary { display: none; }
+.site .wy-more p { margin: 0; }
+.site .wy-badges { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 22px; }
+@media (max-width: 860px) { .site .wy-badges { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+.site .wy-badge { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.16); font-size: 14px; }
+.site .wy-badge svg { flex: none; color: var(--accent-lt); }
+.site .wy-badge b { display: block; color: #fff; }
+.site .wy-badge small { font-size: 12px; color: rgba(255,255,255,.6); }
+.site .wy-act { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+.site .wy-act .btn { background: var(--accent-2); }
+.site .wy-call { color: #fff; font-weight: 600; font-size: 14.5px; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 560px) { .site .wy-act .btn { width: 100%; } }
