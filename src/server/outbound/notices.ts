@@ -3,6 +3,7 @@ import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { withTenant } from "@/db";
 import { contacts, interactions } from "@/db/schema";
 import { env } from "@/env";
+import { SOCIALS } from "@/components/public/agency";
 
 /**
  * Automatic notices for a new website enquiry (owner's request, 2026-11-03).
@@ -43,6 +44,7 @@ const SIGNATURE_HTML = `
       <a href="tel:0422271293" style="color:#0034C8;text-decoration:none">0422 271 293</a><br>
       <a href="https://www.ozirealty.com.au" style="color:#0034C8;text-decoration:none">www.ozirealty.com.au</a><br>
       308 Prospect Rd, Prospect SA 5082 &middot; RLA 350628<br>
+      ${SOCIALS.map((s) => `<a href="${s.href}" style="color:#D84315;text-decoration:none;font-weight:bold">${s.name}</a>`).join(" &middot; ")}<br>
       <img src="https://www.ozirealty.com.au/brand/logo.png" alt="Ozi Realty" height="36" style="margin-top:8px;display:block">
     </td>
   </tr>
@@ -150,6 +152,7 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
     "Director & CEO, Ozi Realty",
     "308 Prospect Rd, Prospect SA 5082",
     "RLA 350628",
+    ...SOCIALS.map((s) => `${s.name}: ${s.href}`),
   ].join("\n");
 
   // HTML twin: the same paragraphs up to "Warm regards," then the graphic signature.

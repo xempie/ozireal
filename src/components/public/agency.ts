@@ -330,3 +330,10 @@ export const JOURNAL_POSTS = [
 /** Unsplash is allow-listed in next.config.ts; this keeps the query string in one place. */
 export const photo = (id: string, w: number) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=${w}&q=75`;
+
+/** The agency's social profiles (owner's request, 2026-11-03): footer and email signature. */
+export const SOCIALS = [
+  { name: "Instagram", href: "https://www.instagram.com/esiozirealty/" },
+  { name: "Facebook", href: "https://www.facebook.com/profile.php?id=61584705912615" },
+  { name: "LinkedIn", href: "https://www.linkedin.com/company/ozi-realty/" },
+] as const;

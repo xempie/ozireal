@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SiteNav } from "./site-nav";
-import { AGENCY, EMAILS } from "./agency";
+import { Facebook, Instagram, Linkedin } from "lucide-react";
+import { AGENCY, EMAILS, SOCIALS } from "./agency";
+
+const SOCIAL_ICON = { Instagram, Facebook, LinkedIn: Linkedin } as const;
 
 /**
  * The public site's utility bar and footer.
@@ -99,6 +102,18 @@ export function SiteFooter() {
               <br />
               ABN: {AGENCY.abn}
             </p>
+            <ul className="foot-social">
+              {SOCIALS.map((s) => {
+                const Icon = SOCIAL_ICON[s.name];
+                return (
+                  <li key={s.name}>
+                    <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={`Ozi Realty on ${s.name}`}>
+                      <Icon size={18} aria-hidden />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
 
           {/*
