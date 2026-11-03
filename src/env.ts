@@ -43,8 +43,6 @@ const schema = z.object({
   MESSAGEMEDIA_SECRET: z.string().min(1).optional(),
   S3_BUCKET: z.string().min(1).optional(),
   AWS_REGION: z.string().default("ap-southeast-2"),
-  /** Automatic notices (src/server/outbound/notices.ts). Unset = notices are skipped. */
-  SES_FROM: z.string().email().optional(),
   /** Where new-enquiry alerts go: the agency's own inbox. */
   NOTIFY_TO: z.string().email().optional(),
 });

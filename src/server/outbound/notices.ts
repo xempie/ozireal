@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import nodemailer, { type Transporter } from "nodemailer";
 import { withTenant } from "@/db";
 import { contacts, interactions } from "@/db/schema";
 import { env } from "@/env";
+import { getSecret } from "@/server/secrets";
 import { SOCIALS } from "@/components/public/agency";
 
 /**
@@ -18,11 +19,10 @@ import { SOCIALS } from "@/components/public/agency";
  * unsubscribe (§10). Plain text only, so nothing the visitor typed can become markup.
  *
  * Idempotent: the reply is recorded as an outbound interaction keyed `ack:<id>`, and a
- * retry that finds it stops. Unset SES_FROM or NOTIFY_TO skips quietly rather than
- * failing, so the form keeps working before SES is set up.
+ * retry that finds it stops. Sent through Gmail; with no Gmail credentials in Settings
+ * the job skips quietly, so the form keeps working.
  */
 
-let client: SESv2Client | null = null;
 
 /** The display name every notice is sent under (owner's request, 2026-11-03). */
 const FROM_NAME = "Esi Dor | Ozi Realty";
@@ -50,36 +50,49 @@ const SIGNATURE_HTML = `
   </tr>
 </table>`;
 
+type Mailer = { transport: Transporter; from: string };
+
+/** Gmail SMTP with an app password (owner's request, 2026-11-03: send through Gmail). */
+async function gmail(tenantId: string): Promise<Mailer | null> {
+  const user = await getSecret(tenantId, "GMAIL_ADDRESS");
+  const pass = await getSecret(tenantId, "GMAIL_APP_PASSWORD");
+  if (!user || !pass) return null;
+  return {
+    transport: nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      // Google shows app passwords in groups of four; the spaces are not part of it.
+      auth: { user, pass: pass.replace(/\s+/g, "") },
+    }),
+    from: user,
+  };
+}
+
 async function sendPlain(
+  m: Mailer,
   to: string,
   subject: string,
   body: string,
   replyTo?: string,
   html?: string,
 ) {
-  client ??= new SESv2Client({ region: env.AWS_REGION });
-  const res = await client.send(
-    new SendEmailCommand({
-      // Quoted: "|" is not allowed bare in a display name.
-      FromEmailAddress: `"${FROM_NAME}" <${env.SES_FROM}>`,
-      Destination: { ToAddresses: [to] },
-      ReplyToAddresses: replyTo ? [replyTo] : undefined,
-      Content: {
-        Simple: {
-          Subject: { Data: subject, Charset: "UTF-8" },
-          Body: {
-            Text: { Data: body, Charset: "UTF-8" },
-            ...(html ? { Html: { Data: html, Charset: "UTF-8" } } : {}),
-          },
-        },
-      },
-    }),
-  );
-  return res.MessageId ?? null;
+  const info = await m.transport.sendMail({
+    from: { name: FROM_NAME, address: m.from },
+    to,
+    replyTo,
+    subject,
+    text: body,
+    html,
+  });
+  return info.messageId ?? null;
 }
 
 export async function notifyEnquiry(tenantId: string, interactionId: string) {
-  if (!env.SES_FROM) return { skipped: "SES_FROM not set" };
+  const mailer = await gmail(tenantId);
+  if (!mailer) return { skipped: "Gmail credentials not set" };
+  // Alerts go to NOTIFY_TO, or to the sending Gmail account itself.
+  const notifyTo = env.NOTIFY_TO ?? mailer.from;
 
   const loaded = await withTenant(tenantId, async (tx) => {
     const [row] = await tx
@@ -111,9 +124,10 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
 
   const name = [row.firstName, row.lastName].filter(Boolean).join(" ") || "Not given";
 
-  if (env.NOTIFY_TO) {
+  {
     await sendPlain(
-      env.NOTIFY_TO,
+      mailer,
+      notifyTo,
       `New ${row.subject ?? "website enquiry"} from ${name}`,
       [
         `Name: ${name}`,
@@ -132,7 +146,7 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
   // Every form alerts the agency; the free-book form gets no receipt (owner's request,
   // 2026-11-03). Its subject is "Website enquiry — Gift Party bundle" (web-form adapter).
   const noReceipt = row.subject?.endsWith("Gift Party bundle") ?? false;
-  if (!row.email || noReceipt) return { alerted: Boolean(env.NOTIFY_TO), acknowledged: false };
+  if (!row.email || noReceipt) return { alerted: true, acknowledged: false };
 
   // Wording is the owner's, verbatim (2026-11-03).
   const first = row.firstName?.trim() || "there";
@@ -163,7 +177,7 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
     SIGNATURE_HTML +
     `</div>`;
 
-  const providerId = await sendPlain(row.email, subject, body, env.NOTIFY_TO, html);
+  const providerId = await sendPlain(mailer, row.email, subject, body, notifyTo, html);
 
   // The reply goes on the contact's record like any other touch (§4), and doubles as
   // the idempotency marker.
@@ -184,5 +198,5 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
       .onConflictDoNothing(),
   );
 
-  return { alerted: Boolean(env.NOTIFY_TO), acknowledged: true };
+  return { alerted: true, acknowledged: true };
 }
