@@ -21,7 +21,8 @@ export type JobName =
   | "MatchListings"
   | "EmbedListing"
   | "EmbedContactPreferences"
-  | "DailyBrief";
+  | "DailyBrief"
+  | "NotifyEnquiry";
 
 export type JobPayload = {
   tenantId: string;

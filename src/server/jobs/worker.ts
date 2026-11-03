@@ -56,6 +56,11 @@ const handlers: Record<JobName, Handler> = {
   async DailyBrief(job) {
     return { pending: "B7", tenantId: job.data.tenantId };
   },
+  /** Fixed-template notices for a new website enquiry — no AI, no marketing. */
+  async NotifyEnquiry(job) {
+    const { notifyEnquiry } = await import("@/server/outbound/notices");
+    return notifyEnquiry(job.data.tenantId, job.data.entityId);
+  },
 };
 
 export function startWorker() {

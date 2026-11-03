@@ -155,6 +155,9 @@ export async function ingestInTx(
      */
     jobs: [
       { name: "SummariseInteraction", payload: { tenantId, entityId: interaction.id } },
+      ...(n.notify
+        ? [{ name: "NotifyEnquiry" as const, payload: { tenantId, entityId: interaction.id } }]
+        : []),
     ],
   };
 }

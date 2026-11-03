@@ -85,6 +85,12 @@ export interface NormalisedInteraction {
    */
   roles?: ContactRole[];
   /**
+   * The channel wants the automatic notices: an alert to the agency and a fixed
+   * "we received it" reply to the sender. Set by the adapter, so the pipeline stays
+   * channel-blind.
+   */
+  notify?: boolean;
+  /**
    * The signed-in user who typed it, when a human did (manual entry). Headless
    * channels leave it null. Set by the caller that owns the session, never by an
    * adapter — an adapter has no business knowing who is logged in.

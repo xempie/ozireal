@@ -95,6 +95,7 @@ export const webFormAdapter: ChannelAdapter = {
       listingRef: p.listingRef,
       consents,
       roles: rolesForSubmission(p.formName, p.message),
+      notify: true,
     };
   },
 };
