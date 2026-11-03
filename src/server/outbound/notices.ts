@@ -23,17 +23,52 @@ import { env } from "@/env";
 
 let client: SESv2Client | null = null;
 
-async function sendPlain(to: string, subject: string, body: string, replyTo?: string) {
+/** The display name every notice is sent under (owner's request, 2026-11-03). */
+const FROM_NAME = "Esi Dor | Ozi Realty";
+
+const esc = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/** HTML signature under the receipt. Images are absolute: mail clients cannot resolve paths. */
+const SIGNATURE_HTML = `
+<table cellpadding="0" cellspacing="0" style="margin-top:24px;border-top:2px solid #D84315;padding-top:16px;font-family:Arial,sans-serif;font-size:13px;color:#13254A">
+  <tr>
+    <td style="padding-right:16px;vertical-align:top">
+      <img src="https://www.ozirealty.com.au/brand/esi-dor.jpg" alt="Esi Dor" width="72" height="72" style="border-radius:50%;display:block">
+    </td>
+    <td style="vertical-align:top;line-height:1.5">
+      <strong style="font-size:15px">Esi Dor</strong><br>
+      Director &amp; CEO, Ozi Realty<br>
+      <a href="tel:1800400333" style="color:#0034C8;text-decoration:none">1800 400 333</a> &middot;
+      <a href="tel:0422271293" style="color:#0034C8;text-decoration:none">0422 271 293</a><br>
+      <a href="https://www.ozirealty.com.au" style="color:#0034C8;text-decoration:none">www.ozirealty.com.au</a><br>
+      308 Prospect Rd, Prospect SA 5082 &middot; RLA 350628<br>
+      <img src="https://www.ozirealty.com.au/brand/logo.png" alt="Ozi Realty" height="36" style="margin-top:8px;display:block">
+    </td>
+  </tr>
+</table>`;
+
+async function sendPlain(
+  to: string,
+  subject: string,
+  body: string,
+  replyTo?: string,
+  html?: string,
+) {
   client ??= new SESv2Client({ region: env.AWS_REGION });
   const res = await client.send(
     new SendEmailCommand({
-      FromEmailAddress: env.SES_FROM,
+      // Quoted: "|" is not allowed bare in a display name.
+      FromEmailAddress: `"${FROM_NAME}" <${env.SES_FROM}>`,
       Destination: { ToAddresses: [to] },
       ReplyToAddresses: replyTo ? [replyTo] : undefined,
       Content: {
         Simple: {
           Subject: { Data: subject, Charset: "UTF-8" },
-          Body: { Text: { Data: body, Charset: "UTF-8" } },
+          Body: {
+            Text: { Data: body, Charset: "UTF-8" },
+            ...(html ? { Html: { Data: html, Charset: "UTF-8" } } : {}),
+          },
         },
       },
     }),
@@ -117,7 +152,15 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
     "RLA 350628",
   ].join("\n");
 
-  const providerId = await sendPlain(row.email, subject, body, env.NOTIFY_TO);
+  // HTML twin: the same paragraphs up to "Warm regards," then the graphic signature.
+  const paras = body.split("\n\n").slice(0, 5);
+  const html =
+    `<div style="font-family:Arial,sans-serif;font-size:14px;color:#13254A;line-height:1.6">` +
+    paras.map((p) => `<p>${esc(p)}</p>`).join("") +
+    SIGNATURE_HTML +
+    `</div>`;
+
+  const providerId = await sendPlain(row.email, subject, body, env.NOTIFY_TO, html);
 
   // The reply goes on the contact's record like any other touch (§4), and doubles as
   // the idempotency marker.
