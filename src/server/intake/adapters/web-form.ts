@@ -95,8 +95,7 @@ export const webFormAdapter: ChannelAdapter = {
       listingRef: p.listingRef,
       consents,
       roles: rolesForSubmission(p.formName, p.message),
-      // The free-book form is excluded from the automatic notices (owner's request, 2026-11-03).
-      notify: p.formName !== "Gift Party bundle",
+      notify: true,
     };
   },
 };

@@ -92,7 +92,10 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
     );
   }
 
-  if (!row.email) return { alerted: Boolean(env.NOTIFY_TO), acknowledged: false };
+  // Every form alerts the agency; the free-book form gets no receipt (owner's request,
+  // 2026-11-03). Its subject is "Website enquiry — Gift Party bundle" (web-form adapter).
+  const noReceipt = row.subject?.endsWith("Gift Party bundle") ?? false;
+  if (!row.email || noReceipt) return { alerted: Boolean(env.NOTIFY_TO), acknowledged: false };
 
   // Wording is the owner's, verbatim (2026-11-03).
   const first = row.firstName?.trim() || "there";
