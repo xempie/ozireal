@@ -44,16 +44,6 @@ const LABELS: Record<string, { label: string; hint: string; where: string }> = {
     hint: "Paired with the key above.",
     where: "hub.messagemedia.com → API credentials",
   },
-  GMAIL_ADDRESS: {
-    label: "Gmail address",
-    hint: "The account the automatic enquiry emails are sent from.",
-    where: "The Gmail or Google Workspace address itself",
-  },
-  GMAIL_APP_PASSWORD: {
-    label: "Gmail app password",
-    hint: "16 characters. Needs 2-Step Verification on the account.",
-    where: "myaccount.google.com/apppasswords",
-  },
 };
 
 function Row({ status }: { status: SecretStatus }) {

@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
-import nodemailer, { type Transporter } from "nodemailer";
+import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
+import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
 import { withTenant } from "@/db";
 import { contacts, interactions } from "@/db/schema";
 import { env } from "@/env";
-import { getSecret } from "@/server/secrets";
 import { SOCIALS } from "@/components/public/agency";
 
 /**
@@ -19,8 +19,10 @@ import { SOCIALS } from "@/components/public/agency";
  * unsubscribe (§10). Plain text only, so nothing the visitor typed can become markup.
  *
  * Idempotent: the reply is recorded as an outbound interaction keyed `ack:<id>`, and a
- * retry that finds it stops. Sent through Gmail; with no Gmail credentials in Settings
- * the job skips quietly, so the form keeps working.
+ * retry that finds it stops. Sent through Amazon SES in the OziRealty AWS account from
+ * mail.ozirealty.com.au (owner's choice, 2026-11-03, replacing Gmail). A send SES
+ * refuses for good (sandbox, suppressed address) ends the job quietly, so the form
+ * keeps working and the dead-letter view stays for real faults.
  */
 
 
@@ -50,49 +52,68 @@ const SIGNATURE_HTML = `
   </tr>
 </table>`;
 
-type Mailer = { transport: Transporter; from: string };
+/** The verified sending address. The display name is the owner's (above). */
+const FROM_ADDRESS = process.env.MAIL_FROM_ADDRESS ?? "noreply@mail.ozirealty.com.au";
 
-/** Gmail SMTP with an app password (owner's request, 2026-11-03: send through Gmail). */
-async function gmail(tenantId: string): Promise<Mailer | null> {
-  const user = await getSecret(tenantId, "GMAIL_ADDRESS");
-  const pass = await getSecret(tenantId, "GMAIL_APP_PASSWORD");
-  if (!user || !pass) return null;
-  return {
-    transport: nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      // Google shows app passwords in groups of four; the spaces are not part of it.
-      auth: { user, pass: pass.replace(/\s+/g, "") },
-    }),
-    from: user,
-  };
+/** Where enquiry alerts go: NOTIFY_TO, else the agency inbox named in .env.example. */
+const ALERT_TO = env.NOTIFY_TO ?? "admin@ozirealty.com.au";
+
+/**
+ * SES lives in the OziRealty AWS account (310792823958). While the web server still
+ * runs in the older account it sends by assuming `ozirealty-ses-sender` there, named by
+ * SES_ROLE_ARN. Once the server moves into that account, unset it and the instance's
+ * own role sends.
+ */
+let ses: SESv2Client | null = null;
+function client() {
+  const roleArn = process.env.SES_ROLE_ARN;
+  ses ??= new SESv2Client({
+    region: env.AWS_REGION,
+    ...(roleArn
+      ? {
+          credentials: fromTemporaryCredentials({
+            params: { RoleArn: roleArn, RoleSessionName: "ozirealty-notices", DurationSeconds: 900 },
+            clientConfig: { region: env.AWS_REGION },
+          }),
+        }
+      : {}),
+  });
+  return ses;
 }
 
-async function sendPlain(
-  m: Mailer,
-  to: string,
-  subject: string,
-  body: string,
-  replyTo?: string,
-  html?: string,
-) {
-  const info = await m.transport.sendMail({
-    from: { name: FROM_NAME, address: m.from },
-    to,
-    replyTo,
-    subject,
-    text: body,
-    html,
-  });
-  return info.messageId ?? null;
+/** A refusal that will not change on retry: end the job instead of retrying it. */
+class Refused extends Error {}
+
+async function sendPlain(to: string, subject: string, body: string, replyTo?: string, html?: string) {
+  try {
+    const r = await client().send(
+      new SendEmailCommand({
+        FromEmailAddress: `${FROM_NAME} <${FROM_ADDRESS}>`,
+        Destination: { ToAddresses: [to] },
+        ...(replyTo ? { ReplyToAddresses: [replyTo] } : {}),
+        Content: {
+          Simple: {
+            Subject: { Data: subject, Charset: "UTF-8" },
+            Body: {
+              Text: { Data: body, Charset: "UTF-8" },
+              ...(html ? { Html: { Data: html, Charset: "UTF-8" } } : {}),
+            },
+          },
+        },
+      }),
+    );
+    return r.MessageId ?? null;
+  } catch (e) {
+    const name = (e as { name?: string }).name ?? "";
+    if (name === "MessageRejected" || name === "AccountSuspendedException" || name === "BadRequestException") {
+      throw new Refused(name);
+    }
+    throw e;
+  }
 }
 
 export async function notifyEnquiry(tenantId: string, interactionId: string) {
-  const mailer = await gmail(tenantId);
-  if (!mailer) return { skipped: "Gmail credentials not set" };
-  // Alerts go to NOTIFY_TO, or to the sending Gmail account itself.
-  const notifyTo = env.NOTIFY_TO ?? mailer.from;
+  const notifyTo = ALERT_TO;
 
   const loaded = await withTenant(tenantId, async (tx) => {
     const [row] = await tx
@@ -124,9 +145,8 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
 
   const name = [row.firstName, row.lastName].filter(Boolean).join(" ") || "Not given";
 
-  {
+  try {
     await sendPlain(
-      mailer,
       notifyTo,
       `New ${row.subject ?? "website enquiry"} from ${name}`,
       [
@@ -137,10 +157,13 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
         "",
         row.body?.trim() || "(no message)",
         "",
-        "Open the contact in the CRM: https://app.ozirealty.com.au/contacts/" + row.contactId,
+        "Open the contact in the CRM: https://crm.ozirealty.com.au/contacts/" + row.contactId,
       ].join("\n"),
       row.email ?? undefined,
     );
+  } catch (e) {
+    if (e instanceof Refused) return { skipped: `alert refused by SES: ${e.message}` };
+    throw e;
   }
 
   // Every form alerts the agency; the free-book form gets no receipt (owner's request,
@@ -177,7 +200,13 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
     SIGNATURE_HTML +
     `</div>`;
 
-  const providerId = await sendPlain(mailer, row.email, subject, body, notifyTo, html);
+  let providerId: string | null;
+  try {
+    providerId = await sendPlain(row.email, subject, body, notifyTo, html);
+  } catch (e) {
+    if (e instanceof Refused) return { alerted: true, acknowledged: false, refused: e.message };
+    throw e;
+  }
 
   // The reply goes on the contact's record like any other touch (§4), and doubles as
   // the idempotency marker.
