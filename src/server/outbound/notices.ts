@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { withTenant } from "@/db";
-import { contacts, interactions, tenants } from "@/db/schema";
+import { contacts, interactions } from "@/db/schema";
 import { env } from "@/env";
 
 /**
@@ -60,24 +60,18 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
       .innerJoin(contacts, eq(contacts.id, interactions.contactId))
       .where(eq(interactions.id, interactionId))
       .limit(1);
-    const [agency] = await tx
-      .select({ name: tenants.name, trading: tenants.tradingName, licence: tenants.licenceNumber })
-      .from(tenants)
-      .where(eq(tenants.id, tenantId))
-      .limit(1);
     const [sent] = await tx
       .select({ id: interactions.id })
       .from(interactions)
       .where(and(eq(interactions.tenantId, tenantId), eq(interactions.messageId, `ack:${interactionId}`)))
       .limit(1);
-    return { row, agency, alreadySent: Boolean(sent) };
+    return { row, alreadySent: Boolean(sent) };
   });
 
-  const { row, agency, alreadySent } = loaded;
+  const { row, alreadySent } = loaded;
   if (!row) return { skipped: "interaction not found" };
   if (alreadySent) return { skipped: "already sent" };
 
-  const agencyName = agency?.trading ?? agency?.name ?? "OziRealty";
   const name = [row.firstName, row.lastName].filter(Boolean).join(" ") || "Not given";
 
   if (env.NOTIFY_TO) {
@@ -100,21 +94,25 @@ export async function notifyEnquiry(tenantId: string, interactionId: string) {
 
   if (!row.email) return { alerted: Boolean(env.NOTIFY_TO), acknowledged: false };
 
-  const subject = `We received your enquiry - ${agencyName}`;
+  // Wording is the owner's, verbatim (2026-11-03).
+  const first = row.firstName?.trim() || "there";
+  const subject = `Thanks for getting in touch, ${first}`;
   const body = [
-    `Hi ${row.firstName || "there"},`,
+    `Hi ${first},`,
     "",
-    "Thank you for getting in touch. We have received your enquiry and will reply within one business day.",
+    "Thanks for reaching out to Ozi Realty. We’ve received your details and we’ll personally follow up with you within one business day.",
     "",
-    "If it is urgent, simply reply to this email.",
+    "In the meantime, if your enquiry is time-sensitive, you’re welcome to call us on 1800 400 333 or 0422 271 293.",
     "",
-    "Kind regards,",
-    agencyName,
-    agency?.licence ? `RLA ${agency.licence}` : null,
-    "https://www.ozirealty.com.au",
-  ]
-    .filter((l): l is string => l !== null)
-    .join("\n");
+    "Looking forward to helping you with your property goals.",
+    "",
+    "Warm regards,",
+    "",
+    "Esi Dor",
+    "Director & CEO, Ozi Realty",
+    "308 Prospect Rd, Prospect SA 5082",
+    "RLA 350628",
+  ].join("\n");
 
   const providerId = await sendPlain(row.email, subject, body, env.NOTIFY_TO);
 
