@@ -129,9 +129,6 @@ export default function Page() {
                 And if the numbers say holding is the better move this year, the report shows
                 that too.
               </p>
-              <a className="btn" href="#enquire" style={{ marginTop: 12 }}>
-                Get my free appraisal report →
-              </a>
             </div>
             <div className="sl-doc">
               <span className="sl-val">Valued at $399</span>
