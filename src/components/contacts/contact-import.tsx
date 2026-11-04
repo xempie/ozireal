@@ -224,8 +224,12 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
     (a, p) => ({ ...a, [p.status]: (a[p.status] ?? 0) + 1 }),
     {} as Record<string, number>,
   );
-  const error = check.error ?? save.error;
   const fe = { ...check.fieldErrors, ...save.fieldErrors };
+  // The generic "Some fields need attention" names no field; say what is actually wrong.
+  const shown = new Set([...(fe.source ?? []), ...(fe.consent ?? [])]);
+  const other = Object.values(fe).flat().filter((m) => !shown.has(m));
+  const raw = check.error ?? save.error;
+  const error = raw && Object.keys(fe).length ? (other.length ? other.join(" ") : "Fill in the highlighted field above.") : raw;
 
   return (
     <Modal open onClose={onClose} title="Import contacts" wide>
@@ -303,7 +307,8 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                       rows={2}
                       value={wording}
                       onChange={(e) => setWording(e.target.value)}
-                      errors={fe["consent.wording"] ?? fe.wording}
+                      errors={fe.consent}
+                      placeholder="e.g. I agree to receive property news and listings from Ozi Realty by email and SMS. I can unsubscribe at any time."
                     />
                   </>
                 )}
