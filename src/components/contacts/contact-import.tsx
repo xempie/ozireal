@@ -13,6 +13,7 @@ import {
   CancelButton,
 } from "@/components/forms/action-form";
 import { importContacts, type ImportPreviewRow } from "@/server/actions/contacts-import";
+import { detectAddressKind, type AddressKind } from "@/lib/address-kind";
 
 /**
  * Import contacts from a CSV, Excel or vCard file (2026-11-04).
@@ -169,7 +170,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   const [table, setTable] = React.useState<string[][]>([]);
   const [map, setMap] = React.useState<Field[]>([]);
   const [role, setRole] = React.useState("");
-  const [addressMeans, setAddressMeans] = React.useState<"lives" | "looking">("lives");
+  const [addressMeans, setAddressMeans] = React.useState<"auto" | AddressKind>("auto");
   const [source, setSource] = React.useState("");
   const [consentOn, setConsentOn] = React.useState(true);
   const [cEmail, setCEmail] = React.useState(true);
@@ -193,6 +194,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           phone2: "",
           suburb: "",
           address: "",
+          addressKind: "lives" as AddressKind,
           note: "",
           tags: [] as string[],
         };
@@ -203,6 +205,11 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             const parts = v.split(/\s+/);
             r.firstName ||= parts[0] ?? "";
             r.lastName ||= parts.slice(1).join(" ");
+          } else if (f === "address") {
+            if (!r.address) {
+              r.address = v;
+              r.addressKind = addressMeans === "auto" ? detectAddressKind(headers[i] ?? "", v) : addressMeans;
+            }
           } else if (f === "tags") {
             for (const t of v.split(/[,;|]/)) {
               const x = t.trim().slice(0, 60);
@@ -213,7 +220,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
         });
         return r;
       }),
-    [body, map],
+    [body, map, headers, addressMeans],
   );
 
   const check = useAction(importContacts, {
@@ -267,7 +274,6 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
     keep: [...keep],
     commit,
     role: role || null,
-    addressMeans,
     source,
     consent: consentOn ? { email: cEmail, sms: cSms, wording } : null,
   });
@@ -345,6 +351,22 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                     <input
                       type="radio"
                       name="addressMeans"
+                      checked={addressMeans === "auto"}
+                      onChange={() => {
+                        setAddressMeans("auto");
+                        setPreview(null);
+                      }}
+                    />
+                    <span>
+                      <strong>Detect for each row (recommended).</strong> A street address is where they
+                      live; a list of suburbs or postcodes is where they&rsquo;re looking. The heading
+                      decides when it says, e.g. &ldquo;Looking in&rdquo; or &ldquo;Home address&rdquo;.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-[13px]">
+                    <input
+                      type="radio"
+                      name="addressMeans"
                       checked={addressMeans === "lives"}
                       onChange={() => {
                         setAddressMeans("lives");
@@ -352,7 +374,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                       }}
                     />
                     <span>
-                      <strong>Where they live.</strong> Saved as their own address, and the suburb
+                      <strong>All are where they live.</strong> Saved as their own address, and the suburb
                       is taken from it when the suburb column is empty.
                     </span>
                   </label>
@@ -367,7 +389,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                       }}
                     />
                     <span>
-                      <strong>Where they want to buy or rent.</strong> Suburbs and postcodes go into what
+                      <strong>All are where they want to buy or rent.</strong> Suburbs and postcodes go into what
                       they&rsquo;re looking for, so they show up in property matching.
                     </span>
                   </label>
@@ -421,7 +443,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                           <th className="p-2">Second number</th>
                           <th className="p-2">Tags</th>
                           <th className="p-2">Suburb</th>
-                          <th className="p-2">{addressMeans === "lives" ? "Address" : "Looking in"}</th>
+                          <th className="p-2">Address</th>
                           <th className="p-2">What happens</th>
                         </tr>
                       </thead>
@@ -452,7 +474,18 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                               <td className="p-2">{r.phone2 || "—"}</td>
                               <td className="p-2">{r.tags.join(", ") || "—"}</td>
                               <td className="p-2">{r.suburb || "—"}</td>
-                              <td className="p-2">{r.address || "—"}</td>
+                              <td className="p-2">
+                                {r.address ? (
+                                  <>
+                                    <span className="text-2 text-[11.5px] font-medium">
+                                      {r.addressKind === "lives" ? "Lives at" : "Looking in"}:
+                                    </span>{" "}
+                                    {r.address}
+                                  </>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
                               <td className={`p-2 font-medium ${STATUS_STYLE[p.status]}`}>{p.detail}</td>
                             </tr>
                           );

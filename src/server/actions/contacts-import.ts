@@ -45,6 +45,8 @@ const row = z.object({
   suburb: z.string().trim().max(120).default(""),
   note: z.string().trim().max(2000).default(""),
   address: z.string().trim().max(300).default(""),
+  /** Decided per row in the dialog (src/lib/address-kind.ts): home, or where they want to buy or rent. */
+  addressKind: z.enum(["lives", "looking"]).default("lives"),
 });
 
 /** "12 Smith St, Norwood SA 5067" -> { suburb: "Norwood", postcode: "5067" }. */
@@ -125,8 +127,6 @@ export const importContacts = defineAction({
     /** Indexes into `rows` to save; ignored on the preview press. */
     keep: z.array(z.number().int().min(0)).default([]),
     commit: z.boolean(),
-    /** What the address column means for this file: home, or where they want to buy/rent. */
-    addressMeans: z.enum(["lives", "looking"]).default("lives"),
     role: z.enum(ROLES).nullable(),
     source: z.string().trim().min(2, "Say where this list came from").max(120),
     consent: z
@@ -194,8 +194,8 @@ export const importContacts = defineAction({
           !hit.phone && r.phoneE ? "phone" : null,
           !hit.email && r.emailN ? "email" : null,
           !hit.suburb && r.suburb ? "suburb" : null,
-          r.address && input.addressMeans === "lives" && !hit.address ? "address" : null,
-          r.address && input.addressMeans === "looking" ? "search area" : null,
+          r.address && r.addressKind === "lives" && !hit.address ? "address" : null,
+          r.address && r.addressKind === "looking" ? "search area" : null,
           !hit.phone2 && r.phone2 ? "second number" : null,
           r.tags.some((t) => !hit.tags.includes(t)) ? "tags" : null,
         ].filter(Boolean);
@@ -221,7 +221,7 @@ export const importContacts = defineAction({
       if (!keep.has(i) || st === "skip") continue;
 
       let contactId: string;
-      const home = input.addressMeans === "lives" && r.address ? r.address : null;
+      const home = r.addressKind === "lives" && r.address ? r.address : null;
       const homeSuburb = home && !r.suburb ? tailSuburb(home).suburb : null;
       if (st === "new") {
         const [c] = await ctx.tx
@@ -275,7 +275,7 @@ export const importContacts = defineAction({
         }
       }
 
-      if (input.addressMeans === "looking" && r.address) {
+      if (r.addressKind === "looking" && r.address) {
         const a = await looseAreas(ctx.tx, r.address, areaCache);
         let [prefs] = await ctx.tx
           .select({ id: contactPreferences.id, postcodes: contactPreferences.postcodes, soft: contactPreferences.softRequirements })
