@@ -118,6 +118,20 @@ const ROLES = [
   "agent",
 ] as const;
 
+/** Tags that name a role ("Buyer", "Seller", "Renter") also set that role (2026-11-04). */
+const ROLE_WORDS: Record<string, (typeof ROLES)[number]> = {
+  buyer: "buyer", buyers: "buyer", purchaser: "buyer",
+  vendor: "vendor", vendors: "vendor", seller: "vendor", sellers: "vendor",
+  landlord: "landlord", landlords: "landlord", owner: "landlord",
+  tenant: "tenant", tenants: "tenant", renter: "tenant", renters: "tenant",
+  referrer: "referrer", referral: "referrer",
+  investor: "investor", investors: "investor",
+  "business vendor": "business_vendor", "business seller": "business_vendor",
+  agent: "agent",
+};
+const rolesFromTags = (tags: string[]) =>
+  [...new Set(tags.map((t) => ROLE_WORDS[t.trim().toLowerCase()]).filter(Boolean))];
+
 export type ImportStatus = "new" | "update" | "duplicate" | "skip";
 export type ImportPreviewRow = { status: ImportStatus; detail: string };
 
@@ -306,10 +320,10 @@ export const importContacts = defineAction({
         reembed.push(contactId);
       }
 
-      if (input.role) {
+      for (const role of new Set([...(input.role ? [input.role] : []), ...rolesFromTags(r.tags)])) {
         await ctx.tx
           .insert(contactRoles)
-          .values({ tenantId: ctx.tenantId, contactId, role: input.role })
+          .values({ tenantId: ctx.tenantId, contactId, role })
           .onConflictDoNothing();
       }
 

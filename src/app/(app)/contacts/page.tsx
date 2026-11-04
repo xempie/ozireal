@@ -40,9 +40,14 @@ const filters = [
   "Last outcome: any",
 ];
 
-export default async function ContactsPage() {
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string }>;
+}) {
+  const order = (await searchParams).sort === "oldest" ? "oldest" : "newest";
   const [contacts, savedViews, contactsBySource] = await Promise.all([
-    getContacts(),
+    getContacts({ order }),
     getSavedViews(),
     getContactsBySource(),
   ]);
@@ -133,6 +138,24 @@ export default async function ContactsPage() {
         </Card>
       </div>
 
+      <div className="mb-2 flex items-center gap-2 text-[12.5px]">
+        <span className="text-2">Sort by date added:</span>
+        {(["newest", "oldest"] as const).map((o) => (
+          <Link
+            key={o}
+            href={o === "newest" ? "/contacts" : "/contacts?sort=oldest"}
+            aria-current={order === o ? "true" : undefined}
+            className={
+              order === o
+                ? "rounded-md px-2.5 py-1 bg-[var(--accent)] text-white"
+                : "rounded-md px-2.5 py-1 border surface-2 hover:surface-3"
+            }
+          >
+            {o === "newest" ? "Newest first" : "Oldest first"}
+          </Link>
+        ))}
+      </div>
+
       <BulkSelection
         allIds={contacts.map((c) => c.id)}
         names={Object.fromEntries(contacts.map((c) => [c.id, `${c.firstName} ${c.lastName}`.trim()]))}
@@ -169,6 +192,14 @@ export default async function ContactsPage() {
                   >
                     {c.firstName} {c.lastName}
                   </Link>
+                  {c.fromNewHomes && (
+                    <span
+                      className="ml-1.5 align-middle rounded px-1.5 py-px text-[10.5px] font-semibold uppercase tracking-wide bg-[#FFF1EB] text-[#B23A0E] border border-[#F5C7B3]"
+                      title="Enquired from a New Homes project"
+                    >
+                      New Homes
+                    </span>
+                  )}
                   <div className="text-3 text-[12px]">{identity || "—"}</div>
                   {c.tags.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -187,6 +218,9 @@ export default async function ContactsPage() {
                         {r}
                       </Badge>
                     ))}
+                    {/* No role on record: the contact's tags stand in (owner's request, 2026-11-04). */}
+                    {c.roles.length === 0 &&
+                      c.tags.slice(0, 3).map((t) => <Badge key={t}>{t}</Badge>)}
                   </div>
                 </TD>
                 <TD>

@@ -24,7 +24,8 @@ import {
 
 export type ContactRow = Awaited<ReturnType<typeof getContacts>>[number];
 
-export async function getContacts() {
+/** `order`: by when the contact was added (owner's request, 2026-11-04). */
+export async function getContacts(opts: { order?: "newest" | "oldest" } = {}) {
   return query(async (tx) => {
     const rows = await tx
       .select({
@@ -55,12 +56,26 @@ export async function getContacts() {
       .leftJoin(contactIntent, eq(contactIntent.contactId, contacts.id))
       .leftJoin(contactPreferences, eq(contactPreferences.contactId, contacts.id))
       .where(isNull(contacts.tombstonedAt))
-      .orderBy(contacts.createdAt);
+      .orderBy(opts.order === "oldest" ? contacts.createdAt : desc(contacts.createdAt));
 
     // Roles and consent badges are per-row lists; two grouped queries beat N+1.
+    // Current roles only: an ended role (activeTo set, e.g. by bulk "Remove role") is history.
     const roles = await tx
       .select({ contactId: contactRoles.contactId, role: contactRoles.role })
-      .from(contactRoles);
+      .from(contactRoles)
+      .where(isNull(contactRoles.activeTo));
+    /**
+     * Who came from a New Homes project card: their enquiry's subject carries
+     * "New homes: <project>" (web-form adapter, 2026-11-04).
+     */
+    const newHomes = new Set(
+      (
+        await tx
+          .selectDistinct({ contactId: interactions.contactId })
+          .from(interactions)
+          .where(sql`${interactions.subject} ilike '%New homes:%'`)
+      ).map((r) => r.contactId),
+    );
     const consentRows = await tx
       .select({
         contactId: consents.contactId,
@@ -74,6 +89,7 @@ export async function getContacts() {
     return rows.map((c) => ({
       ...c,
       roles: roles.filter((r) => r.contactId === c.id).map((r) => r.role),
+      fromNewHomes: newHomes.has(c.id),
       // Consents are append-only, so the CURRENT state is the latest row per channel.
       consents: latestPerChannel(consentRows.filter((k) => k.contactId === c.id)),
     }));
@@ -153,7 +169,7 @@ export async function getContact(id: string) {
     const roles = await tx
       .select({ role: contactRoles.role })
       .from(contactRoles)
-      .where(eq(contactRoles.contactId, id));
+      .where(and(eq(contactRoles.contactId, id), isNull(contactRoles.activeTo)));
 
     /**
      * Every consent row, newest first. The detail screen shows the full provenance
