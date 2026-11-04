@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Newsreader, Instrument_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./public.css";
 import { SiteHeader, SiteFooter, AGENCY } from "@/components/public/site-chrome";
 import { Breadcrumbs } from "@/components/public/breadcrumbs";
@@ -27,20 +27,27 @@ import { isBuiltinPath, themeCss } from "@/lib/site-content";
  * Self-hosted through next/font rather than a stylesheet link: a render-blocking request
  * to fonts.googleapis.com on every public page is the single easiest Core Web Vitals
  * regression to ship, and `display: swap` keeps text visible while they load.
+ *
+ * The files live in ./fonts (Google's latin variable woff2, SIL OFL) rather than being
+ * fetched by next/font/google at build time: on 2026-11-04 that fetch broke the build
+ * twice on the instance while Google itself answered normally. One variable file covers
+ * every weight, so the faces and the CSS variables are unchanged.
  */
-const display = Newsreader({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
+const display = localFont({
+  src: [
+    { path: "./fonts/newsreader-latin.woff2", weight: "200 800", style: "normal" },
+    { path: "./fonts/newsreader-italic-latin.woff2", weight: "200 800", style: "italic" },
+  ],
   display: "swap",
   variable: "--font-display",
+  fallback: ["Georgia", "serif"],
 });
 
-const body = Instrument_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const body = localFont({
+  src: [{ path: "./fonts/instrument-sans-latin.woff2", weight: "400 700", style: "normal" }],
   display: "swap",
   variable: "--font-body",
+  fallback: ["-apple-system", "Segoe UI", "sans-serif"],
 });
 
 /*
