@@ -3275,3 +3275,11 @@
   border: 1px solid var(--line-dk); color: inherit; transition: background .2s, border-color .2s;
 }
 .foot-social a:hover { background: #D84315; border-color: #D84315; color: #fff; }
+
+/* "Talk to Esi" with Esi's photo (2026-11-04). The photo takes the left padding and a
+   negative vertical margin, so the button keeps its 47px height. */
+.proj-btn--esi { padding-left: 8px; }
+.proj-btn-face {
+  width: 31px; height: 31px; margin: -8px 0; border-radius: 50%;
+  object-fit: cover; border: 2px solid var(--paper-2); box-sizing: border-box; flex: none;
+}

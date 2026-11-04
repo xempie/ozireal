@@ -406,9 +406,13 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                 {cta && (
                   // A "Talk to Esi" to the buyer's agent page lands on its brief form itself (2026-10-31).
                   <SmartLink
-                    className="btn proj-btn"
+                    className={/talk to esi/i.test(cta.label) ? "btn proj-btn proj-btn--esi" : "btn proj-btn"}
                     href={/buyer-agent-adelaide\/?$/.test(cta.href) ? `${cta.href.replace(/\/$/, "")}#brief` : cta.href}
                   >
+                    {/* Esi's photo on "Talk to Esi" (owner's choice, 2026-11-04); same button height. */}
+                    {/talk to esi/i.test(cta.label) && (
+                      <Image className="proj-btn-face" src="/brand/esi-dor.jpg" alt="" width={62} height={62} />
+                    )}
                     {cta.label}
                   </SmartLink>
                 )}
