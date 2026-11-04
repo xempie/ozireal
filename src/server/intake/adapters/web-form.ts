@@ -79,7 +79,7 @@ export const webFormAdapter: ChannelAdapter = {
       direction: "in",
       occurredAt: p.submittedAt,
       subject: p.listingRef
-        ? `Website enquiry — ${p.listingRef}`
+        ? `Website enquiry — ${p.formName} — ${p.listingRef}`
         : `Website enquiry — ${p.formName}`,
       body: p.message,
       identity: {

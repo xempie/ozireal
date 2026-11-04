@@ -3283,3 +3283,13 @@
   width: 31px; height: 31px; margin: -8px 0; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--paper-2); box-sizing: border-box; flex: none;
 }
+
+/* The New Homes project a brief came from (2026-11-04). */
+.enq-project {
+  margin: 0 0 18px; padding: 10px 14px; background: var(--paper-2);
+  border-left: 3px solid var(--accent); font-size: 14.5px; font-weight: 600;
+}
+.enq-project span {
+  display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent-dp); font-weight: 600; margin-bottom: 2px;
+}

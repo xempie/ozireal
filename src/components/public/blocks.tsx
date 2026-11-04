@@ -37,6 +37,18 @@ function sectionStyle(b: Block): React.CSSProperties | undefined {
 
 const isExternal = (href: string) => /^https:/i.test(href);
 
+/**
+ * A project card's button. "Talk to Esi" to the buyer's agent page lands on its brief
+ * form (2026-10-31) and names the project it came from, so the enquiry in the CRM says
+ * which project the person was interested in (owner's request, 2026-11-04).
+ */
+function projectHref(href: string, heading?: string, headingEm?: string): string {
+  if (!/buyer-agent-adelaide\/?$/.test(href)) return href;
+  const project = [heading, headingEm].filter(Boolean).join(" – ").slice(0, 90);
+  const base = href.replace(/\/$/, "");
+  return project ? `${base}?project=${encodeURIComponent(project)}#brief` : `${base}#brief`;
+}
+
 function SmartLink({ href, className, children }: { href: string; className?: string; children: React.ReactNode }) {
   if (href.startsWith("/")) {
     return (
@@ -407,7 +419,7 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                   // A "Talk to Esi" to the buyer's agent page lands on its brief form itself (2026-10-31).
                   <SmartLink
                     className={/talk to esi/i.test(cta.label) ? "btn proj-btn proj-btn--esi" : "btn proj-btn"}
-                    href={/buyer-agent-adelaide\/?$/.test(cta.href) ? `${cta.href.replace(/\/$/, "")}#brief` : cta.href}
+                    href={projectHref(cta.href, text.heading, text.headingEm)}
                   >
                     {/* Esi's photo on "Talk to Esi" (owner's choice, 2026-11-04); same button height. */}
                     {/talk to esi/i.test(cta.label) && (

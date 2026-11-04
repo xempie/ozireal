@@ -68,6 +68,15 @@ export function EnquiryForm({
   const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string[]>>({});
+  /**
+   * The New Homes project the person clicked "Talk to Esi" on, from ?project= (2026-11-04).
+   * Read after mount so the statically rendered page stays the same for everyone.
+   */
+  const [project, setProject] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("project")?.trim();
+    if (p) setProject(p.slice(0, 90));
+  }, []);
   const [thanksOpen, setThanksOpen] = React.useState(false);
   const doneRef = React.useRef<HTMLDivElement>(null);
   const errorRef = React.useRef<HTMLParagraphElement>(null);
@@ -152,7 +161,14 @@ export function EnquiryForm({
       if (!text) continue;
       lines.push(`${f.label}: ${text}`);
     }
-    return [`${definition.title} (${definition.formName})`, "", ...lines].join("\n").trim();
+    return [
+      `${definition.title} (${definition.formName})`,
+      ...(project ? [`Project: New homes – ${project}`] : []),
+      "",
+      ...lines,
+    ]
+      .join("\n")
+      .trim();
   }
 
 
@@ -192,7 +208,7 @@ export function EnquiryForm({
           email: (values.email ?? "") as string,
           phone: (values.phone ?? "") as string,
           message: composeMessage(),
-          listingRef: null,
+          listingRef: project ? `New homes: ${project}`.slice(0, 120) : null,
           formName: meta.formName,
           // The marketing opt-in box was removed from the site (owner's decision,
           // 2026-10-29), so a website enquiry never records a marketing consent.
@@ -256,6 +272,11 @@ export function EnquiryForm({
       )}
       <h2 className="enq-title">{definition.title}</h2>
       {definition.intro && <p className="enq-intro">{definition.intro}</p>}
+      {project && (
+        <p className="enq-project">
+          <span>About</span> New homes – {project}
+        </p>
+      )}
 
       {metaFailed && (
         <p className="enq-error" role="alert">
