@@ -14,6 +14,7 @@ import {
 } from "@/components/forms/action-form";
 import { importContacts, type ImportPreviewRow } from "@/server/actions/contacts-import";
 import { detectAddressKind, type AddressKind } from "@/lib/address-kind";
+import { CONTACT_ROLES, ROLE_LABELS } from "@/lib/roles";
 
 /**
  * Import contacts from a CSV, Excel or vCard file (2026-11-04).
@@ -157,10 +158,7 @@ async function readTable(file: File): Promise<string[][]> {
 
 const ROLE_OPTIONS = [
   { value: "", label: "No role" },
-  ...["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor", "agent"].map((r) => ({
-    value: r,
-    label: r.replace("_", " "),
-  })),
+  ...CONTACT_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] })),
 ];
 
 const STATUS_STYLE: Record<ImportPreviewRow["status"], string> = {

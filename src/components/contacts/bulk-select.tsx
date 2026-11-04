@@ -19,6 +19,7 @@ import {
   bulkDoNotContact,
   bulkProposeMerge,
 } from "@/server/actions/contacts-bulk";
+import { CONTACT_ROLES, ROLE_LABELS, roleLabel } from "@/lib/roles";
 
 /**
  * Selection for the contacts table (2026-11-04). The table stays a Server Component;
@@ -39,8 +40,7 @@ const useSel = () => {
   return c;
 };
 
-const ROLES = ["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor", "agent"];
-const roleOptions = ROLES.map((r) => ({ value: r, label: r.replace("_", " ") }));
+const roleOptions = CONTACT_ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }));
 
 export function BulkSelection({
   allIds,
@@ -260,7 +260,7 @@ function RoleDialog({
   const adding = mode === "add-role";
   const a = useAction(adding ? bulkAddRole : bulkRemoveRole, {
     onSuccess: (d) =>
-      onClose(`${adding ? "Added" : "Removed"} ${role.replace("_", " ")} on ${plural(d.count)}.`),
+      onClose(`${adding ? "Added" : "Removed"} ${roleLabel(role)} on ${plural(d.count)}.`),
   });
   return (
     <Modal open onClose={() => onClose()} title={`${adding ? "Add a role to" : "Remove a role from"} ${plural(ids.length)}`}>

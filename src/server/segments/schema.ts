@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL } from "@/lib/roles";
 
 /**
  * A segment: the question "who should hear about this?", written down.
@@ -37,16 +38,7 @@ export const PROPERTY_TYPES = [
   "commercial",
 ] as const;
 
-export const CONTACT_ROLES = [
-  "buyer",
-  "vendor",
-  "landlord",
-  "tenant",
-  "referrer",
-  "investor",
-  "business_vendor",
-  "agent",
-] as const;
+export const CONTACT_ROLES = CONTACT_ROLES_ALL;
 
 export const INTENT_TYPES = [
   "buying",

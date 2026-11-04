@@ -26,6 +26,7 @@ import {
 } from "@/components/forms/stock-forms";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 import { shortDate } from "@/lib/utils";
+import { roleLabel } from "@/lib/roles";
 
 export default async function PropertyDetail({
   params,
@@ -253,7 +254,7 @@ export default async function PropertyDetail({
               <div className="flex flex-wrap gap-1 mt-2">
                 {owner.roles.map((r) => (
                   <Badge key={r} tone="stock">
-                    {r}
+                    {roleLabel(r)}
                   </Badge>
                 ))}
               </div>

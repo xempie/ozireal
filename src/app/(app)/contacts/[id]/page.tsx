@@ -38,6 +38,7 @@ import {
   RecordConsentButton,
 } from "@/components/forms/contact-forms";
 import { EditPreferencesButton } from "@/components/forms/preferences-form";
+import { roleLabel } from "@/lib/roles";
 
 export default async function ContactDetail({
   params,
@@ -63,7 +64,7 @@ export default async function ContactDetail({
     <>
       <PageHeader
         title={`${c.firstName} ${c.lastName}`}
-        subtitle={`${c.roles.join(" · ")} · owned by ${c.owner ?? "unassigned"} · created ${shortDate(c.createdAt)}`}
+        subtitle={`${c.roles.map(roleLabel).join(" · ")} · owned by ${c.owner ?? "unassigned"} · created ${shortDate(c.createdAt)}`}
         actions={
           // A superseded record takes no new activity. Leaving the buttons here would
           // contradict the banner below and split one person's history across two

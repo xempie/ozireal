@@ -19,6 +19,7 @@ import { relative, money } from "@/lib/utils";
 import { NewContactButton } from "@/components/forms/contact-forms";
 import { BulkSelection, SelectAllBox, RowBox } from "@/components/contacts/bulk-select";
 import { ImportContactsButton } from "@/components/contacts/contact-import";
+import { roleLabel } from "@/lib/roles";
 
 const roleTone = {
   buyer: "brand",
@@ -27,6 +28,7 @@ const roleTone = {
   tenant: "neutral",
   referrer: "neutral",
   investor: "ai",
+  developer: "ai",
   business_vendor: "stock",
   agent: "brand",
 } as const;
@@ -215,7 +217,7 @@ export default async function ContactsPage({
                   <div className="flex flex-wrap gap-1">
                     {c.roles.map((r) => (
                       <Badge key={r} tone={roleTone[r]}>
-                        {r}
+                        {roleLabel(r)}
                       </Badge>
                     ))}
                     {/* No role on record: the contact's tags stand in (owner's request, 2026-11-04). */}

@@ -25,6 +25,7 @@ import {
 } from "@/server/ai/proposals";
 import { ingestInTx } from "@/server/intake/pipeline";
 import { enqueue } from "@/server/jobs/queues";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL } from "@/lib/roles";
 
 /**
  * Contact writes — the first real write path in the product.
@@ -153,16 +154,7 @@ async function applyPreferenceChange(
     .where(eq(contactPreferences.id, prefs.id));
 }
 
-const CONTACT_ROLES = [
-  "buyer",
-  "vendor",
-  "landlord",
-  "tenant",
-  "referrer",
-  "investor",
-  "business_vendor",
-  "agent",
-] as const;
+const CONTACT_ROLES = CONTACT_ROLES_ALL;
 
 /** Empty, or a number toE164 can key on: the same rule as the public forms. */
 function phoneOk(v: string): boolean {

@@ -23,6 +23,7 @@ import {
   tombstoneContact,
 } from "@/server/actions/contacts";
 import { recordConsent } from "@/server/actions/consent";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL, roleLabel } from "@/lib/roles";
 
 /* --------------------------------------------------------- record consent */
 
@@ -127,16 +128,7 @@ export function RecordConsentButton({ contactId }: { contactId: string }) {
   );
 }
 
-const ROLES = [
-  "buyer",
-  "vendor",
-  "landlord",
-  "tenant",
-  "referrer",
-  "investor",
-  "business_vendor",
-  "agent",
-] as const;
+const ROLES = CONTACT_ROLES_ALL;
 
 /* ------------------------------------------------------------ new contact */
 
@@ -202,7 +194,7 @@ export function NewContactButton() {
                   className="inline-flex items-center gap-1.5 text-[12.5px] border rounded-md px-2 py-1.5 surface-3 cursor-pointer"
                 >
                   <input type="checkbox" name="roles" value={r} defaultChecked={r === "buyer"} />
-                  {r.replace("_", " ")}
+                  {roleLabel(r)}
                 </label>
               ))}
             </div>
@@ -607,7 +599,7 @@ export function EditContactButton({ contact }: { contact: EditableContact }) {
                     value={r}
                     defaultChecked={contact.roles.includes(r)}
                   />
-                  {r.replace("_", " ")}
+                  {roleLabel(r)}
                 </label>
               ))}
             </div>

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { and, eq, inArray, isNull, sql } from "drizzle-orm";
 import { contacts, contactRoles, interactions, mergeReviews } from "@/db/schema";
 import { defineAction, ActionError } from "./action";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL } from "@/lib/roles";
 
 /**
  * Bulk actions on the contacts list (owner's request, 2026-11-04).
@@ -17,16 +18,7 @@ import { defineAction, ActionError } from "./action";
 
 const ids = z.array(z.string().uuid()).min(1, "Select at least one contact").max(500);
 
-const ROLES = [
-  "buyer",
-  "vendor",
-  "landlord",
-  "tenant",
-  "referrer",
-  "investor",
-  "business_vendor",
-  "agent",
-] as const;
+const ROLES = CONTACT_ROLES_ALL;
 
 /** The selected rows that can still be changed. */
 const live = (contactIds: string[]) =>

@@ -24,6 +24,7 @@ import {
   ThemeDocSchema,
   isBuiltinPath,
 } from "@/lib/site-content";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL } from "@/lib/roles";
 
 /**
  * The assistant's tools.
@@ -39,7 +40,7 @@ import {
  * There is no send tool. The furthest a message gets is a draft in Approvals.
  */
 
-const ROLES = ["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor", "agent"] as const;
+const ROLES = CONTACT_ROLES_ALL;
 const PROPERTY_TYPES = ["house", "unit", "townhouse", "land", "acreage", "commercial"] as const;
 const uuid = () => z.string().uuid();
 

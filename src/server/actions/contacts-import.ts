@@ -16,6 +16,7 @@ import {
 } from "@/db/schema";
 import { enqueue } from "@/server/jobs/queues";
 import { defineAction, toE164, normaliseEmail } from "./action";
+import { CONTACT_ROLES as CONTACT_ROLES_ALL } from "@/lib/roles";
 
 /**
  * Contact import from a file (owner's request, 2026-11-04).
@@ -113,16 +114,7 @@ async function looseAreas(tx: Tx, text: string, cache: Map<string, string[]>) {
   return { suburbIds, postcodes, unknown };
 }
 
-const ROLES = [
-  "buyer",
-  "vendor",
-  "landlord",
-  "tenant",
-  "referrer",
-  "investor",
-  "business_vendor",
-  "agent",
-] as const;
+const ROLES = CONTACT_ROLES_ALL;
 
 /** Tags that name a role ("Buyer", "Seller", "Renter") also set that role (2026-11-04). */
 const ROLE_WORDS: Record<string, (typeof ROLES)[number]> = {
@@ -133,7 +125,8 @@ const ROLE_WORDS: Record<string, (typeof ROLES)[number]> = {
   referrer: "referrer", referral: "referrer",
   investor: "investor", investors: "investor",
   "business vendor": "business_vendor", "business seller": "business_vendor",
-  agent: "agent",
+  agent: "agent", "estate agent": "agent", "real estate agent": "agent",
+  developer: "developer", developers: "developer", "property developer": "developer",
 };
 const rolesFromTags = (tags: string[]) =>
   [...new Set(tags.map((t) => ROLE_WORDS[t.trim().toLowerCase()]).filter(Boolean))];
