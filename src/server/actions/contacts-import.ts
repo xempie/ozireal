@@ -2,8 +2,19 @@
 
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
-import { and, inArray, isNull, or } from "drizzle-orm";
-import { contacts, contactRoles, consents, interactions, mergeReviews } from "@/db/schema";
+import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
+import type { Tx } from "@/db";
+import {
+  contacts,
+  contactRoles,
+  consents,
+  interactions,
+  mergeReviews,
+  contactPreferences,
+  contactPreferenceSuburbs,
+  suburbs,
+} from "@/db/schema";
+import { enqueue } from "@/server/jobs/queues";
 import { defineAction, toE164, normaliseEmail } from "./action";
 
 /**
@@ -33,7 +44,66 @@ const row = z.object({
   tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   suburb: z.string().trim().max(120).default(""),
   note: z.string().trim().max(2000).default(""),
+  address: z.string().trim().max(300).default(""),
 });
+
+/** "12 Smith St, Norwood SA 5067" -> { suburb: "Norwood", postcode: "5067" }. */
+function tailSuburb(address: string): { suburb: string | null; postcode: string | null } {
+  let postcode: string | null = null;
+  // From the end: "SA 5034" alone gives the postcode, and the part before it the suburb.
+  for (const part of address.split(",").reverse()) {
+    const m = /^(.*?)\s*(?:\b(?:SA|NSW|VIC|QLD|WA|TAS|NT|ACT)\b)?\s*(\d{4})?$/i.exec(part.trim());
+    postcode ??= m?.[2] ?? null;
+    const name = m?.[1]?.trim() ?? "";
+    if (name) return { suburb: /\d/.test(name) ? null : name, postcode };
+  }
+  return { suburb: null, postcode };
+}
+
+/**
+ * Where someone wants to buy or rent, from free text: "Norwood, Kensington 5068",
+ * "5067 / Prospect", or a full street address. Never refuses (an import has no one to
+ * ask): what the suburb list does not know is returned so it can be kept as a note.
+ */
+async function looseAreas(tx: Tx, text: string, cache: Map<string, string[]>) {
+  const suburbIds: string[] = [];
+  const postcodes: string[] = [];
+  const unknown: string[] = [];
+  for (const raw of text.split(/[;,/|]|\band\b/i)) {
+    const t = raw.replace(/\s+/g, " ").trim();
+    if (!t) continue;
+    if (/^\d{4}$/.test(t)) {
+      postcodes.push(t);
+      continue;
+    }
+    const m = /^(.+?)\s+(?:(?:SA|NSW|VIC|QLD|WA|TAS|NT|ACT)\s*)?(\d{4})$/i.exec(t);
+    const name = (m ? m[1] : t).replace(/\b(SA|NSW|VIC|QLD|WA|TAS|NT|ACT)$/i, "").trim();
+    const pc = m ? m[2] : null;
+    if (/\d/.test(name)) {
+      // A street line ("12 Smith St"): its suburb is the next part of the text.
+      if (pc) postcodes.push(pc);
+      continue;
+    }
+    const key = `${name.toLowerCase()}|${pc ?? ""}`;
+    let ids = cache.get(key);
+    if (!ids) {
+      const found = await tx
+        .select({ id: suburbs.id })
+        .from(suburbs)
+        .where(
+          pc
+            ? sql`lower(${suburbs.name}) = lower(${name}) and ${suburbs.postcode} = ${pc}`
+            : sql`lower(${suburbs.name}) = lower(${name})`,
+        );
+      ids = found.map((f) => f.id);
+      cache.set(key, ids);
+    }
+    if (ids.length) suburbIds.push(...ids);
+    else if (pc) postcodes.push(pc);
+    else unknown.push(t);
+  }
+  return { suburbIds, postcodes, unknown };
+}
 
 const ROLES = [
   "buyer",
@@ -55,6 +125,8 @@ export const importContacts = defineAction({
     /** Indexes into `rows` to save; ignored on the preview press. */
     keep: z.array(z.number().int().min(0)).default([]),
     commit: z.boolean(),
+    /** What the address column means for this file: home, or where they want to buy/rent. */
+    addressMeans: z.enum(["lives", "looking"]).default("lives"),
     role: z.enum(ROLES).nullable(),
     source: z.string().trim().min(2, "Say where this list came from").max(120),
     consent: z
@@ -82,6 +154,7 @@ export const importContacts = defineAction({
               email: contacts.emailNormalised,
               phone: contacts.phoneE164,
               suburb: contacts.suburb,
+              address: contacts.addressLine,
               phone2: contacts.secondaryPhone,
               tags: contacts.tags,
               firstName: contacts.firstName,
@@ -121,6 +194,8 @@ export const importContacts = defineAction({
           !hit.phone && r.phoneE ? "phone" : null,
           !hit.email && r.emailN ? "email" : null,
           !hit.suburb && r.suburb ? "suburb" : null,
+          r.address && input.addressMeans === "lives" && !hit.address ? "address" : null,
+          r.address && input.addressMeans === "looking" ? "search area" : null,
           !hit.phone2 && r.phone2 ? "second number" : null,
           r.tags.some((t) => !hit.tags.includes(t)) ? "tags" : null,
         ].filter(Boolean);
@@ -137,6 +212,8 @@ export const importContacts = defineAction({
     const keep = new Set(input.keep);
     const now = new Date();
     const counts = { created: 0, updated: 0, merges: 0 };
+    const areaCache = new Map<string, string[]>();
+    const reembed: string[] = [];
 
     for (let i = 0; i < rows.length; i++) {
       const r = rows[i];
@@ -144,6 +221,8 @@ export const importContacts = defineAction({
       if (!keep.has(i) || st === "skip") continue;
 
       let contactId: string;
+      const home = input.addressMeans === "lives" && r.address ? r.address : null;
+      const homeSuburb = home && !r.suburb ? tailSuburb(home).suburb : null;
       if (st === "new") {
         const [c] = await ctx.tx
           .insert(contacts)
@@ -155,7 +234,8 @@ export const importContacts = defineAction({
             emailNormalised: r.emailN,
             phoneRaw: r.phone || null,
             phoneE164: r.phoneE,
-            suburb: r.suburb || null,
+            suburb: r.suburb || homeSuburb || null,
+            addressLine: home,
             secondaryPhone: r.phone2 || null,
             tags: r.tags,
             sourceChannel: "manual",
@@ -182,7 +262,8 @@ export const importContacts = defineAction({
           const fill: Partial<typeof contacts.$inferInsert> = {};
           if (!hit.phone && r.phoneE) Object.assign(fill, { phoneRaw: r.phone, phoneE164: r.phoneE });
           if (!hit.email && r.emailN) Object.assign(fill, { emailRaw: r.email, emailNormalised: r.emailN });
-          if (!hit.suburb && r.suburb) fill.suburb = r.suburb;
+          if (!hit.suburb && (r.suburb || homeSuburb)) fill.suburb = r.suburb || homeSuburb;
+          if (!hit.address && home) fill.addressLine = home;
           if (!hit.phone2 && r.phone2) fill.secondaryPhone = r.phone2;
           // Tags add up; an import never removes one.
           const tags = [...new Set([...hit.tags, ...r.tags])];
@@ -192,6 +273,37 @@ export const importContacts = defineAction({
           }
           counts.updated++;
         }
+      }
+
+      if (input.addressMeans === "looking" && r.address) {
+        const a = await looseAreas(ctx.tx, r.address, areaCache);
+        let [prefs] = await ctx.tx
+          .select({ id: contactPreferences.id, postcodes: contactPreferences.postcodes, soft: contactPreferences.softRequirements })
+          .from(contactPreferences)
+          .where(eq(contactPreferences.contactId, contactId))
+          .limit(1);
+        if (!prefs) {
+          [prefs] = await ctx.tx
+            .insert(contactPreferences)
+            .values({ tenantId: ctx.tenantId, contactId })
+            .returning({ id: contactPreferences.id, postcodes: contactPreferences.postcodes, soft: contactPreferences.softRequirements });
+        }
+        for (const id of new Set(a.suburbIds)) {
+          await ctx.tx.insert(contactPreferenceSuburbs).values({ preferenceId: prefs.id, suburbId: id }).onConflictDoNothing();
+        }
+        const pcs = [...new Set([...(prefs.postcodes ?? []), ...a.postcodes])].sort();
+        // Unrecognised text is kept where the similarity search still reads it.
+        const note = a.unknown.length ? `Looking in: ${a.unknown.join(", ")}` : null;
+        await ctx.tx
+          .update(contactPreferences)
+          .set({
+            postcodes: pcs.length ? pcs : null,
+            ...(note && !(prefs.soft ?? "").includes(note)
+              ? { softRequirements: [prefs.soft, note].filter(Boolean).join("\n").slice(0, 1000) }
+              : {}),
+          })
+          .where(eq(contactPreferences.id, prefs.id));
+        reembed.push(contactId);
       }
 
       if (input.role) {
@@ -231,6 +343,11 @@ export const importContacts = defineAction({
         }
       }
     }
+
+    // The matcher reads an embedding of preferences; refresh the ones this import touched.
+    ctx.afterCommit(async () => {
+      for (const id of reembed) await enqueue("EmbedContactPreferences", { tenantId: ctx.tenantId, entityId: id });
+    });
 
     await ctx.audit({
       kind: "edit",

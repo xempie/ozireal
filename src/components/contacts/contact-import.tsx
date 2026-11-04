@@ -32,6 +32,7 @@ type Field =
   | "phone"
   | "phone2"
   | "suburb"
+  | "address"
   | "tags"
   | "note"
   | "skip";
@@ -43,6 +44,7 @@ const FIELDS: { value: Field; label: string }[] = [
   { value: "phone", label: "Mobile (main number)" },
   { value: "phone2", label: "Second number" },
   { value: "suburb", label: "Suburb" },
+  { value: "address", label: "Address" },
   { value: "tags", label: "Tags" },
   { value: "note", label: "Note on their history" },
   { value: "skip", label: "Don't import" },
@@ -63,6 +65,7 @@ function guess(h: string): Field {
   if (/^(last|surname|family|lastname|familyname|lname)/.test(s)) return "lastName";
   if (/^(name|fullname|contactname|displayname)$/.test(s)) return "fullName";
   if (s.includes("email") || s.includes("mail")) return "email";
+  if (/(address|street|location|area|lookingin|preferred)/.test(s)) return "address";
   if (/(suburb|city|town|locality)/.test(s)) return "suburb";
   if (/(note|comment|message)/.test(s)) return "note";
   return "skip";
@@ -166,6 +169,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   const [table, setTable] = React.useState<string[][]>([]);
   const [map, setMap] = React.useState<Field[]>([]);
   const [role, setRole] = React.useState("");
+  const [addressMeans, setAddressMeans] = React.useState<"lives" | "looking">("lives");
   const [source, setSource] = React.useState("");
   const [consentOn, setConsentOn] = React.useState(true);
   const [cEmail, setCEmail] = React.useState(true);
@@ -188,6 +192,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           phone: "",
           phone2: "",
           suburb: "",
+          address: "",
           note: "",
           tags: [] as string[],
         };
@@ -262,6 +267,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
     keep: [...keep],
     commit,
     role: role || null,
+    addressMeans,
     source,
     consent: consentOn ? { email: cEmail, sms: cSms, wording } : null,
   });
@@ -332,6 +338,42 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                 <Input label="Where this list came from" name="source" value={source} onChange={(e) => setSource(e.target.value)} errors={fe.source} />
               </div>
 
+              {map.includes("address") && (
+                <fieldset className="rounded-lg border p-3 space-y-2">
+                  <legend className="px-1 text-[13px] font-medium">The address column is</legend>
+                  <label className="flex items-start gap-2 text-[13px]">
+                    <input
+                      type="radio"
+                      name="addressMeans"
+                      checked={addressMeans === "lives"}
+                      onChange={() => {
+                        setAddressMeans("lives");
+                        setPreview(null);
+                      }}
+                    />
+                    <span>
+                      <strong>Where they live.</strong> Saved as their own address, and the suburb
+                      is taken from it when the suburb column is empty.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-[13px]">
+                    <input
+                      type="radio"
+                      name="addressMeans"
+                      checked={addressMeans === "looking"}
+                      onChange={() => {
+                        setAddressMeans("looking");
+                        setPreview(null);
+                      }}
+                    />
+                    <span>
+                      <strong>Where they want to buy or rent.</strong> Suburbs and postcodes go into what
+                      they&rsquo;re looking for, so they show up in property matching.
+                    </span>
+                  </label>
+                </fieldset>
+              )}
+
               <div className="rounded-lg border p-3 space-y-2">
                 <label className="flex items-center gap-2 text-[13px] font-medium">
                   <input type="checkbox" checked={consentOn} onChange={(e) => setConsentOn(e.target.checked)} />
@@ -379,6 +421,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                           <th className="p-2">Second number</th>
                           <th className="p-2">Tags</th>
                           <th className="p-2">Suburb</th>
+                          <th className="p-2">{addressMeans === "lives" ? "Address" : "Looking in"}</th>
                           <th className="p-2">What happens</th>
                         </tr>
                       </thead>
@@ -409,6 +452,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                               <td className="p-2">{r.phone2 || "—"}</td>
                               <td className="p-2">{r.tags.join(", ") || "—"}</td>
                               <td className="p-2">{r.suburb || "—"}</td>
+                              <td className="p-2">{r.address || "—"}</td>
                               <td className={`p-2 font-medium ${STATUS_STYLE[p.status]}`}>{p.detail}</td>
                             </tr>
                           );
