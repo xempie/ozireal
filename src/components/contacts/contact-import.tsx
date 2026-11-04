@@ -72,7 +72,7 @@ function guess(h: string): Field {
   if (s.includes("email") || s.includes("mail")) return "email";
   if (/(address|street|location|area|lookingin|preferred)/.test(s)) return "address";
   if (/(suburb|city|town|locality)/.test(s)) return "suburb";
-  if (/(note|comment|message)/.test(s)) return "note";
+  if (/(note|comment|message|organi[sz]ation|company|business|position|jobtitle)/.test(s)) return "note";
   return "skip";
 }
 
@@ -235,11 +235,17 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           } else if (f === "created") {
             r.createdAt ||= toIsoDate(v);
           } else if (f === "tags") {
-            for (const t of v.split(/[,;|]/)) {
-              const x = t.trim().slice(0, 60);
-              if (x && !r.tags.includes(x)) r.tags.push(x);
+            // Google Contacts writes "* myContacts ::: Estate Agent"; the ":::"-separated
+            // parts are the labels and "myContacts" is Google's own, not the person's.
+            for (const t of v.split(/:::|[,;|]/)) {
+              const x = t.replace(/^\*\s*/, "").trim().slice(0, 60);
+              if (x && !/^(my\s?contacts|starred)$/i.test(x) && !r.tags.includes(x)) r.tags.push(x);
             }
-          } else if (f === "note") r.note = r.note ? `${r.note}\n${v}` : v;
+          } else if (f === "note") {
+            // A column that is not itself "Notes" keeps its heading: "Organization Name: RAYWHITE".
+            const line = /^notes?$/i.test((headers[i] ?? "").trim()) ? v : `${headers[i]}: ${v}`;
+            r.note = r.note ? `${r.note}\n${line}` : line;
+          }
           else r[f] ||= v;
         });
         return r;

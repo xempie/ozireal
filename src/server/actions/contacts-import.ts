@@ -192,7 +192,12 @@ export const importContacts = defineAction({
     // Within the file too: the second row for the same person updates the first.
     const seen = new Set<string>();
     const preview: ImportPreviewRow[] = rows.map((r) => {
-      if (!r.emailN && !r.phoneE) return { status: "skip", detail: "No email or phone" };
+      if (!r.emailN && !r.phoneE) {
+        // "9.71504E+11": Excel turned the number into scientific notation and dropped digits.
+        if (/\d[.,]\d+E\+\d+/i.test(r.phone))
+          return { status: "skip", detail: `Phone damaged by Excel (${r.phone}); re-export without opening in Excel` };
+        return { status: "skip", detail: r.phone ? `Phone not recognised (${r.phone}) and no email` : "No email or phone" };
+      }
       if (!r.firstName && !r.lastName && !r.emailN) return { status: "skip", detail: "No name or email" };
       const key = r.emailN ?? r.phoneE!;
       if (seen.has(key)) return { status: "skip", detail: "Repeated in this file" };

@@ -44,6 +44,11 @@ export function toE164(raw: string | null | undefined): string | null {
     return digits.length === 11 ? `+${digits}` : null;
   }
 
+  // An Australian mobile whose trunk zero a spreadsheet dropped ('412345678'). Unlike a
+  // landline it carries no area code, so nothing is guessed: 04 + 8 digits is a mobile
+  // anywhere in Australia (2026-11-04: Google/Excel exports lost 17 of 76 rows to this).
+  if (/^4\d{8}$/.test(digits)) return `+61${digits}`;
+
   // Anything else — an 8-digit local number, a short code — needs a guess we refuse
   // to make. (The pre-B3 version prefixed +61 here and fabricated keys.)
   return null;
