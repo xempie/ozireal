@@ -267,11 +267,25 @@ export default async function ContactDetail({
                 <Phone size={13} className="text-3 shrink-0" />
                 <span className="tabular">{c.phone ?? "No phone on file"}</span>
               </div>
+              {c.secondaryPhone && (
+                <div className="flex items-center gap-2">
+                  <Phone size={13} className="text-3 shrink-0" />
+                  <span className="tabular">{c.secondaryPhone}</span>
+                  <span className="text-3 text-[11.5px]">second number</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <MapPin size={13} className="text-3 shrink-0" />
                 <span>{c.suburb ?? "No suburb on file"}</span>
               </div>
             </div>
+            {c.tags.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1">
+                {c.tags.map((t) => (
+                  <Badge key={t}>{t}</Badge>
+                ))}
+              </div>
+            )}
             {c.doNotContact && (
               <div className="mt-3">
                 <Callout tone="blocked" title="Do not contact">

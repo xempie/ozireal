@@ -24,14 +24,26 @@ import { importContacts, type ImportPreviewRow } from "@/server/actions/contacts
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
-type Field = "firstName" | "lastName" | "fullName" | "email" | "phone" | "suburb" | "note" | "skip";
+type Field =
+  | "firstName"
+  | "lastName"
+  | "fullName"
+  | "email"
+  | "phone"
+  | "phone2"
+  | "suburb"
+  | "tags"
+  | "note"
+  | "skip";
 const FIELDS: { value: Field; label: string }[] = [
   { value: "firstName", label: "First name" },
   { value: "lastName", label: "Last name" },
   { value: "fullName", label: "Full name" },
   { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
+  { value: "phone", label: "Mobile (main number)" },
+  { value: "phone2", label: "Second number" },
   { value: "suburb", label: "Suburb" },
+  { value: "tags", label: "Tags" },
   { value: "note", label: "Note on their history" },
   { value: "skip", label: "Don't import" },
 ];
@@ -43,12 +55,14 @@ const FIELDS: { value: Field; label: string }[] = [
  */
 function guess(h: string): Field {
   const s = h.toLowerCase().replace(/[^a-z]/g, "");
+  if (/^(tags?|labels?|groups?|categor(y|ies)|segments?)$/.test(s)) return "tags";
   if (/(status|subscri|consent|optin|optout|label|type|verified|date|count)/.test(s)) return "skip";
+  if (/(mobile|cell)/.test(s)) return "phone";
+  if (/(phone|tel|landline)/.test(s)) return "phone2";
   if (/^(first|given|firstname|givenname|fname)/.test(s)) return "firstName";
   if (/^(last|surname|family|lastname|familyname|lname)/.test(s)) return "lastName";
   if (/^(name|fullname|contactname|displayname)$/.test(s)) return "fullName";
   if (s.includes("email") || s.includes("mail")) return "email";
-  if (/(phone|mobile|cell|tel)/.test(s)) return "phone";
   if (/(suburb|city|town|locality)/.test(s)) return "suburb";
   if (/(note|comment|message)/.test(s)) return "note";
   return "skip";
@@ -167,7 +181,16 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
   const rows = React.useMemo(
     () =>
       body.map((cells) => {
-        const r = { firstName: "", lastName: "", email: "", phone: "", suburb: "", note: "" };
+        const r = {
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          phone2: "",
+          suburb: "",
+          note: "",
+          tags: [] as string[],
+        };
         map.forEach((f, i) => {
           const v = (cells[i] ?? "").trim();
           if (!v || f === "skip") return;
@@ -175,6 +198,11 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             const parts = v.split(/\s+/);
             r.firstName ||= parts[0] ?? "";
             r.lastName ||= parts.slice(1).join(" ");
+          } else if (f === "tags") {
+            for (const t of v.split(/[,;|]/)) {
+              const x = t.trim().slice(0, 60);
+              if (x && !r.tags.includes(x)) r.tags.push(x);
+            }
           } else if (f === "note") r.note = r.note ? `${r.note}\n${v}` : v;
           else r[f] ||= v;
         });
@@ -211,10 +239,13 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
       setTable(t);
       // One column per field: a second "Email 2" or "Phone 2" is left for the person to choose.
       const used = new Set<Field>();
+      const guesses = t[0].map(guess);
+      // No mobile column: the first other phone becomes the main number.
+      const firstPhone2 = guesses.indexOf("phone2");
+      if (!guesses.includes("phone") && firstPhone2 >= 0) guesses[firstPhone2] = "phone";
       setMap(
-        t[0].map((h) => {
-          const g = guess(h);
-          if (g === "skip" || g === "note") return g;
+        guesses.map((g) => {
+          if (g === "skip" || g === "note" || g === "tags") return g;
           if (used.has(g)) return "skip";
           used.add(g);
           return g;
@@ -344,7 +375,9 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                           <th className="p-2 w-8"></th>
                           <th className="p-2">Name</th>
                           <th className="p-2">Email</th>
-                          <th className="p-2">Phone</th>
+                          <th className="p-2">Mobile</th>
+                          <th className="p-2">Second number</th>
+                          <th className="p-2">Tags</th>
                           <th className="p-2">Suburb</th>
                           <th className="p-2">What happens</th>
                         </tr>
@@ -373,6 +406,8 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                               <td className="p-2 font-medium">{`${r.firstName} ${r.lastName}`.trim() || "—"}</td>
                               <td className="p-2">{r.email || "—"}</td>
                               <td className="p-2">{r.phone || "—"}</td>
+                              <td className="p-2">{r.phone2 || "—"}</td>
+                              <td className="p-2">{r.tags.join(", ") || "—"}</td>
                               <td className="p-2">{r.suburb || "—"}</td>
                               <td className={`p-2 font-medium ${STATUS_STYLE[p.status]}`}>{p.detail}</td>
                             </tr>

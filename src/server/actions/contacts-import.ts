@@ -28,6 +28,9 @@ const row = z.object({
   lastName: z.string().trim().max(200).default(""),
   email: z.string().trim().max(320).default(""),
   phone: z.string().trim().max(40).default(""),
+  /** A second number (the landline beside a mobile). Stored for calling only. */
+  phone2: z.string().trim().max(40).default(""),
+  tags: z.array(z.string().trim().min(1).max(60)).max(30).default([]),
   suburb: z.string().trim().max(120).default(""),
   note: z.string().trim().max(2000).default(""),
 });
@@ -79,6 +82,8 @@ export const importContacts = defineAction({
               email: contacts.emailNormalised,
               phone: contacts.phoneE164,
               suburb: contacts.suburb,
+              phone2: contacts.secondaryPhone,
+              tags: contacts.tags,
               firstName: contacts.firstName,
               lastName: contacts.lastName,
             })
@@ -116,6 +121,8 @@ export const importContacts = defineAction({
           !hit.phone && r.phoneE ? "phone" : null,
           !hit.email && r.emailN ? "email" : null,
           !hit.suburb && r.suburb ? "suburb" : null,
+          !hit.phone2 && r.phone2 ? "second number" : null,
+          r.tags.some((t) => !hit.tags.includes(t)) ? "tags" : null,
         ].filter(Boolean);
         return {
           status: "update",
@@ -149,6 +156,8 @@ export const importContacts = defineAction({
             phoneRaw: r.phone || null,
             phoneE164: r.phoneE,
             suburb: r.suburb || null,
+            secondaryPhone: r.phone2 || null,
+            tags: r.tags,
             sourceChannel: "manual",
             ownerUserId: ctx.userId,
           })
@@ -174,6 +183,10 @@ export const importContacts = defineAction({
           if (!hit.phone && r.phoneE) Object.assign(fill, { phoneRaw: r.phone, phoneE164: r.phoneE });
           if (!hit.email && r.emailN) Object.assign(fill, { emailRaw: r.email, emailNormalised: r.emailN });
           if (!hit.suburb && r.suburb) fill.suburb = r.suburb;
+          if (!hit.phone2 && r.phone2) fill.secondaryPhone = r.phone2;
+          // Tags add up; an import never removes one.
+          const tags = [...new Set([...hit.tags, ...r.tags])];
+          if (tags.length !== hit.tags.length) fill.tags = tags;
           if (Object.keys(fill).length) {
             await ctx.tx.update(contacts).set({ ...fill, updatedAt: now }).where(inArray(contacts.id, [hit.id]));
           }

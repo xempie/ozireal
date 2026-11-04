@@ -85,6 +85,10 @@ export const contacts = pgTable(
     phoneRaw: text("phone_raw"),
 
     secondaryEmail: text("secondary_email"),
+    /** A second number for calling (often the landline beside a mobile). Not used for SMS or matching. */
+    secondaryPhone: text("secondary_phone"),
+    /** Free-form labels, e.g. from an imported list (0020). */
+    tags: text("tags").array().notNull().default(sql`'{}'::text[]`),
     addressLine: text("address_line"),
     suburb: text("suburb"),
 
