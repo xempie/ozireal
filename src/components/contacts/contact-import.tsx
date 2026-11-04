@@ -36,9 +36,14 @@ const FIELDS: { value: Field; label: string }[] = [
   { value: "skip", label: "Don't import" },
 ];
 
-/** Guess a column from its heading. */
+/**
+ * Guess a column from its heading. Status, label and type columns are never data: a Wix
+ * export puts "Email subscriber status" beside "Email 1", and reading the status as the
+ * address skipped every row (2026-11-04).
+ */
 function guess(h: string): Field {
   const s = h.toLowerCase().replace(/[^a-z]/g, "");
+  if (/(status|subscri|consent|optin|optout|label|type|verified|date|count)/.test(s)) return "skip";
   if (/^(first|given|firstname|givenname|fname)/.test(s)) return "firstName";
   if (/^(last|surname|family|lastname|familyname|lname)/.test(s)) return "lastName";
   if (/^(name|fullname|contactname|displayname)$/.test(s)) return "fullName";
@@ -171,7 +176,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
             r.firstName ||= parts[0] ?? "";
             r.lastName ||= parts.slice(1).join(" ");
           } else if (f === "note") r.note = r.note ? `${r.note}\n${v}` : v;
-          else r[f] = v;
+          else r[f] ||= v;
         });
         return r;
       }),
@@ -204,7 +209,17 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
       if (t.length < 2) throw new Error("No rows found under the heading row.");
       setFileName(file.name);
       setTable(t);
-      setMap(t[0].map(guess));
+      // One column per field: a second "Email 2" or "Phone 2" is left for the person to choose.
+      const used = new Set<Field>();
+      setMap(
+        t[0].map((h) => {
+          const g = guess(h);
+          if (g === "skip" || g === "note") return g;
+          if (used.has(g)) return "skip";
+          used.add(g);
+          return g;
+        }),
+      );
       setSource((s) => s || file.name.replace(/\.[^.]+$/, ""));
     } catch (e) {
       setReadError(e instanceof Error ? e.message : "The file could not be read.");
@@ -324,7 +339,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                   </div>
                   <div className="max-h-[340px] overflow-auto rounded-lg border">
                     <table className="w-full text-[12.5px]">
-                      <thead className="surface-1 sticky top-0">
+                      <thead className="surface-2 sticky top-0 z-10 shadow-[0_1px_0_var(--border,#e5e7eb)]">
                         <tr className="text-left text-2">
                           <th className="p-2 w-8"></th>
                           <th className="p-2">Name</th>
