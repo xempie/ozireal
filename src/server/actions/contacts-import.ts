@@ -47,6 +47,12 @@ const row = z.object({
   address: z.string().trim().max(300).default(""),
   /** Decided per row in the dialog (src/lib/address-kind.ts): home, or where they want to buy or rent. */
   addressKind: z.enum(["lives", "looking"]).default("lives"),
+  /**
+   * When the person was first added, from the file's own date column (ISO). Without it
+   * every imported contact is "added" at import time, in file order, which turned the
+   * newest/oldest sort upside down for a newest-first export (2026-11-04).
+   */
+  createdAt: z.string().datetime({ offset: true }).nullable().default(null),
 });
 
 /** "12 Smith St, Norwood SA 5067" -> { suburb: "Norwood", postcode: "5067" }. */
@@ -169,6 +175,7 @@ export const importContacts = defineAction({
               phone: contacts.phoneE164,
               suburb: contacts.suburb,
               address: contacts.addressLine,
+              createdAt: contacts.createdAt,
               phone2: contacts.secondaryPhone,
               tags: contacts.tags,
               firstName: contacts.firstName,
@@ -212,6 +219,7 @@ export const importContacts = defineAction({
           r.address && r.addressKind === "looking" ? "search area" : null,
           !hit.phone2 && r.phone2 ? "second number" : null,
           r.tags.some((t) => !hit.tags.includes(t)) ? "tags" : null,
+          r.createdAt && new Date(r.createdAt) < hit.createdAt ? "date added" : null,
         ].filter(Boolean);
         return {
           status: "update",
@@ -250,6 +258,7 @@ export const importContacts = defineAction({
             phoneE164: r.phoneE,
             suburb: r.suburb || homeSuburb || null,
             addressLine: home,
+            ...(r.createdAt ? { createdAt: new Date(r.createdAt) } : {}),
             secondaryPhone: r.phone2 || null,
             tags: r.tags,
             sourceChannel: "manual",
@@ -278,6 +287,8 @@ export const importContacts = defineAction({
           if (!hit.email && r.emailN) Object.assign(fill, { emailRaw: r.email, emailNormalised: r.emailN });
           if (!hit.suburb && (r.suburb || homeSuburb)) fill.suburb = r.suburb || homeSuburb;
           if (!hit.address && home) fill.addressLine = home;
+          // The earliest known date wins, so re-importing a file corrects an import-time date.
+          if (r.createdAt && new Date(r.createdAt) < hit.createdAt) fill.createdAt = new Date(r.createdAt);
           if (!hit.phone2 && r.phone2) fill.secondaryPhone = r.phone2;
           // Tags add up; an import never removes one.
           const tags = [...new Set([...hit.tags, ...r.tags])];

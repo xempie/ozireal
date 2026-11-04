@@ -35,6 +35,7 @@ type Field =
   | "suburb"
   | "address"
   | "tags"
+  | "created"
   | "note"
   | "skip";
 const FIELDS: { value: Field; label: string }[] = [
@@ -47,6 +48,7 @@ const FIELDS: { value: Field; label: string }[] = [
   { value: "suburb", label: "Suburb" },
   { value: "address", label: "Address" },
   { value: "tags", label: "Tags" },
+  { value: "created", label: "Date added" },
   { value: "note", label: "Note on their history" },
   { value: "skip", label: "Don't import" },
 ];
@@ -59,6 +61,7 @@ const FIELDS: { value: Field; label: string }[] = [
 function guess(h: string): Field {
   const s = h.toLowerCase().replace(/[^a-z]/g, "");
   if (/^(tags?|labels?|groups?|categor(y|ies)|segments?)$/.test(s)) return "tags";
+  if (/^(created|createdat|createdon|datecreated|dateadded|added|addedon|signedup|signupdate|joined|datejoined)/.test(s)) return "created";
   if (/(status|subscri|consent|optin|optout|label|type|verified|date|count)/.test(s)) return "skip";
   if (/(mobile|cell)/.test(s)) return "phone";
   if (/(phone|tel|landline)/.test(s)) return "phone2";
@@ -70,6 +73,26 @@ function guess(h: string): Field {
   if (/(suburb|city|town|locality)/.test(s)) return "suburb";
   if (/(note|comment|message)/.test(s)) return "note";
   return "skip";
+}
+
+/**
+ * A file's date cell to ISO, or null. Australian order for slashes (12/05/2024 is
+ * 12 May); ISO and "2024-05-12 10:22" as written; anything unreadable is left out
+ * rather than guessed.
+ */
+function toIsoDate(v: string): string | null {
+  const t = v.trim();
+  if (!t) return null;
+  const au = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?/.exec(t);
+  let d: Date;
+  if (au) {
+    const y = au[3].length === 2 ? 2000 + Number(au[3]) : Number(au[3]);
+    d = new Date(y, Number(au[2]) - 1, Number(au[1]), Number(au[4] ?? 0), Number(au[5] ?? 0), Number(au[6] ?? 0));
+  } else {
+    d = new Date(/^\d{4}-\d{2}-\d{2} \d/.test(t) ? t.replace(" ", "T") : t);
+  }
+  if (Number.isNaN(d.getTime()) || d.getFullYear() < 1990 || d > new Date()) return null;
+  return d.toISOString();
 }
 
 /** RFC 4180 CSV (quotes, doubled quotes, newlines in quotes); tab-separated when tabs win. */
@@ -124,7 +147,7 @@ async function readTable(file: File): Promise<string[][]> {
   if (ext === "xlsx") {
     const { readSheet } = await import("read-excel-file/browser");
     const data = await readSheet(file);
-    return data.map((r) => r.map((c) => (c == null ? "" : c instanceof Date ? c.toISOString().slice(0, 10) : String(c))));
+    return data.map((r) => r.map((c) => (c == null ? "" : c instanceof Date ? c.toISOString() : String(c))));
   }
   const text = await file.text();
   if (ext === "vcf") return parseVcf(text);
@@ -195,6 +218,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
           suburb: "",
           address: "",
           addressKind: "lives" as AddressKind,
+          createdAt: null as string | null,
           note: "",
           tags: [] as string[],
         };
@@ -210,6 +234,8 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
               r.address = v;
               r.addressKind = addressMeans === "auto" ? detectAddressKind(headers[i] ?? "", v) : addressMeans;
             }
+          } else if (f === "created") {
+            r.createdAt ||= toIsoDate(v);
           } else if (f === "tags") {
             for (const t of v.split(/[,;|]/)) {
               const x = t.trim().slice(0, 60);
@@ -442,6 +468,7 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                           <th className="p-2">Mobile</th>
                           <th className="p-2">Second number</th>
                           <th className="p-2">Tags</th>
+                          <th className="p-2">Added</th>
                           <th className="p-2">Suburb</th>
                           <th className="p-2">Address</th>
                           <th className="p-2">What happens</th>
@@ -473,6 +500,9 @@ function ImportDialog({ onClose }: { onClose: () => void }) {
                               <td className="p-2">{r.phone || "—"}</td>
                               <td className="p-2">{r.phone2 || "—"}</td>
                               <td className="p-2">{r.tags.join(", ") || "—"}</td>
+                              <td className="p-2 whitespace-nowrap">
+                                {r.createdAt ? new Date(r.createdAt).toLocaleDateString("en-AU") : "—"}
+                              </td>
                               <td className="p-2">{r.suburb || "—"}</td>
                               <td className="p-2">
                                 {r.address ? (
