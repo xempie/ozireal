@@ -18,6 +18,7 @@ import { HBars } from "@/components/charts";
 import { relative, money } from "@/lib/utils";
 import { NewContactButton } from "@/components/forms/contact-forms";
 import { BulkSelection, SelectAllBox, RowBox } from "@/components/contacts/bulk-select";
+import { ImportContactsButton } from "@/components/contacts/contact-import";
 
 const roleTone = {
   buyer: "brand",
@@ -64,6 +65,7 @@ export default async function ContactsPage() {
               <Download size={13} />
               Export CSV
             </a>
+            <ImportContactsButton />
             <NewContactButton />
           </>
         }

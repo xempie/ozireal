@@ -122,6 +122,8 @@ export function SubmitButton({
   size = "md",
   className,
   disabled,
+  onClick,
+  type = "submit",
 }: {
   pending: boolean;
   children: React.ReactNode;
@@ -129,6 +131,9 @@ export function SubmitButton({
   size?: "sm" | "md";
   className?: string;
   disabled?: boolean;
+  /** For a button that runs an action itself rather than submitting a form. */
+  onClick?: () => void;
+  type?: "submit" | "button";
 }) {
   const variants = {
     primary: "bg-[var(--accent)] text-white border border-transparent hover:opacity-90",
@@ -138,7 +143,8 @@ export function SubmitButton({
   };
   return (
     <button
-      type="submit"
+      type={type}
+      onClick={onClick}
       disabled={pending || disabled}
       className={cn(
         "inline-flex items-center justify-center gap-1.5 rounded-md font-medium transition-colors disabled:opacity-60",

@@ -1,0 +1,386 @@
+"use client";
+
+import * as React from "react";
+import { Upload } from "lucide-react";
+import {
+  useAction,
+  Modal,
+  Select,
+  Input,
+  Textarea,
+  FormError,
+  SubmitButton,
+  CancelButton,
+} from "@/components/forms/action-form";
+import { importContacts, type ImportPreviewRow } from "@/server/actions/contacts-import";
+
+/**
+ * Import contacts from a CSV, Excel or vCard file (2026-11-04).
+ *
+ * The file is read here, in the browser: the server only ever sees mapped rows. Two
+ * presses, like the property import — Check shows what would happen, Import saves the
+ * ticked rows.
+ */
+
+const MAX_BYTES = 10 * 1024 * 1024;
+
+type Field = "firstName" | "lastName" | "fullName" | "email" | "phone" | "suburb" | "note" | "skip";
+const FIELDS: { value: Field; label: string }[] = [
+  { value: "firstName", label: "First name" },
+  { value: "lastName", label: "Last name" },
+  { value: "fullName", label: "Full name" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "suburb", label: "Suburb" },
+  { value: "note", label: "Note on their history" },
+  { value: "skip", label: "Don't import" },
+];
+
+/** Guess a column from its heading. */
+function guess(h: string): Field {
+  const s = h.toLowerCase().replace(/[^a-z]/g, "");
+  if (/^(first|given|firstname|givenname|fname)/.test(s)) return "firstName";
+  if (/^(last|surname|family|lastname|familyname|lname)/.test(s)) return "lastName";
+  if (/^(name|fullname|contactname|displayname)$/.test(s)) return "fullName";
+  if (s.includes("email") || s.includes("mail")) return "email";
+  if (/(phone|mobile|cell|tel)/.test(s)) return "phone";
+  if (/(suburb|city|town|locality)/.test(s)) return "suburb";
+  if (/(note|comment|message)/.test(s)) return "note";
+  return "skip";
+}
+
+/** RFC 4180 CSV (quotes, doubled quotes, newlines in quotes); tab-separated when tabs win. */
+function parseDelimited(text: string): string[][] {
+  const first = text.split(/\r?\n/, 1)[0] ?? "";
+  const sep = (first.match(/\t/g)?.length ?? 0) > (first.match(/,/g)?.length ?? 0) ? "\t" : ",";
+  const out: string[][] = [];
+  let row: string[] = [];
+  let cell = "";
+  let q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') q = false;
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && text[i + 1] === "\n") i++;
+      row.push(cell); out.push(row); row = []; cell = "";
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); out.push(row); }
+  return out.filter((r) => r.some((c) => c.trim()));
+}
+
+/** vCard (.vcf): one row per card, with fixed headings so the guesses land. */
+function parseVcf(text: string): string[][] {
+  const unfolded = text.replace(/\r?\n[ \t]/g, "");
+  const rows: string[][] = [["First name", "Last name", "Email", "Phone", "Suburb", "Note"]];
+  for (const card of unfolded.split(/BEGIN:VCARD/i).slice(1)) {
+    const get = (k: string) =>
+      card.match(new RegExp(`^${k}(?:;[^:]*)?:(.*)$`, "im"))?.[1]?.trim() ?? "";
+    const [last = "", first = ""] = get("N").split(";");
+    const fn = get("FN");
+    const adr = get("ADR").split(";");
+    rows.push([
+      first || fn.split(" ")[0] || "",
+      last || fn.split(" ").slice(1).join(" "),
+      get("EMAIL"),
+      get("TEL"),
+      adr[3] ?? "",
+      get("NOTE").replace(/\\n/g, "\n"),
+    ]);
+  }
+  return rows;
+}
+
+async function readTable(file: File): Promise<string[][]> {
+  const ext = file.name.toLowerCase().split(".").pop();
+  if (ext === "xlsx") {
+    const { readSheet } = await import("read-excel-file/browser");
+    const data = await readSheet(file);
+    return data.map((r) => r.map((c) => (c == null ? "" : c instanceof Date ? c.toISOString().slice(0, 10) : String(c))));
+  }
+  const text = await file.text();
+  if (ext === "vcf") return parseVcf(text);
+  if (ext === "csv" || ext === "tsv" || ext === "txt") return parseDelimited(text.replace(/^﻿/, ""));
+  throw new Error("Upload a .csv, .xlsx, .tsv or .vcf file. From Excel's older .xls, save as .xlsx or CSV first.");
+}
+
+const ROLE_OPTIONS = [
+  { value: "", label: "No role" },
+  ...["buyer", "vendor", "landlord", "tenant", "referrer", "investor", "business_vendor", "agent"].map((r) => ({
+    value: r,
+    label: r.replace("_", " "),
+  })),
+];
+
+const STATUS_STYLE: Record<ImportPreviewRow["status"], string> = {
+  new: "text-[#1B6B3F]",
+  update: "text-[#0034C8]",
+  duplicate: "text-[#8A4B00]",
+  skip: "text-[#A12A12]",
+};
+
+export function ImportContactsButton() {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1.5 text-[13px] px-3 min-h-9 rounded-md surface-2 border hover:surface-3"
+      >
+        <Upload size={13} />
+        Import
+      </button>
+      {open && <ImportDialog onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function ImportDialog({ onClose }: { onClose: () => void }) {
+  const [fileName, setFileName] = React.useState("");
+  const [readError, setReadError] = React.useState<string | null>(null);
+  const [table, setTable] = React.useState<string[][]>([]);
+  const [map, setMap] = React.useState<Field[]>([]);
+  const [role, setRole] = React.useState("");
+  const [source, setSource] = React.useState("");
+  const [consentOn, setConsentOn] = React.useState(true);
+  const [cEmail, setCEmail] = React.useState(true);
+  const [cSms, setCSms] = React.useState(true);
+  const [wording, setWording] = React.useState("");
+  const [preview, setPreview] = React.useState<ImportPreviewRow[] | null>(null);
+  const [keep, setKeep] = React.useState<Set<number>>(new Set());
+  const [done, setDone] = React.useState<string | null>(null);
+
+  const headers = table[0] ?? [];
+  const body = table.slice(1);
+
+  const rows = React.useMemo(
+    () =>
+      body.map((cells) => {
+        const r = { firstName: "", lastName: "", email: "", phone: "", suburb: "", note: "" };
+        map.forEach((f, i) => {
+          const v = (cells[i] ?? "").trim();
+          if (!v || f === "skip") return;
+          if (f === "fullName") {
+            const parts = v.split(/\s+/);
+            r.firstName ||= parts[0] ?? "";
+            r.lastName ||= parts.slice(1).join(" ");
+          } else if (f === "note") r.note = r.note ? `${r.note}\n${v}` : v;
+          else r[f] = v;
+        });
+        return r;
+      }),
+    [body, map],
+  );
+
+  const check = useAction(importContacts, {
+    refreshOnSuccess: false,
+    onSuccess: (d) => {
+      setPreview(d.preview);
+      setKeep(new Set(d.preview.flatMap((p, i) => (p.status === "skip" ? [] : [i]))));
+    },
+  });
+  const save = useAction(importContacts, {
+    onSuccess: (d) => {
+      const s = d.saved!;
+      setDone(
+        `Imported: ${s.created} new, ${s.updated} updated${s.merges ? `, ${s.merges} sent to merge review` : ""}.`,
+      );
+    },
+  });
+
+  async function onFile(file: File | undefined) {
+    setReadError(null);
+    setPreview(null);
+    if (!file) return;
+    if (file.size > MAX_BYTES) return setReadError("That file is over 10 MB.");
+    try {
+      const t = await readTable(file);
+      if (t.length < 2) throw new Error("No rows found under the heading row.");
+      setFileName(file.name);
+      setTable(t);
+      setMap(t[0].map(guess));
+      setSource((s) => s || file.name.replace(/\.[^.]+$/, ""));
+    } catch (e) {
+      setReadError(e instanceof Error ? e.message : "The file could not be read.");
+    }
+  }
+
+  const payload = (commit: boolean) => ({
+    rows,
+    keep: [...keep],
+    commit,
+    role: role || null,
+    source,
+    consent: consentOn ? { email: cEmail, sms: cSms, wording } : null,
+  });
+
+  const counts = preview?.reduce(
+    (a, p) => ({ ...a, [p.status]: (a[p.status] ?? 0) + 1 }),
+    {} as Record<string, number>,
+  );
+  const error = check.error ?? save.error;
+  const fe = { ...check.fieldErrors, ...save.fieldErrors };
+
+  return (
+    <Modal open onClose={onClose} title="Import contacts" wide>
+      {done ? (
+        <div className="space-y-3">
+          <p role="status" className="text-[14px] font-medium">{done}</p>
+          <div className="flex justify-end">
+            <SubmitButton pending={false} onClick={onClose} type="button">Close</SubmitButton>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <label className="flex flex-col gap-2 rounded-lg border border-dashed p-4 text-[13px] cursor-pointer surface-1">
+            <span className="font-medium">{fileName || "Choose a file"}</span>
+            <span className="text-2 text-[12.5px]">
+              CSV, Excel (.xlsx), tab-separated or vCard (.vcf), with one heading row. Google and
+              Outlook contact exports work as they are.
+            </span>
+            <input
+              type="file"
+              accept=".csv,.tsv,.txt,.xlsx,.vcf,text/csv,text/vcard"
+              onChange={(e) => onFile(e.target.files?.[0])}
+            />
+          </label>
+          <FormError message={readError} />
+
+          {headers.length > 0 && (
+            <>
+              <div>
+                <h3 className="text-[13px] font-semibold mb-2">
+                  Columns ({body.length} rows read)
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {headers.map((h, i) => (
+                    <Select
+                      key={i}
+                      label={h || `Column ${i + 1}`}
+                      name={`col-${i}`}
+                      value={map[i]}
+                      onChange={(e) => {
+                        const next = [...map];
+                        next[i] = e.target.value as Field;
+                        setMap(next);
+                        setPreview(null);
+                      }}
+                      options={FIELDS}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Select label="Give everyone the role" name="role" value={role} onChange={(e) => setRole(e.target.value)} options={ROLE_OPTIONS} />
+                <Input label="Where this list came from" name="source" value={source} onChange={(e) => setSource(e.target.value)} errors={fe.source} />
+              </div>
+
+              <div className="rounded-lg border p-3 space-y-2">
+                <label className="flex items-center gap-2 text-[13px] font-medium">
+                  <input type="checkbox" checked={consentOn} onChange={(e) => setConsentOn(e.target.checked)} />
+                  These contacts consented to marketing
+                </label>
+                {consentOn && (
+                  <>
+                    <div className="flex gap-4 text-[13px]">
+                      <label className="flex items-center gap-1.5">
+                        <input type="checkbox" checked={cEmail} onChange={(e) => setCEmail(e.target.checked)} /> Email
+                      </label>
+                      <label className="flex items-center gap-1.5">
+                        <input type="checkbox" checked={cSms} onChange={(e) => setCSms(e.target.checked)} /> SMS
+                      </label>
+                    </div>
+                    <Textarea
+                      label="The consent wording they agreed to (kept as the evidence for every send)"
+                      name="wording"
+                      rows={2}
+                      value={wording}
+                      onChange={(e) => setWording(e.target.value)}
+                      errors={fe["consent.wording"] ?? fe.wording}
+                    />
+                  </>
+                )}
+              </div>
+
+              {preview && counts && (
+                <>
+                  <div className="flex flex-wrap gap-2 text-[12.5px]">
+                    <span className="px-2.5 py-1 rounded-md bg-[#E8F6EE] text-[#1B6B3F]"><strong>{counts.new ?? 0}</strong> new</span>
+                    <span className="px-2.5 py-1 rounded-md bg-[#EEF3FF] text-[#0034C8]"><strong>{counts.update ?? 0}</strong> already in CRM</span>
+                    <span className="px-2.5 py-1 rounded-md bg-[#FFF4E5] text-[#8A4B00]"><strong>{counts.duplicate ?? 0}</strong> to merge review</span>
+                    <span className="px-2.5 py-1 rounded-md bg-[#FDECEA] text-[#A12A12]"><strong>{counts.skip ?? 0}</strong> skipped</span>
+                  </div>
+                  <div className="max-h-[340px] overflow-auto rounded-lg border">
+                    <table className="w-full text-[12.5px]">
+                      <thead className="surface-1 sticky top-0">
+                        <tr className="text-left text-2">
+                          <th className="p-2 w-8"></th>
+                          <th className="p-2">Name</th>
+                          <th className="p-2">Email</th>
+                          <th className="p-2">Phone</th>
+                          <th className="p-2">Suburb</th>
+                          <th className="p-2">What happens</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r, i) => {
+                          const p = preview[i];
+                          return (
+                            <tr key={i} className="border-t">
+                              <td className="p-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Import row ${i + 1}`}
+                                  disabled={p.status === "skip"}
+                                  checked={keep.has(i)}
+                                  onChange={() =>
+                                    setKeep((k) => {
+                                      const n = new Set(k);
+                                      if (n.has(i)) n.delete(i);
+                                      else n.add(i);
+                                      return n;
+                                    })
+                                  }
+                                />
+                              </td>
+                              <td className="p-2 font-medium">{`${r.firstName} ${r.lastName}`.trim() || "—"}</td>
+                              <td className="p-2">{r.email || "—"}</td>
+                              <td className="p-2">{r.phone || "—"}</td>
+                              <td className="p-2">{r.suburb || "—"}</td>
+                              <td className={`p-2 font-medium ${STATUS_STYLE[p.status]}`}>{p.detail}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              <FormError message={error} />
+              <div className="flex justify-end gap-2">
+                <CancelButton onClick={onClose} />
+                {preview ? (
+                  <SubmitButton pending={save.pending} disabled={!keep.size} onClick={() => save.run(payload(true))} type="button">
+                    Import {keep.size} contact{keep.size === 1 ? "" : "s"}
+                  </SubmitButton>
+                ) : (
+                  <SubmitButton pending={check.pending} onClick={() => check.run(payload(false))} type="button">
+                    Check the file
+                  </SubmitButton>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </Modal>
+  );
+}
