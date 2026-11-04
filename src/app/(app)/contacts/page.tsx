@@ -17,6 +17,7 @@ import { getContacts, getSavedViews, getContactsBySource } from "@/server/querie
 import { HBars } from "@/components/charts";
 import { relative, money } from "@/lib/utils";
 import { NewContactButton } from "@/components/forms/contact-forms";
+import { BulkSelection, SelectAllBox, RowBox } from "@/components/contacts/bulk-select";
 
 const roleTone = {
   buyer: "brand",
@@ -130,9 +131,16 @@ export default async function ContactsPage() {
         </Card>
       </div>
 
-      <Table minWidth={900}>
+      <BulkSelection
+        allIds={contacts.map((c) => c.id)}
+        names={Object.fromEntries(contacts.map((c) => [c.id, `${c.firstName} ${c.lastName}`.trim()]))}
+      >
+      <Table minWidth={940}>
         <THead>
           <TR>
+            <TH className="w-10">
+              <SelectAllBox />
+            </TH>
             <TH>Name</TH>
             <TH>Roles</TH>
             <TH>Intent</TH>
@@ -149,6 +157,9 @@ export default async function ContactsPage() {
             const identity = [c.suburb, c.phone].filter(Boolean).join(" · ");
             return (
               <TR key={c.id}>
+                <TD>
+                  <RowBox id={c.id} name={`${c.firstName} ${c.lastName}`} />
+                </TD>
                 <TD nowrap>
                   <Link
                     href={`/contacts/${c.id}`}
@@ -224,6 +235,7 @@ export default async function ContactsPage() {
           })}
         </tbody>
       </Table>
+      </BulkSelection>
 
       {contacts.length === 0 && <Empty>No contacts yet.</Empty>}
 

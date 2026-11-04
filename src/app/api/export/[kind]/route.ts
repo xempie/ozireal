@@ -58,7 +58,8 @@ function toCsv(headers: string[], rows: unknown[][]): string {
   return "﻿" + lines.join("\r\n") + "\r\n";
 }
 
-type Export = { headers: string[]; rows: () => Promise<unknown[][]> };
+/** `only`: limit to these ids (the contacts list's "Export selected"). */
+type Export = { headers: string[]; rows: (only?: Set<string>) => Promise<unknown[][]> };
 
 const EXPORTS: Record<string, Export> = {
   audit: {
@@ -87,8 +88,8 @@ const EXPORTS: Record<string, Export> = {
       "Follow-up due",
       "Created",
     ],
-    rows: async () =>
-      (await getContacts()).map((c) => [
+    rows: async (only) =>
+      (await getContacts()).filter((c) => !only || only.has(c.id)).map((c) => [
         c.firstName,
         c.lastName,
         c.email,
@@ -185,7 +186,7 @@ const EXPORTS: Record<string, Export> = {
 };
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ kind: string }> },
 ) {
   const session = await auth();
@@ -202,7 +203,9 @@ export async function GET(
     );
   }
 
-  const csv = toCsv(spec.headers, await spec.rows());
+  const idsParam = new URL(req.url).searchParams.get("ids");
+  const only = idsParam ? new Set(idsParam.split(",").filter(Boolean)) : undefined;
+  const csv = toCsv(spec.headers, await spec.rows(only));
   const stamp = new Date().toISOString().slice(0, 10);
 
   return new NextResponse(csv, {
