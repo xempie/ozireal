@@ -194,6 +194,21 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
       priceMax: z.number().int().positive().optional(),
       /** Short key facts, shown as pills over the photo when the block is a project card. */
       highlights: z.array(t(60)).max(4).optional(),
+      /**
+       * A project card's key numbers, as written ("3", "3–4", "180–220"): bedrooms,
+       * bathrooms, car spaces, land and house size in m² (owner's request, 2026-11-05,
+       * from UNIFI). Strings so a range reads as the developer quotes it.
+       */
+      specs: z
+        .object({
+          beds: t(12).optional(),
+          baths: t(12).optional(),
+          parking: t(12).optional(),
+          landM2: t(20).optional(),
+          buildM2: t(20).optional(),
+        })
+        .strict()
+        .optional(),
     }).strict(),
     z.object({
       ...base,

@@ -9,6 +9,7 @@ import { PageHero } from "./page-shell";
 import { photo } from "./agency";
 import { ProjectFinder } from "./project-finder";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
+import { Bath, BedDouble, Car, LandPlot, Ruler } from "lucide-react";
 
 /**
  * Renders blocks added in the console's website editor.
@@ -399,6 +400,35 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                     </>
                   ) : null}
                 </h3>
+                {text.specs && Object.values(text.specs).some(Boolean) && (
+                  <ul className="proj-specs" aria-label="Key details">
+                    {text.specs.beds && (
+                      <li title="Bedrooms">
+                        <BedDouble size={16} aria-hidden /> {text.specs.beds} <span>bed</span>
+                      </li>
+                    )}
+                    {text.specs.baths && (
+                      <li title="Bathrooms">
+                        <Bath size={16} aria-hidden /> {text.specs.baths} <span>bath</span>
+                      </li>
+                    )}
+                    {text.specs.parking && (
+                      <li title="Car spaces">
+                        <Car size={16} aria-hidden /> {text.specs.parking} <span>car</span>
+                      </li>
+                    )}
+                    {text.specs.landM2 && (
+                      <li title="Land size">
+                        <LandPlot size={16} aria-hidden /> {text.specs.landM2} m² <span>land</span>
+                      </li>
+                    )}
+                    {text.specs.buildM2 && (
+                      <li title="House size">
+                        <Ruler size={16} aria-hidden /> {text.specs.buildM2} m² <span>house</span>
+                      </li>
+                    )}
+                  </ul>
+                )}
                 {text.price && (
                   <p className="proj-price">
                     <span>Price</span>
