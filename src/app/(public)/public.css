@@ -3312,3 +3312,16 @@
 .proj-body .proj-specs li + li { padding-left: 14px; border-left: 1px solid var(--line, #DCE2EC); }
 .proj-specs svg { color: var(--accent); flex: none; }
 .proj-specs span { font-weight: 400; color: var(--ink-2, #4A5878); }
+
+/*
+ * Phones (2026-11-05): the nowrap spec row stretched every card past the screen,
+ * because a grid item's min-width defaults to its content. Cards may shrink to the
+ * viewport; the row drops its words (bed, bath…) to fit and scrolls only as a last resort.
+ */
+.proj-grid > *, .proj, .proj-body { min-width: 0; }
+.proj-body ul.proj-specs { max-width: 100%; }
+@media (max-width: 600px) {
+  .proj-body ul.proj-specs { gap: 10px; font-size: 13px; }
+  .proj-body .proj-specs li + li { padding-left: 10px; }
+  .proj-body .proj-specs li span { display: none; }
+}
