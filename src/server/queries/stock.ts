@@ -9,6 +9,7 @@ import {
   suburbs,
   contacts,
   matches,
+  listingContacts,
 } from "@/db/schema";
 
 /**
@@ -248,4 +249,68 @@ export async function getAllMatches() {
       .innerJoin(contacts, eq(contacts.id, matches.contactId))
       .orderBy(desc(matches.score)),
   );
+}
+
+/* ------------------------------------------------- contacts on listings (0022) */
+
+/** The contacts attached to a listing, with their role on it. */
+export async function getListingContacts(listingId: string) {
+  return query((tx) =>
+    tx
+      .select({
+        contactId: contacts.id,
+        firstName: contacts.firstName,
+        lastName: contacts.lastName,
+        phone: contacts.phoneRaw,
+        role: listingContacts.role,
+      })
+      .from(listingContacts)
+      .innerJoin(contacts, eq(contacts.id, listingContacts.contactId))
+      .where(eq(listingContacts.listingId, listingId))
+      .orderBy(listingContacts.createdAt),
+  );
+}
+
+/** The listings a contact is attached to, newest first. */
+export async function getContactListings(contactId: string) {
+  return query((tx) =>
+    tx
+      .select({
+        listingId: listings.id,
+        slug: listings.slug,
+        status: listings.status,
+        projectName: listings.projectName,
+        websiteSection: listings.websiteSection,
+        street: properties.street,
+        streetNumber: properties.streetNumber,
+        role: listingContacts.role,
+      })
+      .from(listingContacts)
+      .innerJoin(listings, eq(listings.id, listingContacts.listingId))
+      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .where(eq(listingContacts.contactId, contactId))
+      .orderBy(desc(listingContacts.createdAt)),
+  );
+}
+
+export const LISTING_ROLE_LABELS: Record<string, string> = {
+  owner: "Owner / vendor",
+  landlord: "Landlord",
+  tenant: "Tenant",
+  interested_buyer: "Interested buyer",
+  builder_developer: "Builder / developer",
+  estate_agent: "Estate agent",
+  other: "Other",
+};
+
+/** Where a listing shows on the website, for its CRM page. */
+export async function getListingSection(listingId: string) {
+  const [row] = await query((tx) =>
+    tx
+      .select({ websiteSection: listings.websiteSection, projectName: listings.projectName })
+      .from(listings)
+      .where(eq(listings.id, listingId))
+      .limit(1),
+  );
+  return row ?? null;
 }

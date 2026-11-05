@@ -11,11 +11,11 @@ import { getListings } from "@/server/queries";
 import { statusLabel } from "@/lib/labels";
 import { relative } from "@/lib/utils";
 import {
-  NewListingButton,
   EditListingButton,
   ListingStatusButtons,
 } from "@/components/forms/stock-forms";
-import { propertyOptions } from "@/server/queries/pickers";
+import { propertyOptions, suburbOptions } from "@/server/queries/pickers";
+import { FullListingButton } from "@/components/forms/new-listing-form";
 
 const columns: {
   status: string;
@@ -32,7 +32,7 @@ const columns: {
 ];
 
 export default async function ListingsPage() {
-  const propertyOpts = await propertyOptions();
+  const [propertyOpts, suburbOpts] = await Promise.all([propertyOptions(), suburbOptions()]);
   const listings = await getListings();
 
   return (
@@ -40,7 +40,7 @@ export default async function ListingsPage() {
       <PageHeader
         title="Listings"
         subtitle="A campaign over a property. A property can have many across its life; at most one is live."
-        actions={<NewListingButton properties={propertyOpts} />}
+        actions={<FullListingButton properties={propertyOpts} suburbs={suburbOpts} />}
       />
 
       <div className="grid md:grid-cols-2 xl:grid-cols-6 gap-4 items-start">

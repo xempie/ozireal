@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Block } from "@/lib/site-content";
-import { GALLERY } from "@/lib/site-content";
+import { GALLERY, IMAGE_IDS } from "@/lib/site-content";
 import { FormSection } from "./forms/form-section";
 import { ListingCard } from "./listing-card";
 import { toCard } from "./listing-cards";
@@ -10,6 +10,7 @@ import { photo } from "./agency";
 import { ProjectFinder } from "./project-finder";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
 import { Bath, BedDouble, Car, LandPlot, Ruler } from "lucide-react";
+import type { PublicNewHomesProject } from "@/server/public/listings";
 
 /**
  * Renders blocks added in the console's website editor.
@@ -316,7 +317,74 @@ type Project = {
   image: Extract<Block, { type: "image" }>;
   text: Extract<Block, { type: "text" }>;
   cta?: Extract<Block, { type: "cta" }>;
+  /** A real listing photo (a New Homes listing from the CRM); stock images have none. */
+  photoUrl?: string;
 };
+
+const KIND_LABEL: Record<string, string> = {
+  house: "House",
+  townhouse: "Townhouse",
+  unit: "Apartment",
+  land: "House and land",
+  acreage: "House and land",
+  commercial: "Warehouse",
+};
+
+/**
+ * A New Homes listing from the CRM as a project card (2026-11-05): the same card the
+ * editor's image + text blocks make, fed from the allow-listed public projection.
+ */
+export function listingProject(p: PublicNewHomesProject): Project {
+  const range = (a: number | null, b?: number | null) => (a ? String(a) + (b && b !== a ? `–${b}` : "") : undefined);
+  return {
+    photoUrl: p.coverPhoto ? `/media/${p.coverPhoto}` : undefined,
+    image: {
+      id: `listing-${p.id}-img`,
+      type: "image",
+      // The type needs a gallery id; photoUrl wins when the listing has a photo.
+      image: IMAGE_IDS[0],
+      alt: `${p.projectName ?? "New home"}, ${p.suburb ?? ""}`,
+    } as Extract<Block, { type: "image" }>,
+    text: {
+      id: `listing-${p.id}-text`,
+      type: "text",
+      heading: p.suburb ?? undefined,
+      headingEm: p.projectName ?? undefined,
+      price: p.priceDisplay ?? undefined,
+      priceMin: p.searchPriceMin ?? undefined,
+      priceMax: p.searchPriceMax ?? undefined,
+      area: p.area ?? undefined,
+      kind: KIND_LABEL[p.propertyType] ?? undefined,
+      ready: p.ready,
+      highlights: p.highlights ?? undefined,
+      paragraphs: [p.headline, p.copy].filter((x): x is string => !!x),
+      specs: {
+        beds: range(p.beds),
+        baths: range(p.baths),
+        parking: range(p.parking),
+        landM2: range(p.landSqm),
+        buildM2: range(p.floorSqm),
+      },
+    } as Extract<Block, { type: "text" }>,
+    cta: {
+      id: `listing-${p.id}-cta`,
+      type: "cta",
+      heading: "Talk to Esi",
+      label: "Talk to Esi",
+      href: "https://www.ozirealty.com.au/buyer-agent-adelaide",
+    } as Extract<Block, { type: "cta" }>,
+  };
+}
+
+/** CRM New Homes listings first, then the editor's cards, in one grid. */
+export function withListingProjects(items: PageItem[], live: PublicNewHomesProject[]): PageItem[] {
+  if (!live.length) return items;
+  const extra = live.map(listingProject);
+  const i = items.findIndex((x) => x.kind === "projects");
+  if (i < 0) return [...items, { kind: "projects", items: extra }];
+  const grid = items[i] as Extract<PageItem, { kind: "projects" }>;
+  return [...items.slice(0, i), { kind: "projects", items: [...extra, ...grid.items] }, ...items.slice(i + 1)];
+}
 
 export type PageItem = { kind: "block"; b: Block } | { kind: "projects"; items: Project[] };
 
@@ -356,7 +424,7 @@ export function ProjectGrid({ items }: { items: Project[] }) {
   const fallback = items.find((p) => p.cta)?.cta;
   const grid = (
         <div className="proj-grid">
-          {items.map(({ image, text, cta = fallback }, i) => (
+          {items.map(({ image, text, cta = fallback, photoUrl }, i) => (
             <article
               className="proj"
               key={image.id}
@@ -371,14 +439,14 @@ export function ProjectGrid({ items }: { items: Project[] }) {
             >
               <figure className="proj-fig">
                 <Image
-                  src={photo(image.image, 1000)}
+                  src={photoUrl ?? photo(image.image, 1000)}
                   alt={image.alt}
                   width={1000}
                   height={667}
                   sizes="(max-width: 900px) 100vw, 600px"
                 />
                 {/* The project photos are stock, so the card says so rather than implying them. */}
-                <span className="proj-note">Illustrative image</span>
+                {!photoUrl && <span className="proj-note">Illustrative image</span>}
                 {text.highlights?.length ? (
                   <div className="proj-pills">
                     {text.highlights.map((h) => (

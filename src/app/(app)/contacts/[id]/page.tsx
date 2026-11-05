@@ -39,6 +39,7 @@ import {
 } from "@/components/forms/contact-forms";
 import { EditPreferencesButton } from "@/components/forms/preferences-form";
 import { roleLabel } from "@/lib/roles";
+import { getContactListings, LISTING_ROLE_LABELS } from "@/server/queries/stock";
 
 export default async function ContactDetail({
   params,
@@ -47,6 +48,7 @@ export default async function ContactDetail({
 }) {
   const { id } = await params;
   const c = await getContact(id);
+  const onListings = c ? await getContactListings(c.id) : [];
   if (!c) notFound();
 
   const [log, contactMatches, listings, tasks] = await Promise.all([
@@ -296,6 +298,26 @@ export default async function ContactDetail({
               </div>
             )}
           </Card>
+
+          {onListings.length > 0 && (
+            <Card>
+              <CardTitle>On listings</CardTitle>
+              <ul className="space-y-1.5 text-[13px]">
+                {onListings.map((k) => (
+                  <li key={`${k.listingId}-${k.role}`} className="flex items-center justify-between gap-2">
+                    <Link href={`/listings/${k.listingId}`} className="font-medium hover:underline underline-offset-2 truncate">
+                      {k.websiteSection === "new_homes"
+                        ? (k.projectName ?? k.street)
+                        : [k.streetNumber, k.street].filter(Boolean).join(" ")}
+                    </Link>
+                    <span className="text-2 text-[12px] whitespace-nowrap">
+                      {LISTING_ROLE_LABELS[k.role] ?? k.role} · {statusLabel[k.status] ?? k.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
 
           <Card>
             <CardTitle>Last follow-up</CardTitle>

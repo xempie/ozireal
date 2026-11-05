@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { BlockView, ProjectGrid, groupProjects } from "@/components/public/blocks";
+import { BlockView, ProjectGrid, groupProjects, withListingProjects } from "@/components/public/blocks";
+import { newHomesProjects } from "@/server/public/listings";
 import { CtaBand } from "@/components/public/page-shell";
 import { customPage } from "@/server/public/content";
 
@@ -41,7 +42,11 @@ export default async function Page({ params }: Params) {
     <>
       {/* Read by `.site:has(.no-foot-cta) .foot-cta` in public.css; the footer is in the layout. */}
       {NO_FOOTER_CTA.has(path) && <span className="no-foot-cta" hidden />}
-      {groupProjects(doc.blocks).map((item) =>
+      {withListingProjects(
+        groupProjects(doc.blocks),
+        // Live CRM listings marked "New Homes" (2026-11-05) join the editor's cards.
+        path === "/new-homes-adelaide" ? await newHomesProjects() : [],
+      ).map((item) =>
         item.kind === "projects" ? (
           <ProjectGrid key={item.items[0].image.id} items={item.items} />
         ) : (

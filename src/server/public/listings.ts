@@ -88,6 +88,11 @@ export type PublicListing = {
  * interesting moment of its campaign.
  */
 const ON_MARKET = ["live", "under_offer"] as const;
+/**
+ * The For Sale / For Rent, All Listings, home and suburb pages show advertised listings
+ * only; a New Homes listing appears on /new-homes-adelaide alone (0022).
+ */
+const ADVERTISED = eq(listings.websiteSection, "advertised");
 
 /** The archive. Never deleted — §16 calls it the site's best organic asset. */
 const SETTLED = ["sold", "leased"] as const;
@@ -185,7 +190,7 @@ export async function searchListings(s: ListingSearch): Promise<SearchResult> {
   const perPage = Math.min(48, Math.max(1, s.perPage ?? PER_PAGE));
 
   return publicQuery(async (tx) => {
-    const where = [inArray(listings.status, [...ON_MARKET])];
+    const where = [and(ADVERTISED, inArray(listings.status, [...ON_MARKET]))];
 
     if (s.listingType) where.push(eq(listings.listingType, s.listingType));
 
@@ -267,7 +272,7 @@ export async function listingBySlug(slug: string): Promise<PublicListing | null>
       .where(
         and(
           eq(listings.slug, slug),
-          inArray(listings.status, [...ON_MARKET, ...SETTLED]),
+          and(ADVERTISED, inArray(listings.status, [...ON_MARKET, ...SETTLED])),
         ),
       )
       .limit(1);
@@ -287,7 +292,7 @@ export async function publicListingSlugs(): Promise<
         updatedAt: listings.updatedAt,
       })
       .from(listings)
-      .where(inArray(listings.status, [...ON_MARKET, ...SETTLED]))
+      .where(and(ADVERTISED, inArray(listings.status, [...ON_MARKET, ...SETTLED])))
       .orderBy(desc(listings.updatedAt)),
   );
 }
@@ -297,7 +302,7 @@ export async function publicListingSlugs(): Promise<
 export async function soldAndLeased(limit = 60): Promise<PublicListing[]> {
   return publicQuery((tx) =>
     base(tx)
-      .where(inArray(listings.status, [...SETTLED]))
+      .where(and(ADVERTISED, inArray(listings.status, [...SETTLED])))
       .orderBy(desc(listings.soldAt))
       .limit(limit),
   );
@@ -345,7 +350,7 @@ export async function inspectionsForListing(
 export async function onMarket(limit = 8): Promise<PublicListing[]> {
   return publicQuery((tx) =>
     base(tx)
-      .where(inArray(listings.status, [...ON_MARKET]))
+      .where(and(ADVERTISED, inArray(listings.status, [...ON_MARKET])))
       .orderBy(desc(listings.publishedAt), desc(listings.id))
       .limit(limit),
   );
@@ -357,7 +362,7 @@ export async function onMarketCount(): Promise<number> {
     const [row] = await tx
       .select({ n: sql<number>`count(*)::int` })
       .from(listings)
-      .where(inArray(listings.status, [...ON_MARKET]));
+      .where(and(ADVERTISED, inArray(listings.status, [...ON_MARKET])));
     return row?.n ?? 0;
   });
 }
@@ -388,7 +393,7 @@ export async function suburbsWithListings(): Promise<PublicSuburb[]> {
       .from(listings)
       .innerJoin(properties, eq(properties.id, listings.propertyId))
       .innerJoin(suburbs, eq(suburbs.id, properties.suburbId))
-      .where(inArray(listings.status, [...ON_MARKET, ...SETTLED]))
+      .where(and(ADVERTISED, inArray(listings.status, [...ON_MARKET, ...SETTLED])))
       .groupBy(suburbs.name)
       .orderBy(suburbs.name),
   );
@@ -400,11 +405,70 @@ export async function listingsInSuburb(name: string): Promise<PublicListing[]> {
   return publicQuery((tx) =>
     base(tx)
       .where(
-        and(eq(suburbs.name, name), inArray(listings.status, [...ON_MARKET, ...SETTLED])),
+        and(eq(suburbs.name, name), and(ADVERTISED, inArray(listings.status, [...ON_MARKET, ...SETTLED]))),
       )
       .orderBy(
         sql`case when ${listings.status} in ('live', 'under_offer') then 0 else 1 end`,
         desc(listings.publishedAt),
       ),
+  );
+}
+
+/* -------------------------------------------------------------- new homes */
+
+/**
+ * A New Homes listing, as a project card shows it (2026-11-05). Allow-listed like
+ * everything here (rule 8): suburb only, never the street, the owner or anything
+ * internal. The price is the authored wording; the numbers only drive the finder.
+ */
+export type PublicNewHomesProject = {
+  id: string;
+  projectName: string | null;
+  suburb: string | null;
+  area: string | null;
+  ready: boolean;
+  propertyType: string;
+  priceDisplay: string | null;
+  searchPriceMin: number | null;
+  searchPriceMax: number | null;
+  headline: string | null;
+  copy: string | null;
+  highlights: string[] | null;
+  beds: number | null;
+  baths: number | null;
+  parking: number | null;
+  landSqm: number | null;
+  floorSqm: number | null;
+  coverPhoto: string | null;
+};
+
+export async function newHomesProjects(): Promise<PublicNewHomesProject[]> {
+  return publicQuery((tx) =>
+    tx
+      .select({
+        id: listings.id,
+        projectName: listings.projectName,
+        suburb: suburbs.name,
+        area: listings.projectArea,
+        ready: listings.projectReady,
+        propertyType: properties.propertyType,
+        priceDisplay: listings.priceDisplay,
+        searchPriceMin: listings.searchPriceMin,
+        searchPriceMax: listings.searchPriceMax,
+        headline: listings.publicHeadline,
+        copy: listings.publicCopy,
+        highlights: listings.highlights,
+        beds: properties.beds,
+        baths: properties.baths,
+        parking: properties.parking,
+        landSqm: properties.landAreaSqm,
+        floorSqm: properties.floorAreaSqm,
+        coverPhoto: publicSelect.coverPhoto,
+      })
+      .from(listings)
+      .innerJoin(properties, eq(properties.id, listings.propertyId))
+      .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
+      .where(and(eq(listings.websiteSection, "new_homes"), inArray(listings.status, [...ON_MARKET])))
+      .orderBy(desc(listings.publishedAt)),
   );
 }

@@ -38,6 +38,7 @@ import {
   CancelInspectionButton,
 } from "@/components/forms/stock-forms";
 import { money, shortDate, timeOfDay, relative } from "@/lib/utils";
+import { getListingContacts, getListingSection, LISTING_ROLE_LABELS } from "@/server/queries/stock";
 
 export default async function ListingDetail({
   params,
@@ -51,6 +52,7 @@ export default async function ListingDetail({
   const listingMatches = await getMatchesForListing(l.id);
   const insp = (await getInspections()).filter((i) => i.listingId === l.id);
   const photos = await getListingPhotos(l.id);
+  const [linked, where] = await Promise.all([getListingContacts(l.id), getListingSection(l.id)]);
 
   /**
    * Consent state is not carried on the match row, so it is read per matched contact.
@@ -261,13 +263,38 @@ export default async function ListingDetail({
           </Card>
 
           <Card>
+            <CardTitle>Contacts on this listing</CardTitle>
+            {linked.length === 0 ? (
+              <p className="text-3 text-[12.5px]">None attached.</p>
+            ) : (
+              <ul className="space-y-1.5 text-[13px]">
+                {linked.map((k) => (
+                  <li key={`${k.contactId}-${k.role}`} className="flex items-center justify-between gap-2">
+                    <Link href={`/contacts/${k.contactId}`} className="font-medium hover:underline underline-offset-2">
+                      {k.firstName} {k.lastName}
+                    </Link>
+                    <span className="text-2 text-[12px]">{LISTING_ROLE_LABELS[k.role] ?? k.role}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
+          <Card>
             <CardTitle>Website</CardTitle>
             <div className="flex items-start gap-2">
               <Globe size={13} className="text-3 mt-0.5 shrink-0" />
               <div className="min-w-0">
-                <div className="text-[12px] font-mono break-all text-2">
-                  /{l.type === "rent" ? "for-rent" : "for-sale"}/{l.slug}
+                <div className="text-[12.5px] font-medium">
+                  {where?.websiteSection === "new_homes"
+                    ? `New Homes page${where.projectName ? ` · ${where.projectName}` : ""}`
+                    : "Currently advertised"}
                 </div>
+                {where?.websiteSection !== "new_homes" && (
+                  <div className="text-[12px] font-mono break-all text-2">
+                    /{l.type === "rent" ? "for-rent" : "for-sale"}/{l.slug}
+                  </div>
+                )}
                 <div className="text-3 text-[11.5px] mt-1">
                   {l.publishedAt
                     ? `Published ${relative(l.publishedAt)} · revalidated on save`

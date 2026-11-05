@@ -142,6 +142,18 @@ export const listings = pgTable(
     publicHeadline: text("public_headline"),
     publicCopy: text("public_copy"),
 
+    /**
+     * Where a live listing shows on the website (0022): "advertised" (For Sale / For
+     * Rent, All Listings, home, suburb pages) or "new_homes" (a project card on
+     * /new-homes-adelaide, shown by suburb only, titled by projectName).
+     */
+    websiteSection: text("website_section").notNull().default("advertised"),
+    projectName: text("project_name"),
+    /** The New Homes finder area, e.g. "Northern suburbs". */
+    projectArea: text("project_area"),
+    projectReady: boolean("project_ready").notNull().default(false),
+    highlights: text("highlights").array(),
+
     /** B5.1: what was (or would be) embedded, and when. The vector column itself
      *  lives only where pgvector exists — see migration 0010. */
     embeddedText: text("embedded_text"),
@@ -257,4 +269,40 @@ export const listingAgents = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
   },
   (t) => [uniqueIndex("listing_agents_uq").on(t.listingId, t.userId)],
+);
+
+/**
+ * Contacts attached to a listing, each with their role on it (0022). Internal only:
+ * the public layer never reads this table.
+ */
+export const LISTING_CONTACT_ROLES = [
+  "owner",
+  "landlord",
+  "tenant",
+  "interested_buyer",
+  "builder_developer",
+  "estate_agent",
+  "other",
+] as const;
+
+export const listingContacts = pgTable(
+  "listing_contacts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    listingId: uuid("listing_id")
+      .notNull()
+      .references(() => listings.id, { onDelete: "cascade" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "restrict" }),
+    role: text("role", { enum: LISTING_CONTACT_ROLES }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("listing_contacts_uq").on(t.listingId, t.contactId, t.role),
+    index("listing_contacts_contact_idx").on(t.contactId),
+  ],
 );
