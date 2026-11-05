@@ -3296,14 +3296,19 @@
 
 /* Project card key numbers: bed, bath, car, land, house (2026-11-05). */
 /* One horizontal line (owner, 2026-11-05): never wraps; a phone scrolls it sideways. */
-.proj-specs {
+.proj-body ul.proj-specs {
   list-style: none; margin: 4px 0 14px; padding: 0;
   display: flex; flex-wrap: nowrap; align-items: center; gap: 14px;
   font-size: 13.5px; font-weight: 600; color: var(--ink);
   overflow-x: auto; scrollbar-width: none;
 }
-.proj-specs::-webkit-scrollbar { display: none; }
-.proj-specs li { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex: none; }
-.proj-specs li + li { padding-left: 14px; border-left: 1px solid var(--line, #DCE2EC); }
+.proj-body ul.proj-specs::-webkit-scrollbar { display: none; }
+/* Scoped under .proj-body to beat the card bullet-list rules (.proj-body ul / li). */
+.proj-body .proj-specs li {
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex: none;
+  padding-left: 0; color: var(--ink);
+}
+.proj-body .proj-specs li::before { content: none; display: none; }
+.proj-body .proj-specs li + li { padding-left: 14px; border-left: 1px solid var(--line, #DCE2EC); }
 .proj-specs svg { color: var(--accent); flex: none; }
 .proj-specs span { font-weight: 400; color: var(--ink-2, #4A5878); }
