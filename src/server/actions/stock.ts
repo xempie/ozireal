@@ -33,7 +33,7 @@ import {
 
 export const createProperty = defineAction({
   input: propertyInput,
-  handler: (input, ctx) => insertProperty(input, ctx),
+  handler: async (input, ctx) => insertProperty(input, ctx),
 });
 
 /* ------------------------------------------------------------- listings */
@@ -41,7 +41,7 @@ export const createProperty = defineAction({
 
 export const createListing = defineAction({
   input: listingInput,
-  handler: (input, ctx) => insertListing(input, ctx),
+  handler: async (input, ctx) => insertListing(input, ctx),
 });
 
 /* --------------------------------------------------- editing and removing */
@@ -370,7 +370,7 @@ export const updateListing = defineAction({
  */
 export const setListingStatus = defineAction({
   input: listingStatusInput,
-  handler: (input, ctx) => changeListingStatus(input, ctx),
+  handler: async (input, ctx) => changeListingStatus(input, ctx),
 });
 
 /**

@@ -3,11 +3,10 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { and, eq, isNull, or, sql } from "drizzle-orm";
-import { contacts, listings, listingContacts, properties, LISTING_CONTACT_ROLES } from "@/db/schema";
+import { contacts, listings, listingContacts, properties } from "@/db/schema";
 import { defineAction, ActionError, toE164, normaliseEmail } from "./action";
-import { optionalInt } from "./fields";
 import {
-  PROPERTY_TYPES,
+  fullListingInput,
   insertProperty,
   insertListing,
   changeListingStatus,
@@ -25,62 +24,8 @@ import {
  * for the street on the property record, and the website shows the suburb only.
  */
 
-const contactLink = z.object({
-  role: z.enum(LISTING_CONTACT_ROLES),
-  contactId: z.string().uuid().optional(),
-  newContact: z
-    .object({
-      firstName: z.string().trim().min(1, "First name").max(100),
-      lastName: z.string().trim().max(100).default(""),
-      phone: z.string().trim().max(40).default(""),
-      email: z.string().trim().max(320).default(""),
-    })
-    .optional(),
-});
-
 export const createFullListing = defineAction({
-  input: z
-    .object({
-      listingType: z.enum(["sale", "rent"]),
-      section: z.enum(["advertised", "new_homes"]),
-      goLive: z.boolean(),
-
-      propertyId: z.string().uuid().optional(),
-      streetNumber: z.string().trim().max(20).optional(),
-      street: z.string().trim().max(120).optional(),
-      unit: z.string().trim().max(20).optional(),
-      suburbId: z.string().uuid().optional(),
-      propertyType: z.enum(PROPERTY_TYPES),
-      beds: optionalInt(0, 30),
-      baths: optionalInt(0, 30),
-      parking: optionalInt(0, 30),
-      landAreaSqm: optionalInt(0, 10_000_000),
-      floorAreaSqm: optionalInt(0, 100_000),
-
-      projectName: z.string().trim().max(120).optional(),
-      projectArea: z.string().trim().max(60).optional(),
-      projectReady: z.boolean().default(false),
-      highlights: z.array(z.string().trim().min(1).max(60)).max(4).default([]),
-
-      priceDisplay: z.string().trim().max(200).optional(),
-      searchPriceMin: optionalInt(0, 50_000_000),
-      searchPriceMax: optionalInt(0, 50_000_000),
-      rentPw: optionalInt(0, 100_000),
-      publicHeadline: z.string().trim().max(200).optional(),
-      publicCopy: z.string().trim().max(6000).optional(),
-
-      contacts: z.array(contactLink).max(30).default([]),
-    })
-    .superRefine((v, c) => {
-      if (!v.propertyId && !v.suburbId) c.addIssue({ code: "custom", path: ["suburbId"], message: "Choose a suburb from the list" });
-      if (v.section === "new_homes" && !v.projectName)
-        c.addIssue({ code: "custom", path: ["projectName"], message: "Give the project a name" });
-      if (v.section === "advertised" && !v.propertyId && !v.street)
-        c.addIssue({ code: "custom", path: ["street"], message: "Street is required" });
-      for (const [i, k] of v.contacts.entries())
-        if (!k.contactId && !k.newContact)
-          c.addIssue({ code: "custom", path: ["contacts", i], message: "Pick a contact or add a new one" });
-    }),
+  input: fullListingInput,
   async handler(input, ctx) {
     // 1. The property: the one picked, or a new record.
     let propertyId = input.propertyId;
