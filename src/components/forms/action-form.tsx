@@ -40,7 +40,21 @@ export function useAction<T>(
       setState(null);
       setSending(true);
       try {
-        const result = await action(input);
+        let result: ActionResult<T>;
+        try {
+          result = await action(input);
+        } catch {
+          /**
+           * The call itself failed: no network, or, most often, a page loaded before a
+           * deploy calling an action id the new build no longer has. Unhandled, the
+           * button just did nothing (2026-11-05, the contact import). Say what to do.
+           */
+          result = {
+            ok: false,
+            error:
+              "That didn't reach the CRM. It may have just been updated: reload the page (Ctrl+F5) and try again.",
+          };
+        }
         setState(result);
 
         if (result.ok) {
