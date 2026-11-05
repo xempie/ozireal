@@ -196,7 +196,7 @@ function blockOptions<I extends z.ZodTypeAny>(id: I) {
       highlights: z.array(t(60)).max(4).optional(),
       /**
        * A project card's key numbers, as written ("3", "3–4", "180–220"): bedrooms,
-       * bathrooms, car spaces, land and house size in m² (owner's request, 2026-11-05,
+       * bathrooms, car spaces, land size and total floor area in m² (owner's request, 2026-11-05,
        * from UNIFI). Strings so a range reads as the developer quotes it.
        */
       specs: z

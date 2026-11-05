@@ -423,8 +423,8 @@ export function ProjectGrid({ items }: { items: Project[] }) {
                       </li>
                     )}
                     {text.specs.buildM2 && (
-                      <li title="House size">
-                        <Ruler size={16} aria-hidden /> {text.specs.buildM2} m² <span>house</span>
+                      <li title="Total floor area, as printed on the plan (may include garage and porch)">
+                        <Ruler size={16} aria-hidden /> {text.specs.buildM2} m² <span>total</span>
                       </li>
                     )}
                   </ul>
