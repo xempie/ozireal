@@ -11,6 +11,7 @@ import { ProjectFinder } from "./project-finder";
 import { onMarket, soldAndLeased } from "@/server/public/listings";
 import { Bath, BedDouble, Car, LandPlot, Ruler } from "lucide-react";
 import type { PublicNewHomesProject } from "@/server/public/listings";
+import { HouseArt } from "./house-art";
 
 /**
  * Renders blocks added in the console's website editor.
@@ -438,15 +439,19 @@ export function ProjectGrid({ items }: { items: Project[] }) {
               data-hi={text.priceMax ?? text.priceMin ?? ""}
             >
               <figure className="proj-fig">
-                <Image
-                  src={photoUrl ?? photo(image.image, 1000)}
-                  alt={image.alt}
-                  width={1000}
-                  height={667}
-                  sizes="(max-width: 900px) 100vw, 600px"
-                />
-                {/* The project photos are stock, so the card says so rather than implying them. */}
-                {!photoUrl && <span className="proj-note">Illustrative image</span>}
+                {photoUrl ? (
+                  <Image
+                    src={photoUrl}
+                    alt={image.alt}
+                    width={1000}
+                    height={667}
+                    sizes="(max-width: 900px) 100vw, 600px"
+                  />
+                ) : (
+                  /* A drawn generic new home instead of a stock photo (2026-11-09): clearly
+                     an illustration, so no "Illustrative image" label is needed. */
+                  <HouseArt kind={text.kind} index={i} label={`Illustration: a new ${(text.kind ?? "home").toLowerCase()} in ${text.heading ?? "Adelaide"}`} />
+                )}
                 {text.highlights?.length ? (
                   <div className="proj-pills">
                     {text.highlights.map((h) => (
