@@ -3325,3 +3325,7 @@
   .proj-body .proj-specs li + li { padding-left: 10px; }
   .proj-body .proj-specs li span { display: none; }
 }
+
+/* The drawn house fills the 3:2 frame exactly; as a plain block it collapsed the
+   frame's aspect-ratio height and showed as a cropped strip (2026-11-09). */
+.proj-fig .proj-art { position: absolute; inset: 0; width: 100%; height: 100%; }
