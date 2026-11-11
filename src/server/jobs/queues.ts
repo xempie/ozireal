@@ -22,7 +22,11 @@ export type JobName =
   | "EmbedListing"
   | "EmbedContactPreferences"
   | "DailyBrief"
-  | "NotifyEnquiry";
+  | "NotifyEnquiry"
+  /** entityId = a property id: rank every possible lead for it. */
+  | "MatchProperty"
+  /** entityId = the tenant id: re-match every property (the nightly sweep). */
+  | "MatchAllProperties";
 
 export type JobPayload = {
   tenantId: string;

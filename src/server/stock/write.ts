@@ -154,6 +154,9 @@ export async function insertProperty(input: z.infer<typeof propertyInput>, ctx: 
       })
       .returning({ id: properties.id });
 
+    // Every property is matched against every possible lead, whatever its status.
+    ctx.afterCommit(() => enqueue("MatchProperty", { tenantId: ctx.tenantId, entityId: created.id }));
+
     await ctx.audit({
       kind: "edit",
       action: "Added a property",

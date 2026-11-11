@@ -59,8 +59,12 @@ const RANK_PROMPT = "rank-matches.v2";
 /** Listing states that count as a property's active campaign. Drafts included. */
 export const MATCHABLE_STATUSES: string[] = ["draft", "live", "under_offer"];
 
-/** Property states that are matched. Sold and archived stock is finished. */
-export const MATCHABLE_PROPERTY_STATUSES = ["prospect", "appraised", "off_market", "listed"] as const;
+/**
+ * Property states that are matched: all of them (owner's rule, 2026-11-11). Every property
+ * is matched against every possible lead regardless of status; a sold home still tells
+ * the agent who wants one like it.
+ */
+export const MATCHABLE_PROPERTY_STATUSES = ["prospect", "appraised", "off_market", "listed", "sold", "archived"] as const;
 
 export type MatchOutcome = {
   written: number;

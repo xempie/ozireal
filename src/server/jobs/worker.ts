@@ -41,17 +41,52 @@ const handlers: Record<JobName, Handler> = {
     const { matchContactsForListing } = await import("@/server/matching/engine");
     return matchContactsForListing(job.data.tenantId, job.data.entityId);
   },
+  /** Every property, whatever its status, against every possible lead (2026-11-11). */
+  async MatchProperty(job) {
+    const { matchContactsForProperty } = await import("@/server/matching/engine");
+    return matchContactsForProperty(job.data.tenantId, job.data.entityId);
+  },
+  /**
+   * Nightly: queue a match for every property in every tenant, so new leads are matched
+   * against existing stock too. Each MatchProperty job collapses by property id.
+   */
+  async MatchAllProperties() {
+    const { properties, tenants } = await import("@/db/schema");
+    const { withTenant } = await import("@/db");
+    const { enqueue } = await import("./queues");
+    const ts = await db.select({ id: tenants.id }).from(tenants);
+    let queued = 0;
+    for (const t of ts) {
+      const ps = await withTenant(t.id, (tx) => tx.select({ id: properties.id }).from(properties));
+      for (const p of ps) if (await enqueue("MatchProperty", { tenantId: t.id, entityId: p.id })) queued++;
+    }
+    return { queued };
+  },
   async MatchListings(job) {
     const { matchListingsForContact } = await import("@/server/matching/engine");
     return matchListingsForContact(job.data.tenantId, job.data.entityId);
   },
   async EmbedListing(job) {
     const { embedListing } = await import("@/server/ai/embed");
-    return embedListing(job.data.tenantId, job.data.entityId);
+    const result = await embedListing(job.data.tenantId, job.data.entityId);
+    // The listing now has fresh copy (and maybe a vector): re-match its property.
+    const { listings } = await import("@/db/schema");
+    const { withTenant } = await import("@/db");
+    const { eq } = await import("drizzle-orm");
+    const { enqueue } = await import("./queues");
+    const [l] = await withTenant(job.data.tenantId, (tx) =>
+      tx.select({ propertyId: listings.propertyId }).from(listings).where(eq(listings.id, job.data.entityId)).limit(1),
+    );
+    if (l) await enqueue("MatchProperty", { tenantId: job.data.tenantId, entityId: l.propertyId });
+    return result;
   },
   async EmbedContactPreferences(job) {
     const { embedContactPreferences } = await import("@/server/ai/embed");
-    return embedContactPreferences(job.data.tenantId, job.data.entityId);
+    const { enqueue } = await import("./queues");
+    const result = await embedContactPreferences(job.data.tenantId, job.data.entityId);
+    // Preferences changed: match this lead against all stock, whatever its status.
+    await enqueue("MatchListings", { tenantId: job.data.tenantId, entityId: job.data.entityId });
+    return result;
   },
   async DailyBrief(job) {
     return { pending: "B7", tenantId: job.data.tenantId };
@@ -64,6 +99,23 @@ const handlers: Record<JobName, Handler> = {
 };
 
 export function startWorker() {
+  /**
+   * The nightly sweep as a BullMQ job scheduler (CLAUDE.md §8: repeatable jobs, no cron).
+   * Upserted on every boot, so the schedule lives in code and survives restarts.
+   */
+  void (async () => {
+    try {
+      const { getQueue } = await import("./queues");
+      await getQueue().upsertJobScheduler(
+        "MatchAllProperties",
+        { pattern: "0 30 2 * * *", tz: "Australia/Adelaide" },
+        { name: "MatchAllProperties", data: { tenantId: "all", entityId: "all" } },
+      );
+    } catch (e) {
+      console.error("[worker] could not schedule the nightly match:", e instanceof Error ? e.message : e);
+    }
+  })();
+
   const worker = new Worker<JobPayload, unknown, JobName>(
     QUEUE_NAME,
     async (job) => {
