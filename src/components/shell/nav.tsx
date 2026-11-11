@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Users,
   Home,
-  Tags,
   GitCompareArrows,
   ShieldCheck,
   CheckCheck,
@@ -83,7 +82,6 @@ function buildGroups(
       items: [
         { href: "/approvals", label: "Approvals", icon: ShieldCheck, badge: counts.approvals, badgeTone: "queue" },
         { href: "/confirm", label: "Confirm queue", icon: CheckCheck, badge: counts.confirms + counts.merges, badgeTone: "queue" },
-        { href: "/listings", label: "Listings", icon: Tags },
         { href: "/campaigns", label: "Campaigns", icon: Send },
         { href: "/calendar", label: "Calendar", icon: CalendarDays },
         { href: "/voice", label: "Voice notes", icon: Mic },

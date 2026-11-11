@@ -67,13 +67,36 @@ export async function getProperties() {
         propertyId: listings.propertyId,
         id: listings.id,
         status: listings.status,
+        listingType: listings.listingType,
+        websiteSection: listings.websiteSection,
+        projectName: listings.projectName,
+        priceDisplay: listings.priceDisplay,
+        resultDisplay: listings.resultDisplay,
+        createdAt: listings.createdAt,
       })
-      .from(listings);
+      .from(listings)
+      .orderBy(desc(listings.createdAt));
 
-    return rows.map((p) => ({
-      ...p,
-      listings: ls.filter((l) => l.propertyId === p.id),
-    }));
+    // Matched buyers per property, one grouped count (the Properties list shows it).
+    const counts = await tx
+      .select({ propertyId: matches.propertyId, n: sql<number>`count(*)::int` })
+      .from(matches)
+      .groupBy(matches.propertyId);
+    const matchCount = new Map(counts.map((c) => [c.propertyId, c.n]));
+
+    return rows.map((p) => {
+      const mine = ls.filter((l) => l.propertyId === p.id);
+      /**
+       * The campaign the Properties list describes: a live or under-offer one first,
+       * then a draft being prepared, then the most recent settled one.
+       */
+      const current =
+        mine.find((l) => l.status === "live" || l.status === "under_offer") ??
+        mine.find((l) => l.status === "draft") ??
+        mine[0] ??
+        null;
+      return { ...p, listings: mine, current, matchCount: matchCount.get(p.id) ?? 0 };
+    });
   });
 }
 

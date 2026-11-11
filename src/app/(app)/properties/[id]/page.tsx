@@ -23,10 +23,12 @@ import { suburbOptions, contactOptions } from "@/server/queries/pickers";
 import {
   EditPropertyButton,
   DeletePropertyButton,
+  NewListingButton,
 } from "@/components/forms/stock-forms";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 import { shortDate } from "@/lib/utils";
 import { roleLabel } from "@/lib/roles";
+import { WebsitePanel } from "@/components/stock/website-panel";
 
 export default async function PropertyDetail({
   params,
@@ -57,7 +59,9 @@ export default async function PropertyDetail({
   return (
     <>
       <PageHeader
-        title={p.address}
+        title={
+          p.current?.websiteSection === "new_homes" && p.current.projectName ? p.current.projectName : p.address
+        }
         subtitle={subtitle}
         actions={
           <>
@@ -88,6 +92,26 @@ export default async function PropertyDetail({
           </>
         }
       />
+
+      {/* The advertising, merged in from the old listing page (2026-11-11). */}
+      <div className="mb-6">
+        {p.current && p.current.status !== "withdrawn" ? (
+          <WebsitePanel listingId={p.current.id} />
+        ) : (
+          <Card>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex-1 min-w-[220px]">
+                <CardTitle>Not on the website</CardTitle>
+                <p className="text-2 text-[12.5px]">
+                  Prepare the price wording, description and photos; publish when you are ready.
+                  It is matched to buyers either way.
+                </p>
+              </div>
+              <NewListingButton properties={[{ value: p.id, label: p.address }]} label="Prepare advertising" />
+            </div>
+          </Card>
+        )}
+      </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -183,6 +207,7 @@ export default async function PropertyDetail({
           </Section>
 
           {/* Matched on the property, listed or not (0017). */}
+          <div id="matches" className="scroll-mt-20" />
           <Section title="Buyers who suit it" hint="matched whether or not it is listed">
             <Card>
               <div className="flex items-start justify-between gap-3">

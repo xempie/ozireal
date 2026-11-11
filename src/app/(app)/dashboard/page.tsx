@@ -219,9 +219,10 @@ export default async function DashboardPage() {
           big={c.properties}
           bigLabel={c.properties === 1 ? "property" : "properties"}
           stats={[
-            { text: `${c.listed} listed`, href: "/properties?status=listed" },
+            { text: `${c.listed} on the website`, href: "/properties?status=website" },
             { text: `${c.offMarket} off market`, href: "/properties?status=off_market" },
-            { text: "Listings", href: "/listings" },
+            // Listings merged into Properties (2026-11-11); Board is the old listings view.
+            { text: "Board", href: "/properties?view=board" },
           ]}
           action={{ label: "Add property", prefill: "Add a new property: " }}
         />

@@ -182,7 +182,14 @@ export function NewPropertyButton({
   );
 }
 
-export function NewListingButton({ properties }: { properties: Option[] }) {
+export function NewListingButton({
+  properties,
+  label = "New listing",
+}: {
+  properties: Option[];
+  /** "Prepare advertising" on a property page, where the property is already chosen. */
+  label?: string;
+}) {
   const [open, setOpen] = React.useState(false);
   const [type, setType] = React.useState<"sale" | "rent">("sale");
   const a = useAction(createListing, { onSuccess: () => setOpen(false) });
@@ -197,10 +204,10 @@ export function NewListingButton({ properties }: { properties: Option[] }) {
         className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9 hover:opacity-90"
       >
         <Plus size={13} />
-        New listing
+        {label}
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="New listing">
+      <Modal open={open} onClose={() => setOpen(false)} title={label}>
         <form
           className="space-y-3"
           onSubmit={(e) => {
@@ -775,7 +782,7 @@ export function DeleteListingButton({ id }: { id: string }) {
       action={deleteListing}
       input={{ id }}
       confirmLabel="Delete the draft"
-      onDone={() => router.push("/listings")}
+      onDone={() => router.push("/properties")}
     >
       <Trash2 size={11} />
       Delete
