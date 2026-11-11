@@ -70,6 +70,11 @@ const handlers: Record<JobName, Handler> = {
     }
     return { queued };
   },
+  /** Photos to a Red / Amber / Green condition read (2026-11-11). */
+  async RunBuildingCheck(job) {
+    const { runBuildingCheck } = await import("@/server/building-check/run");
+    return runBuildingCheck(job.data.tenantId, job.data.entityId);
+  },
   async MatchListings(job) {
     const { matchListingsForContact } = await import("@/server/matching/engine");
     return matchListingsForContact(job.data.tenantId, job.data.entityId);

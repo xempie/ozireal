@@ -50,6 +50,11 @@ export type ContentBlock =
       type: "document";
       source: { type: "base64"; media_type: "application/pdf"; data: string };
     }
+  | {
+      /** A photo, for vision tasks (the building check, 2026-11-11). */
+      type: "image";
+      source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/webp"; data: string };
+    }
   | { type: "tool_use"; id: string; name: string; input: unknown }
   | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
 

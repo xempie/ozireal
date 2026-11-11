@@ -29,6 +29,7 @@ import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 import { shortDate } from "@/lib/utils";
 import { roleLabel } from "@/lib/roles";
 import { WebsitePanel } from "@/components/stock/website-panel";
+import { buildingChecksForProperty } from "@/server/queries/building-checks";
 
 export default async function PropertyDetail({
   params,
@@ -38,12 +39,13 @@ export default async function PropertyDetail({
   const { id } = await params;
   const p = await getProperty(id);
   if (!p) notFound();
-  const [history, owner, suburbOpts, contactOpts, propertyMatches] = await Promise.all([
+  const [history, owner, suburbOpts, contactOpts, propertyMatches, checks] = await Promise.all([
     getListingsForProperty(p.id),
     p.ownerContactId ? getContact(p.ownerContactId) : Promise.resolve(null),
     suburbOptions(),
     contactOptions(),
     getMatchesForProperty(p.id),
+    buildingChecksForProperty(p.id),
   ]);
 
   const locality = [p.suburb, p.state, p.postcode].filter(Boolean).join(" ");
@@ -207,6 +209,43 @@ export default async function PropertyDetail({
           </Section>
 
           {/* Matched on the property, listed or not (0017). */}
+          {/* Building checks on this property (2026-11-11). */}
+          <Card>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <CardTitle>Building checks</CardTitle>
+              <Link
+                href={`/building-checks/new?property=${p.id}`}
+                className="ml-auto inline-flex items-center rounded-md bg-[var(--accent)] text-white text-[12.5px] font-medium px-2.5 min-h-8"
+              >
+                New building check
+              </Link>
+            </div>
+            {checks.length === 0 ? (
+              <p className="text-3 text-[12.5px]">
+                None yet. Take photos on site for a Red / Amber / Green condition read.
+              </p>
+            ) : (
+              <ul className="divide-y text-[13px]">
+                {checks.map((b) => (
+                  <li key={b.id} className="py-2 flex flex-wrap items-center gap-2">
+                    <Link href={`/building-checks/${b.id}`} className="font-medium hover:underline underline-offset-2">
+                      {shortDate(b.createdAt)}
+                    </Link>
+                    {b.status === "done" ? (
+                      <span className="text-2">
+                        <span className="text-[#A12A12] font-semibold">{b.red} red</span> ·{" "}
+                        <span className="text-[#8A4B00] font-semibold">{b.amber} amber</span> · {b.green} green
+                      </span>
+                    ) : (
+                      <span className="text-3">{b.status === "failed" ? "failed" : "running…"}</span>
+                    )}
+                    <span className="ml-auto text-3 text-[12px]">{b.photos.length} photos</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+
           <div id="matches" className="scroll-mt-20" />
           <Section title="Buyers who suit it" hint="matched whether or not it is listed">
             <Card>

@@ -302,3 +302,36 @@ export const matchRuns = pgTable(
   },
   (t) => [index("match_runs_tenant_created_idx").on(t.tenantId, t.createdAt)],
 );
+
+/**
+ * Building checks (0023): photos in, a Red / Amber / Green condition read out. Optional
+ * property; private photos (t/<tenant>/c/<check>/...); validated JSON result.
+ */
+export const BUILDING_CHECK_CONTEXTS = ["buyer", "pre_listing", "property_management"] as const;
+export type BuildingCheckPhoto = { key: string; area: string | null; name: string };
+
+export const buildingChecks = pgTable(
+  "building_checks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id, { onDelete: "restrict" }),
+    propertyId: uuid("property_id").references(() => properties.id, { onDelete: "set null" }),
+    label: text("label"),
+    context: text("context", { enum: BUILDING_CHECK_CONTEXTS }).notNull(),
+    notes: text("notes"),
+    photos: jsonb("photos").$type<BuildingCheckPhoto[]>().notNull().default([]),
+    status: text("status", { enum: ["queued", "running", "done", "failed"] }).notNull().default("queued"),
+    result: jsonb("result"),
+    error: text("error"),
+    aiGenerationId: uuid("ai_generation_id"),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("building_checks_property_idx").on(t.propertyId),
+    index("building_checks_tenant_created_idx").on(t.tenantId, t.createdAt),
+  ],
+);

@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Home,
+  ClipboardCheck,
   GitCompareArrows,
   ShieldCheck,
   CheckCheck,
@@ -72,6 +73,8 @@ function buildGroups(
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { href: "/contacts", label: "My contacts", icon: Users },
         { href: "/properties", label: "My properties", icon: Home },
+        // The owner's "building-check" skill as a feature (2026-11-11).
+        { href: "/building-checks", label: "Building checks", icon: ClipboardCheck },
         { href: "/matching", label: "Matching", icon: GitCompareArrows },
         { href: "/tasks", label: "My tasks", icon: ListTodo, badge: counts.tasksOpen, badgeTone: "plain" },
       ],
@@ -219,7 +222,7 @@ function DesktopSidebar({
   return (
     <aside
       className={cn(
-        "hidden lg:flex shrink-0 border-r surface-2 flex-col h-screen sticky top-0 transition-[width] duration-150",
+        "hidden lg:flex shrink-0 border-r surface-2 flex-col h-screen sticky top-0 transition-[width] duration-150 print:!hidden",
         collapsed ? "w-[60px]" : "w-[228px]",
       )}
     >
@@ -295,7 +298,7 @@ function MobileDrawer({
       />
       <aside
         className={cn(
-          "lg:hidden fixed inset-y-0 left-0 z-50 w-[264px] max-w-[85vw] surface-2 border-r",
+          "lg:hidden fixed inset-y-0 left-0 z-50 w-[264px] max-w-[85vw] surface-2 border-r print:hidden",
           "flex flex-col transition-transform duration-200 will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
         )}
@@ -506,7 +509,7 @@ function TopBar({
 
   return (
     <>
-      <header className="h-14 border-b surface-2 flex items-center gap-2 sm:gap-4 px-3 sm:px-5 sticky top-0 z-30">
+      <header className="h-14 border-b surface-2 flex items-center gap-2 sm:gap-4 px-3 sm:px-5 sticky top-0 z-30 print:hidden">
         <button
           onClick={onOpenMenu}
           className="lg:hidden text-2 hover:text-[var(--text)] p-2 -ml-1 rounded-md hover:surface-3 shrink-0"
