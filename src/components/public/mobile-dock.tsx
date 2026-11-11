@@ -17,10 +17,10 @@ const FALLBACK = { href: "/free-property-appraisal-sa", label: "Free appraisal" 
 
 /**
  * Pages whose visitors are buying, not selling, so an appraisal is the wrong offer.
- * New Homes sends them to the buyer's agent brief (owner's request, 2026-11-11).
+ * New Homes sends them to the top of the buyer's agent page (owner's request, 2026-11-11).
  */
 const BY_PATH: Record<string, { href: string; label: string }> = {
-  "/new-homes-adelaide": { href: "/buyer-agent-adelaide#brief", label: "Buyer's agent" },
+  "/new-homes-adelaide": { href: "/buyer-agent-adelaide", label: "Buyer's agent" },
 };
 
 export function MobileDock({ mobile, mobileHref }: { mobile: string; mobileHref: string }) {
