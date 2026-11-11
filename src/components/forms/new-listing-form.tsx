@@ -76,7 +76,9 @@ export function FullListingButton({
   const [type, setType] = React.useState<"sale" | "rent">("sale");
   const [existing, setExisting] = React.useState(false);
   const [goLive, setGoLive] = React.useState(false);
-  const [section, setSection] = React.useState<"advertised" | "new_homes">("advertised");
+  // Nothing pre-chosen (owner, 2026-11-11): where it shows is a deliberate choice.
+  const [section, setSection] = React.useState<"advertised" | "new_homes" | null>(null);
+  const [sectionError, setSectionError] = React.useState<string | null>(null);
   const [linked, setLinked] = React.useState<Linked[]>([]);
   const a = useAction(createFullListing, {
     onSuccess: (d) => {
@@ -89,10 +91,16 @@ export function FullListingButton({
 
   function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (goLive && !section) {
+      setSectionError("Choose where it shows on the website: Currently advertised or New Homes.");
+      return;
+    }
+    setSectionError(null);
     const f = new FormData(e.currentTarget);
     a.run({
       listingType: type,
-      section,
+      // Not going live and not chosen: kept as an ordinary listing, changeable later.
+      section: section ?? "advertised",
       goLive,
       propertyId: existing ? str(f.get("propertyId")) : undefined,
       streetNumber: str(f.get("streetNumber")),
@@ -131,6 +139,9 @@ export function FullListingButton({
         onClick={() => {
           a.reset();
           setLinked([]);
+          setSection(null);
+          setSectionError(null);
+          setGoLive(false);
           setOpen(true);
         }}
         className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9 hover:opacity-90"
@@ -162,7 +173,7 @@ export function FullListingButton({
               <input type="checkbox" className="size-4" checked={goLive} onChange={(e) => setGoLive(e.target.checked)} />
               Go live on the website
             </label>
-            <p className="text-[12px] text-2 pl-6">{goLive ? "Show it in:" : "Saved as a draft. It will show in, once live:"}</p>
+            <p className="text-[12px] text-2 pl-6">{goLive ? "Show it in (choose one):" : "Saved as a draft. Where it will show once live (optional for now):"}</p>
             <div className="grid sm:grid-cols-2 gap-2 pl-6">
               {(
                 [
@@ -174,7 +185,16 @@ export function FullListingButton({
                   key={v}
                   className={`flex items-start gap-2 rounded-md p-2.5 text-[13px] cursor-pointer surface-2 ${section === v ? "border-2 border-[var(--accent)]" : "border"}`}
                 >
-                  <input type="radio" name="section" className="mt-1" checked={section === v} onChange={() => setSection(v)} />
+                  <input
+                    type="radio"
+                    name="section"
+                    className="mt-1"
+                    checked={section === v}
+                    onChange={() => {
+                      setSection(v);
+                      setSectionError(null);
+                    }}
+                  />
                   <span>
                     <strong>{title}</strong>
                     <span className="block text-2 text-[12px]">{note}</span>
@@ -279,7 +299,7 @@ export function FullListingButton({
           {/* ---- contacts */}
           <ContactLinks linked={linked} setLinked={setLinked} />
 
-          <FormError message={a.error} />
+          <FormError message={sectionError ?? a.error} />
           <div className="flex justify-end gap-2">
             <CancelButton onClick={() => setOpen(false)} />
             <SubmitButton pending={a.pending}>{goLive ? "Save and go live" : "Save draft"}</SubmitButton>
