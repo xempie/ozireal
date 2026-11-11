@@ -112,7 +112,8 @@ export default function Page() {
         {
           heading: "Cookies",
           body: [
-            "This website uses only the cookies it needs to work, such as keeping our staff signed in and protecting forms from automated abuse. It does not use advertising or tracking cookies.",
+            "This website uses the cookies it needs to work, such as keeping our staff signed in and protecting forms from automated abuse.",
+            "We also use Google Analytics to understand how visitors use the public website, for example which pages are read and which enquiry forms are sent. Google Analytics sets cookies and processes this usage information on Google's servers, which may be outside Australia. It does not receive your name, email address, phone number or anything you type into a form, and it is not used on our client management system. We do not use advertising cookies.",
             "You can block cookies in your browser; the public pages will still work.",
           ],
         },

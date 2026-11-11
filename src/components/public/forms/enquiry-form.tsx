@@ -3,6 +3,7 @@
 import * as React from "react";
 import type { FormDefinition, FormField } from "./definitions";
 import { validateField, validateForm } from "./validate";
+import { track } from "@/components/public/analytics";
 
 /**
  * One component that renders any of the enquiry forms and posts it to the CRM.
@@ -220,6 +221,12 @@ export function EnquiryForm({
       if (r.ok) {
         setDone(true);
         setThanksOpen(true);
+        // GA4 lead event: which form, page and New Homes project; nothing the person typed.
+        track("generate_lead", {
+          form_name: meta.formName,
+          page_path: window.location.pathname,
+          project: project ?? undefined,
+        });
         return;
       }
       if (r.status === 422 && j.fieldErrors) setFieldErrors(j.fieldErrors);

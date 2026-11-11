@@ -7,6 +7,7 @@ import { MobileDock } from "@/components/public/mobile-dock";
 import { Zone } from "@/components/public/blocks";
 import { currentPath, currentPageContent, isPreview, themeContent } from "@/server/public/content";
 import { isBuiltinPath, themeCss } from "@/lib/site-content";
+import { Analytics } from "@/components/public/analytics";
 
 /**
  * The public website.
@@ -149,6 +150,8 @@ export default async function PublicLayout({
       />
       <SiteFooter />
       <MobileDock mobile={AGENCY.mobile} mobileHref={AGENCY.mobileHref} />
+      {/* Google Analytics, public pages only (preview and the CRM excluded). */}
+      {!preview && <Analytics />}
     </div>
   );
 }
