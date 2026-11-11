@@ -30,6 +30,7 @@ export const PRIVATE_PREFIXES = [
   "/voice",
   "/properties",
   "/listings",
+  "/building-checks",
   "/matching",
   "/campaigns",
   "/approvals",
