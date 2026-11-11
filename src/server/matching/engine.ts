@@ -60,11 +60,11 @@ const RANK_PROMPT = "rank-matches.v2";
 export const MATCHABLE_STATUSES: string[] = ["draft", "live", "under_offer"];
 
 /**
- * Property states that are matched: all of them (owner's rule, 2026-11-11). Every property
- * is matched against every possible lead regardless of status; a sold home still tells
- * the agent who wants one like it.
+ * Property states that are matched: every one the agent is still working, listed or not
+ * (prospect, appraised, off market, listed). Sold and archived stock is finished and is
+ * never matched (owner's rule, 2026-11-11).
  */
-export const MATCHABLE_PROPERTY_STATUSES = ["prospect", "appraised", "off_market", "listed", "sold", "archived"] as const;
+export const MATCHABLE_PROPERTY_STATUSES = ["prospect", "appraised", "off_market", "listed"] as const;
 
 export type MatchOutcome = {
   written: number;

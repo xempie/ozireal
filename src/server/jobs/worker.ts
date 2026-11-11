@@ -41,7 +41,7 @@ const handlers: Record<JobName, Handler> = {
     const { matchContactsForListing } = await import("@/server/matching/engine");
     return matchContactsForListing(job.data.tenantId, job.data.entityId);
   },
-  /** Every property, whatever its status, against every possible lead (2026-11-11). */
+  /** A property still being worked (not sold or archived) against every possible lead. */
   async MatchProperty(job) {
     const { matchContactsForProperty } = await import("@/server/matching/engine");
     return matchContactsForProperty(job.data.tenantId, job.data.entityId);
@@ -52,12 +52,20 @@ const handlers: Record<JobName, Handler> = {
    */
   async MatchAllProperties() {
     const { properties, tenants } = await import("@/db/schema");
+    const { inArray } = await import("drizzle-orm");
+    const { MATCHABLE_PROPERTY_STATUSES } = await import("@/server/matching/engine");
     const { withTenant } = await import("@/db");
     const { enqueue } = await import("./queues");
     const ts = await db.select({ id: tenants.id }).from(tenants);
     let queued = 0;
     for (const t of ts) {
-      const ps = await withTenant(t.id, (tx) => tx.select({ id: properties.id }).from(properties));
+      // Sold and archived stock is never matched, so it is not queued either.
+      const ps = await withTenant(t.id, (tx) =>
+        tx
+          .select({ id: properties.id })
+          .from(properties)
+          .where(inArray(properties.status, [...MATCHABLE_PROPERTY_STATUSES])),
+      );
       for (const p of ps) if (await enqueue("MatchProperty", { tenantId: t.id, entityId: p.id })) queued++;
     }
     return { queued };
@@ -84,7 +92,7 @@ const handlers: Record<JobName, Handler> = {
     const { embedContactPreferences } = await import("@/server/ai/embed");
     const { enqueue } = await import("./queues");
     const result = await embedContactPreferences(job.data.tenantId, job.data.entityId);
-    // Preferences changed: match this lead against all stock, whatever its status.
+    // Preferences changed: match this lead against all stock still being worked.
     await enqueue("MatchListings", { tenantId: job.data.tenantId, entityId: job.data.entityId });
     return result;
   },
