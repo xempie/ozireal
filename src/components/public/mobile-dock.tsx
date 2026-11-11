@@ -15,6 +15,14 @@ import { useEffect, useState } from "react";
 
 const FALLBACK = { href: "/free-property-appraisal-sa", label: "Free appraisal" };
 
+/**
+ * Pages whose visitors are buying, not selling, so an appraisal is the wrong offer.
+ * New Homes sends them to the buyer's agent brief (owner's request, 2026-11-11).
+ */
+const BY_PATH: Record<string, { href: string; label: string }> = {
+  "/new-homes-adelaide": { href: "/buyer-agent-adelaide#brief", label: "Buyer's agent" },
+};
+
 export function MobileDock({ mobile, mobileHref }: { mobile: string; mobileHref: string }) {
   const pathname = usePathname();
   const [cta, setCta] = useState(FALLBACK);
@@ -23,7 +31,11 @@ export function MobileDock({ mobile, mobileHref }: { mobile: string; mobileHref:
   useEffect(() => {
     const a = document.querySelector<HTMLAnchorElement>(".ss-sticky a.btn");
     const label = a?.textContent?.trim();
-    setCta(a && label ? { href: a.getAttribute("href") ?? FALLBACK.href, label } : FALLBACK);
+    setCta(
+      a && label
+        ? { href: a.getAttribute("href") ?? FALLBACK.href, label }
+        : (BY_PATH[pathname] ?? FALLBACK),
+    );
   }, [pathname]);
 
   useEffect(() => {
