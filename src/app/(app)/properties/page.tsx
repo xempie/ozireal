@@ -12,10 +12,10 @@ import {
 import { getProperties } from "@/server/queries";
 import { statusLabel, propertyTypeLabel } from "@/lib/labels";
 import {
-  NewPropertyButton,
   EditPropertyButton,
 } from "@/components/forms/stock-forms";
-import { suburbOptions, contactOptions } from "@/server/queries/pickers";
+import { suburbOptions, contactOptions, propertyOptions } from "@/server/queries/pickers";
+import { FullListingButton } from "@/components/forms/new-listing-form";
 import { ImportPropertiesButton } from "@/components/forms/property-import";
 
 /**
@@ -41,7 +41,7 @@ export default async function PropertiesPage({
   const { status } = await searchParams;
   const tab = TABS.some((t) => t.key === status) ? status! : "all";
 
-  const [suburbOpts, contactOpts] = await Promise.all([suburbOptions(), contactOptions()]);
+  const [suburbOpts, contactOpts, propertyOpts] = await Promise.all([suburbOptions(), contactOptions(), propertyOptions()]);
   const all = await getProperties();
 
   const isListed = (p: (typeof all)[number]) =>
@@ -62,7 +62,8 @@ export default async function PropertiesPage({
         actions={
           <div className="flex gap-2">
             <ImportPropertiesButton />
-            <NewPropertyButton suburbs={suburbOpts} contacts={contactOpts} />
+            {/* One way to add stock (owner, 2026-11-11): the same form as New listing. */}
+            <FullListingButton properties={propertyOpts} suburbs={suburbOpts} label="New property" />
           </div>
         }
       />

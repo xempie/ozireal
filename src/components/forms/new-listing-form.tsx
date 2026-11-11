@@ -61,7 +61,16 @@ type Linked =
 const num = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : Number(v));
 const str = (v: FormDataEntryValue | null) => (v === null || v === "" ? undefined : String(v));
 
-export function FullListingButton({ properties, suburbs }: { properties: Option[]; suburbs: Option[] }) {
+export function FullListingButton({
+  properties,
+  suburbs,
+  label = "New listing",
+}: {
+  properties: Option[];
+  suburbs: Option[];
+  /** "New property" on the Properties page: the same one form (owner's request, 2026-11-11). */
+  label?: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [type, setType] = React.useState<"sale" | "rent">("sale");
@@ -127,10 +136,10 @@ export function FullListingButton({ properties, suburbs }: { properties: Option[
         className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9 hover:opacity-90"
       >
         <Plus size={13} />
-        New listing
+        {label}
       </button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="New listing" wide>
+      <Modal open={open} onClose={() => setOpen(false)} title={label} wide>
         <form className="space-y-5" onSubmit={submit}>
           <div className="flex gap-1.5" role="radiogroup" aria-label="Sale or rent">
             {(["sale", "rent"] as const).map((t) => (
