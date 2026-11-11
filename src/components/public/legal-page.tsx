@@ -5,7 +5,12 @@ import { PageHero, Prose } from "./page-shell";
  * numbered sections in one readable column. Kept on our own domain on purpose; a policy
  * hosted on somebody else's site is not the agency's policy.
  */
-export type LegalSection = { heading: string; body: string[] };
+export type LegalSection = {
+  heading: string;
+  body: string[];
+  /** Links shown under the text (e.g. Google's opt-out, which its Analytics terms require). */
+  links?: { label: string; href: string }[];
+};
 
 export function LegalPage({
   eyebrow,
@@ -37,7 +42,20 @@ export function LegalPage({
         <div className="wrap">
           <div className="legal">
             {sections.map((s, i) => (
-              <Prose key={s.heading} heading={`${i + 1}. ${s.heading}`} body={s.body} />
+              <div key={s.heading}>
+                <Prose heading={`${i + 1}. ${s.heading}`} body={s.body} />
+                {s.links?.length ? (
+                  <ul className="legal-links">
+                    {s.links.map((l) => (
+                      <li key={l.href}>
+                        <a href={l.href} target="_blank" rel="noopener noreferrer">
+                          {l.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
             ))}
           </div>
         </div>

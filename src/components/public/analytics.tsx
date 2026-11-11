@@ -7,6 +7,9 @@ import { useEffect } from "react";
  * Google Analytics 4 on the public site only (owner's decision, 2026-11-11). The CRM
  * never loads it, so client records and staff sessions are never tracked.
  *
+ * Advertising features (Google signals, ad personalisation) are switched off in the tag
+ * itself, so the Privacy policy's promise holds whatever is toggled in the GA admin.
+ *
  * Disclosed in the Privacy policy. A documented exception to "data stays in
  * ap-southeast-2" (CLAUDE.md §3.6), approved by the owner: only anonymous usage data
  * goes to Google, never a name, email or phone number. Events carry the form, page
@@ -55,7 +58,7 @@ export function Analytics() {
         {`window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
-gtag('config', '${GA_ID}');`}
+gtag('config', '${GA_ID}', { allow_google_signals: false, allow_ad_personalization_signals: false });`}
       </Script>
     </>
   );

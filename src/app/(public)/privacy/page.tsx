@@ -24,7 +24,7 @@ export default function Page() {
       title="Privacy"
       titleEm="policy"
       lede={`How ${A.name} collects, uses, stores and protects your personal information, under the Privacy Act 1988 (Cth) and the Australian Privacy Principles.`}
-      updated="29 October 2026"
+      updated="11 November 2026"
       sections={[
         {
           heading: "Who we are",
@@ -74,7 +74,7 @@ export default function Page() {
           heading: "Where your information is stored",
           body: [
             "Your information is stored on Amazon Web Services infrastructure in Sydney, Australia, with backups also kept in Sydney.",
-            "Some service providers that help us operate process information outside Australia: our AI provider (see above), and our speech-to-text provider Deepgram, which may process voice notes our team records in the United States. We take reasonable steps to ensure these providers protect your information consistently with the Australian Privacy Principles.",
+            "Some service providers that help us operate process information outside Australia: our AI provider (see above), our speech-to-text provider Deepgram, which may process voice notes our team records in the United States, and Google, which processes website usage information for Google Analytics (see Website analytics). We take reasonable steps to ensure these providers protect your information consistently with the Australian Privacy Principles.",
           ],
         },
         {
@@ -112,9 +112,22 @@ export default function Page() {
         {
           heading: "Cookies",
           body: [
-            "This website uses the cookies it needs to work, such as keeping our staff signed in and protecting forms from automated abuse.",
-            "We also use Google Analytics to understand how visitors use the public website, for example which pages are read and which enquiry forms are sent. Google Analytics sets cookies and processes this usage information on Google's servers, which may be outside Australia. It does not receive your name, email address, phone number or anything you type into a form, and it is not used on our client management system. We do not use advertising cookies.",
-            "You can block cookies in your browser; the public pages will still work.",
+            "This website uses cookies it needs to work, such as keeping our staff signed in and protecting forms from automated abuse, and analytics cookies set by Google Analytics (see Website analytics). We do not use advertising or remarketing cookies.",
+            "You can block or delete cookies in your browser settings; the public pages will still work.",
+          ],
+        },
+        {
+          heading: "Website analytics (Google Analytics)",
+          body: [
+            "We use Google Analytics, a web analytics service provided by Google LLC, to understand how visitors use our public website: for example which pages are viewed, how visitors arrive (such as from a search engine), the type of device and browser used, the approximate region, and whether an enquiry form was sent or a phone number was tapped.",
+            "Google Analytics uses cookies and similar technologies to collect this information. It is collected by Google and may be stored and processed on Google's servers outside Australia, including in the United States. We use it only in aggregate, to improve our website and services.",
+            "We do not send Google your name, email address, phone number or anything you type into our forms, and Google Analytics is not used on our client management system. We have not enabled Google's advertising features, and we do not use this information to identify you.",
+            "You can stop Google Analytics from collecting information about your visits by installing Google's opt-out browser add-on, or by blocking cookies in your browser. You can read how Google uses information from websites that use its services at the links below.",
+          ],
+          links: [
+            { label: "How Google uses information from sites that use its services", href: "https://policies.google.com/technologies/partner-sites" },
+            { label: "Google Analytics opt-out browser add-on", href: "https://tools.google.com/dlpage/gaoptout" },
+            { label: "Google Privacy Policy", href: "https://policies.google.com/privacy" },
           ],
         },
         {
