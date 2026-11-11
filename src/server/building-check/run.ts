@@ -18,43 +18,62 @@ export { AREAS, KEY_AREAS } from "@/lib/building-check";
  * contact or a property; the check is its own record (rule 5).
  */
 
-const money = z.number().int().min(0).max(5_000_000).nullable();
+const money = z.preprocess((v) => { const n = Number(v); return v == null || v === "" || !Number.isFinite(n) || n < 0 ? null : Math.min(Math.round(n), 5_000_000); }, z.number().nullable());
+
+/** Lenient parsing: a stray label or a long sentence must not throw away a whole check. */
+const text = (max: number) => z.preprocess((v) => (v == null ? "" : String(v).slice(0, max)), z.string());
+const textOrNull = (max: number) =>
+  z.preprocess((v) => (v == null || v === "" ? null : String(v).slice(0, max)), z.string().nullable());
+function pick<T extends string>(values: readonly [T, ...T[]], fallback: T, alias: Record<string, T> = {}) {
+  return z.preprocess((v) => {
+    const k = String(v ?? "").toLowerCase().trim().replace(/[\s/-]+/g, "_");
+    return (values as readonly string[]).includes(k) ? k : (alias[k] ?? fallback);
+  }, z.enum(values));
+}
+const STATUS = ["met", "not_met", "unverifiable", "not_applicable"] as const;
+const STATUS_ALIAS: Record<string, (typeof STATUS)[number]> = {
+  compliant: "met", pass: "met", yes: "met", ok: "met", present: "met",
+  non_compliant: "not_met", fail: "not_met", no: "not_met", missing: "not_met", absent: "not_met",
+  na: "not_applicable", n_a: "not_applicable", unknown: "unverifiable", unclear: "unverifiable",
+  partial: "unverifiable", partially_met: "unverifiable", not_visible: "unverifiable",
+};
+const slice = (n: number) => <T>(a: T[]) => a.slice(0, n);
 
 export const checkResult = z.object({
-  headline: z.string().min(10).max(600),
+  headline: text(600),
   era: z.object({
-    estimate: z.string().max(80),
-    cues: z.string().max(400),
-    implications: z.string().max(600),
+    estimate: text(80),
+    cues: text(400),
+    implications: text(600),
   }),
   findings: z
     .array(
       z.object({
-        severity: z.enum(["red", "amber", "green"]),
-        issue: z.string().max(160),
-        location: z.string().max(120),
-        reading: z.string().max(1200),
-        confidence: z.enum(["confirmed", "likely", "needs_verification"]),
-        verify: z.string().max(400).nullable(),
+        severity: pick(["red", "amber", "green"] as const, "amber", { high: "red", critical: "red", medium: "amber", low: "green", cosmetic: "green" }),
+        issue: text(160),
+        location: text(120),
+        reading: text(1200),
+        confidence: pick(["confirmed", "likely", "needs_verification"] as const, "needs_verification", { high: "confirmed", medium: "likely", low: "needs_verification" }),
+        verify: textOrNull(400),
         costLow: money,
         costHigh: money,
-        costDriver: z.string().max(200).nullable(),
-        action: z.string().max(300),
-        photos: z.array(z.number().int().min(1)).max(40),
+        costDriver: textOrNull(200),
+        action: text(300),
+        photos: z.preprocess((v) => (Array.isArray(v) ? v.map(Number).filter((n) => Number.isInteger(n) && n >= 1).slice(0, 40) : []), z.array(z.number())),
       }),
     )
-    .max(60),
+    .transform(slice(60)),
   compliance: z
     .array(
       z.object({
-        item: z.string().max(120),
-        status: z.enum(["met", "not_met", "unverifiable", "not_applicable"]),
-        note: z.string().max(400),
+        item: text(120),
+        status: pick(STATUS, "unverifiable", STATUS_ALIAS),
+        note: text(400),
       }),
     )
-    .max(20),
-  missing: z.array(z.object({ area: z.string().max(120), why: z.string().max(300) })).max(20),
-  specialists: z.array(z.object({ trade: z.string().max(120), for: z.string().max(300) })).max(15),
+    .transform(slice(20)),
+  missing: z.array(z.object({ area: text(120), why: text(300) })).transform(slice(20)),
+  specialists: z.array(z.object({ trade: text(120), for: text(300) })).transform(slice(15)),
 });
 export type CheckResult = z.infer<typeof checkResult>;
 
