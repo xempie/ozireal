@@ -1,3 +1,4 @@
+import { InsightsTabs } from "@/components/shell/insights-tabs";
 import { Download } from "lucide-react";
 import {
   PageHeader,
@@ -94,6 +95,7 @@ export default async function ReportsPage() {
 
   return (
     <>
+      <InsightsTabs />
       <PageHeader
         title="Reports"
         subtitle="Activity across the agency, counted from the rows the console holds."

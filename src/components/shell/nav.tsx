@@ -51,6 +51,12 @@ export type ShellData = {
   searchItems: { label: string; sub: string; href: string }[];
 };
 
+/** Insights covers its sibling tabs (Reports, SEO), so it stays lit on them. */
+const ALIASES: Record<string, string[]> = { "/insights": ["/reports", "/seo"] };
+function matches(pathname: string, href: string) {
+  return [href, ...(ALIASES[href] ?? [])].some((h) => pathname === h || pathname.startsWith(h + "/"));
+}
+
 type Item = {
   href: string;
   label: string;
@@ -89,11 +95,9 @@ function buildGroups(
         { href: "/calendar", label: "Calendar", icon: CalendarDays },
         { href: "/voice", label: "Voice notes", icon: Mic },
         { href: "/insights", label: "Insights", icon: BarChart3 },
-        { href: "/reports", label: "Reports", icon: BarChart3 },
         { href: "/compliance", label: "Compliance", icon: Scale },
         { href: "/proposals", label: "Proposals", icon: FileText },
         { href: "/content", label: "Content & social", icon: Newspaper },
-        { href: "/seo", label: "SEO agent", icon: TrendingUp },
         { href: "/website", label: "Website", icon: Globe },
         { href: "/costs", label: "AI cost & jobs", icon: Receipt },
         { href: "/audit", label: "Audit log", icon: ScrollText },
@@ -116,7 +120,7 @@ function NavList({
 }) {
   const pathname = usePathname();
   const groups = buildGroups(counts);
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
+  const isActive = (href: string) => matches(pathname, href);
   const [advancedOpen, setAdvancedOpen] = React.useState(false);
 
   return (
@@ -151,8 +155,7 @@ function NavList({
           )}
           {g.collapsible && collapsed && <div className="border-t mx-2 mb-2" />}
           {(open || collapsed) && g.items.map((item) => {
-            const active =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+            const active = matches(pathname, item.href);
             const Icon = item.icon;
             return (
               <Link

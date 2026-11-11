@@ -1,3 +1,4 @@
+import { InsightsTabs } from "@/components/shell/insights-tabs";
 import { AlertOctagon, AlertTriangle, Info, Ban } from "lucide-react";
 import {
   PageHeader,
@@ -37,8 +38,9 @@ export default async function SeoPage() {
 
   return (
     <>
+      <InsightsTabs />
       <PageHeader
-        title="SEO agent"
+        title="SEO"
         subtitle="Crawls the site fortnightly and produces a change set you can read. It has no ability to publish — not even a disabled one."
         /* No "Run a crawl" button. The crawler is Phase 5 and does not exist, and a
            button that starts nothing is worse than none — it makes an empty findings

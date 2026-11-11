@@ -1,3 +1,4 @@
+import { InsightsTabs } from "@/components/shell/insights-tabs";
 import Link from "next/link";
 import { AlertTriangle, Calendar, Camera, TrendingUp, TrendingDown } from "lucide-react";
 import {
@@ -211,7 +212,8 @@ export default async function InsightsPage() {
 
   return (
     <>
-      <PageHeader title="Insights" subtitle={`${today} · Adelaide. The detailed view; the dashboard keeps it simple.`} />
+      <InsightsTabs />
+      <PageHeader title="Performance" subtitle={`${today} · Adelaide. The detailed view; the dashboard keeps it simple.`} />
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 mb-6">
