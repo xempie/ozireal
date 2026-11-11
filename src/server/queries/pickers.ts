@@ -21,7 +21,8 @@ import {
 export async function suburbOptions() {
   return query((tx) =>
     tx
-      .select({ value: suburbs.id, label: suburbs.name })
+      // With the postcode: some SA names repeat, and the suburb search matches either.
+      .select({ value: suburbs.id, label: sql<string>`${suburbs.name} || coalesce(' ' || ${suburbs.postcode}, '')` })
       .from(suburbs)
       .orderBy(asc(suburbs.name)),
   );
