@@ -19,7 +19,7 @@ import { relative, money } from "@/lib/utils";
 import { NewContactButton } from "@/components/forms/contact-forms";
 import { BulkSelection, SelectAllBox, RowBox } from "@/components/contacts/bulk-select";
 import { ImportContactsButton } from "@/components/contacts/contact-import";
-import { roleLabel } from "@/lib/roles";
+import { roleLabel, CONTACT_ROLES } from "@/lib/roles";
 
 const roleTone = {
   buyer: "brand",
@@ -45,20 +45,38 @@ const filters = [
 export default async function ContactsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string }>;
+  searchParams: Promise<{ sort?: string; role?: string }>;
 }) {
-  const order = (await searchParams).sort === "oldest" ? "oldest" : "newest";
-  const [contacts, savedViews, contactsBySource] = await Promise.all([
+  const sp = await searchParams;
+  const order = sp.sort === "oldest" ? "oldest" : "newest";
+  /** Role filter (2026-11-12): one role, or "none" for people still to sort. */
+  const roleFilter =
+    sp.role === "none" || (CONTACT_ROLES as readonly string[]).includes(sp.role ?? "") ? (sp.role as string) : null;
+  const [everyone, savedViews, contactsBySource] = await Promise.all([
     getContacts({ order }),
     getSavedViews(),
     getContactsBySource(),
   ]);
+  const contacts = !roleFilter
+    ? everyone
+    : everyone.filter((c) => (roleFilter === "none" ? c.roles.length === 0 : (c.roles as string[]).includes(roleFilter)));
+  const roleCount = (r: string) =>
+    everyone.filter((c) => (r === "none" ? c.roles.length === 0 : (c.roles as string[]).includes(r))).length;
+  const href = (o: { sort?: string; role?: string | null }) => {
+    const q = new URLSearchParams();
+    const so = o.sort ?? order;
+    const ro = o.role === undefined ? roleFilter : o.role;
+    if (so === "oldest") q.set("sort", "oldest");
+    if (ro) q.set("role", ro);
+    const qs = q.toString();
+    return qs ? `/contacts?${qs}` : "/contacts";
+  };
 
   return (
     <>
       <PageHeader
         title="Contacts"
-        subtitle={`${contacts.length} people. One record per person, accumulating roles over time — never one record per deal.`}
+        subtitle={`${everyone.length} people. One record per person, accumulating roles over time — never one record per deal.`}
         actions={
           <>
             {/* The "Saved views" button here opened nothing and duplicated the card
@@ -145,7 +163,7 @@ export default async function ContactsPage({
         {(["newest", "oldest"] as const).map((o) => (
           <Link
             key={o}
-            href={o === "newest" ? "/contacts" : "/contacts?sort=oldest"}
+            href={href({ sort: o })}
             aria-current={order === o ? "true" : undefined}
             className={
               order === o
@@ -156,6 +174,32 @@ export default async function ContactsPage({
             {o === "newest" ? "Newest first" : "Oldest first"}
           </Link>
         ))}
+      </div>
+
+      <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 text-[12.5px]" aria-label="Filter by role">
+        {[
+          { key: null, label: `All ${everyone.length}` },
+          ...CONTACT_ROLES.map((r) => ({ key: r as string, label: `${roleLabel(r)} ${roleCount(r)}` })),
+          { key: "none", label: `No role ${roleCount("none")}` },
+        ]
+          .filter((f) => f.key === null || f.key === "none" || roleCount(f.key) > 0)
+          .map((f) => (
+            <Link
+              key={f.key ?? "all"}
+              href={href({ role: f.key })}
+              aria-current={roleFilter === f.key ? "true" : undefined}
+              className={
+                "shrink-0 whitespace-nowrap rounded-full px-3 py-1 " +
+                (roleFilter === f.key
+                  ? "bg-[var(--accent)] text-white"
+                  : f.key === "none"
+                    ? "border border-[#F3D9A8] bg-[#FFF7E0] text-[#8A4B00] hover:border-[#D98A00]"
+                    : "border surface-2 hover:surface-3")
+              }
+            >
+              {f.label}
+            </Link>
+          ))}
       </div>
 
       <BulkSelection

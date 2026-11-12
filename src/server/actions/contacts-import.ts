@@ -127,6 +127,10 @@ const ROLE_WORDS: Record<string, (typeof ROLES)[number]> = {
   "business vendor": "business_vendor", "business seller": "business_vendor",
   agent: "agent", "estate agent": "agent", "real estate agent": "agent",
   developer: "developer", developers: "developer", "property developer": "developer",
+  // The agency's own Wix labels (2026-11-12).
+  "need to rent": "tenant", lessor: "landlord", "manage my property": "landlord",
+  "meta property management": "landlord", "need a buyer agent": "buyer",
+  "meta appraisal": "vendor", broker: "agent",
 };
 const rolesFromTags = (tags: string[]) =>
   [...new Set(tags.map((t) => ROLE_WORDS[t.trim().toLowerCase()]).filter(Boolean))];
