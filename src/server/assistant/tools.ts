@@ -53,6 +53,12 @@ type ToolSpec = {
 
 export const TOOLS = {
   /* ------------------------------------------------------------------ reads */
+  read_web_page: {
+    kind: "read",
+    description:
+      "Open a public web page the agent linked (a listing, a developer's project page, an agency site, an article) and read it: title, description, main photo URL, any schema.org listing data, and the page text. Use it whenever the agent pastes a link, then act on what it says exactly as for a pasted screenshot (e.g. add_property_with_listing). If the site refuses (big portals often do), say so and ask for a screenshot or the pasted text.",
+    schema: z.object({ url: z.string().url().max(2000) }),
+  },
   get_overview: {
     kind: "read",
     description:
@@ -450,6 +456,14 @@ export async function runReadTool(name: ToolName, rawInput: unknown): Promise<un
   const input = (TOOLS[name].schema as z.ZodTypeAny).parse(rawInput ?? {}) as Record<string, unknown>;
 
   switch (name) {
+    case "read_web_page": {
+      const { fetchPage } = await import("@/server/web/fetch-page");
+      try {
+        return await fetchPage(String(input.url));
+      } catch (e) {
+        return { error: e instanceof Error ? e.message : "The page could not be read." };
+      }
+    }
     case "get_overview":
       return getHomeCounts();
 
