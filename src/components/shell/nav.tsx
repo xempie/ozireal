@@ -583,7 +583,7 @@ export function ConsoleShell({
         <TopBar onOpenMenu={() => setMenuOpen(true)} data={data} signOut={signOut} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 w-full max-w-[1500px] min-w-0">
           <FeatureAssist />
-
+          {children}
         </main>
       </div>
       <AssistantWidget />
