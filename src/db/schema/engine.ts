@@ -100,6 +100,8 @@ export const campaigns = pgTable(
     /** Provenance only. The campaign keeps its own copy of the filter above, so
      *  deleting a saved view can never destroy the record of who was targeted. */
     savedViewId: uuid("saved_view_id"),
+    /** The property a match campaign is about (0024). */
+    propertyId: uuid("property_id").references(() => properties.id, { onDelete: "set null" }),
 
     createdByUserId: uuid("created_by_user_id").references(() => users.id, {
       onDelete: "set null",
@@ -188,6 +190,8 @@ export const approvalItems = pgTable(
     draftBody: text("draft_body").notNull(),
     /** Kept when a human edits before approving, so the audit shows what changed. */
     originalBody: text("original_body"),
+    /** Why the AI flags this draft for a look before sending (0024). */
+    reviewNote: text("review_note"),
 
     /**
      * Consent as it stood when the draft was written, and as it stands now. Holding

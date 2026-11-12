@@ -67,6 +67,12 @@ export default async function PropertyDetail({
         subtitle={subtitle}
         actions={
           <>
+            <Link
+              href={`/matching?focus=${p.id}`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-[var(--accent)] text-white text-[13px] font-medium px-3 min-h-9"
+            >
+              Email matched buyers
+            </Link>
             <EditPropertyButton
               property={{
                 id: p.id,

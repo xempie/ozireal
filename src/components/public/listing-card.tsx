@@ -38,6 +38,8 @@ export interface CardListing {
   /** Unsplash photo id (allow-listed host), or null for the placeholder. */
   img: string | null;
   alt: string;
+  /** The listing's own page, when it has one. */
+  href?: string;
 }
 
 const Bed = () => (
@@ -63,7 +65,10 @@ const House = () => (
 
 export function ListingCard({ l }: { l: CardListing }) {
   return (
-    <article className="card">
+    <article className="card" style={l.href ? { position: "relative" } : undefined}>
+      {l.href && (
+        <a href={l.href} aria-label={`${l.addr}, ${l.sub}`} style={{ position: "absolute", inset: 0, zIndex: 2 }} />
+      )}
       <div className="card-media">
         <span className={`tag ${l.tagClass}`}>{l.tag}</span>
         {l.img ? (

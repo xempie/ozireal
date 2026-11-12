@@ -237,6 +237,7 @@ export const approveAndSend = defineAction({
       subject: item.draftSubject,
       body: item.draftBody,
       agency: { name: agency.name, licence: agency.licence },
+      listingId: item.listingId,
     });
 
     if (!result.ok) {

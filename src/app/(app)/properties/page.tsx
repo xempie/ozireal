@@ -271,12 +271,20 @@ export default async function PropertiesPage({
                   {stage === "sold" || stage === "archived" ? (
                     <span className="text-3">—</span>
                   ) : (
-                    <Link href={`/properties/${p.id}#matches`} className="font-semibold text-[#0E9F6E] hover:underline">
+                    <Link href={`/matching?focus=${p.id}`} className="font-semibold text-[#0E9F6E] hover:underline">
                       {p.matchCount}
                     </Link>
                   )}
                 </TD>
-                <TD className="text-[12.5px] text-[var(--accent)] font-medium whitespace-nowrap">{nextStep(p, stage)}</TD>
+                <TD className="text-[12.5px] text-[var(--accent)] font-medium whitespace-nowrap">
+                  {p.matchCount && (stage === "website" || stage === "off_market") ? (
+                    <Link href={`/matching?focus=${p.id}`} className="hover:underline">
+                      {nextStep(p, stage)}
+                    </Link>
+                  ) : (
+                    nextStep(p, stage)
+                  )}
+                </TD>
                 <TD className="text-right">
                   <EditPropertyButton
                     property={{

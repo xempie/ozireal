@@ -81,6 +81,48 @@ function client() {
   return ses;
 }
 
+/** The owner's signature, for other emails (the matched-buyer emails, 2026-11-12). */
+export const EMAIL_SIGNATURE_HTML = SIGNATURE_HTML;
+
+/**
+ * A marketing email (approved in the queue, consent checked by the gate). Carries the
+ * one-click List-Unsubscribe headers (RFC 8058) as well as the link in the body. Replies
+ * go to the agency inbox, not the no-reply sender.
+ */
+export async function sendMarketingEmail(m: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  unsubscribeUrl: string;
+}): Promise<{ ok: true; id: string | null } | { ok: false; error: string }> {
+  try {
+    const oneClick = m.unsubscribeUrl.replace("/unsubscribe?", "/api/unsubscribe?");
+    const r = await client().send(
+      new SendEmailCommand({
+        FromEmailAddress: `${FROM_NAME} <${FROM_ADDRESS}>`,
+        Destination: { ToAddresses: [m.to] },
+        ReplyToAddresses: [ALERT_TO],
+        Content: {
+          Simple: {
+            Subject: { Data: m.subject, Charset: "UTF-8" },
+            Body: { Text: { Data: m.text, Charset: "UTF-8" }, Html: { Data: m.html, Charset: "UTF-8" } },
+            Headers: [
+              { Name: "List-Unsubscribe", Value: `<${oneClick}>` },
+              { Name: "List-Unsubscribe-Post", Value: "List-Unsubscribe=One-Click" },
+            ],
+          },
+        },
+      }),
+    );
+    return { ok: true, id: r.MessageId ?? null };
+  } catch (e) {
+    const name = (e as { name?: string }).name ?? "Error";
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: `${name}: ${msg.slice(0, 200)}` };
+  }
+}
+
 /** A refusal that will not change on retry: end the job instead of retrying it. */
 class Refused extends Error {}
 

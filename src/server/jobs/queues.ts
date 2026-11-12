@@ -28,7 +28,9 @@ export type JobName =
   /** entityId = the tenant id: re-match every property (the nightly sweep). */
   | "MatchAllProperties"
   /** entityId = a building check id: read its photos and write the report. */
-  | "RunBuildingCheck";
+  | "RunBuildingCheck"
+  /** entityId = a campaign_recipients id: draft that person's matched-property email. */
+  | "DraftMatchEmail";
 
 export type JobPayload = {
   tenantId: string;

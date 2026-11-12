@@ -49,5 +49,6 @@ export function toCard(l: PublicListing): CardListing {
     open: l.headline ?? "",
     img: l.coverPhoto ? `/media/${l.coverPhoto}` : null,
     alt: l.address,
+    href: `/property/${l.slug}`,
   };
 }

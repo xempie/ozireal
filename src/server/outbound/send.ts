@@ -3,6 +3,9 @@ import { withTenant } from "@/db";
 import { contacts } from "@/db/schema";
 import { getSecret } from "@/server/secrets";
 import { withComplianceFooter } from "./gate";
+import { unsubscribeUrl } from "./unsubscribe";
+import { sendMarketingEmail } from "./notices";
+import { emailPropertyFor, propertyEmailHtml, propertyEmailText } from "./property-email";
 
 /**
  * Actually putting a message on the wire (B5.6).
@@ -24,6 +27,8 @@ export type SendRequest = {
   subject: string | null;
   body: string;
   agency: { name: string; licence: string | null };
+  /** The listing the email is about: adds the property card (photo, price, link). */
+  listingId?: string | null;
 };
 
 export async function sendMessage(req: SendRequest): Promise<SendResult> {
@@ -57,17 +62,22 @@ export async function sendMessage(req: SendRequest): Promise<SendResult> {
   if (!contact.email) return { ok: false, error: "No email address on file" };
 
   /**
-   * There is no unsubscribe-link route yet, so there is no URL to put in the
-   * footer — and a marketing email without a functional unsubscribe is unlawful.
-   * This refuses deliberately, as a COMPLIANCE guard, not as a transport stub:
-   * B6 wires SES, and wiring a transport must not be able to turn this into a
-   * silent breach. Build the unsubscribe route first.
+   * Email (2026-11-12): the unsubscribe route exists (/unsubscribe, signed per contact),
+   * so every email carries a working link in the body and the one-click headers.
    */
-  return {
-    ok: false,
-    error:
-      "Marketing email cannot be sent yet: there is no unsubscribe link to include, and a marketing email without a functional unsubscribe breaches the Spam Act. Nothing was sent. (B6 must build the unsubscribe route, not only wire SES.)",
-  };
+  const unsub = unsubscribeUrl(req.tenantId, req.contactId);
+  const agencyLine = req.agency.licence ? `${req.agency.name} · ${req.agency.licence}` : req.agency.name;
+  const property = req.listingId ? await emailPropertyFor(req.tenantId, req.listingId) : null;
+  const text = propertyEmailText({ body: req.body, property, unsubscribeUrl: unsub, agencyLine });
+  const html = propertyEmailHtml({ body: req.body, property, unsubscribeUrl: unsub, agencyLine });
+  const r = await sendMarketingEmail({
+    to: contact.email,
+    subject: req.subject?.trim() || "From Ozi Realty",
+    text,
+    html,
+    unsubscribeUrl: unsub,
+  });
+  return r.ok ? { ok: true, providerMessageId: r.id, sentBody: text } : { ok: false, error: r.error };
 }
 
 /* ------------------------------------------------------------------ SMS */
