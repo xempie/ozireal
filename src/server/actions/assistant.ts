@@ -31,7 +31,7 @@ import type { ActionResult } from "./action";
  * could have done themselves.
  */
 
-const PROMPT = "assistant.v7";
+const PROMPT = "assistant.v8";
 const MAX_ROUNDS = 6;
 
 const block = z.union([
@@ -153,7 +153,7 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
         ],
         messages: history as { role: "user" | "assistant"; content: string | ContentBlock[] }[],
         tools: TOOL_DEFINITIONS,
-        maxTokens: 6000,
+        maxTokens: 16_000,
         tenantId: s.tenantId,
         promptVersion: prompt.version,
       });
@@ -186,7 +186,7 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
         if (spec.kind === "read") {
           try {
             const out = await runReadTool(u.name, valid.data);
-            results.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(out).slice(0, 30_000) });
+            results.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(out).slice(0, 55_000) });
           } catch (e) {
             results.push({
               type: "tool_result",

@@ -363,6 +363,20 @@ export function AssistantWidget() {
     }
   }
 
+  const waitingCount = pending.filter((p) => cards[p.id]?.status === "waiting").length;
+  const [bulk, setBulk] = React.useState(false);
+  /** Decide every waiting card in turn, through the same path as pressing each one. */
+  async function decideAll(doIt: boolean) {
+    setBulk(true);
+    try {
+      for (const p of pending) {
+        if (cards[p.id]?.status === "waiting") await decide(p.id, doIt);
+      }
+    } finally {
+      setBulk(false);
+    }
+  }
+
   /** A suggestion either goes straight to the assistant, or starts a request to finish. */
   function pickSuggestion(sug: Suggestion) {
     if (sug.send) {
@@ -567,6 +581,29 @@ export function AssistantWidget() {
               </div>
             )}
           </div>
+
+          {/* Many cards waiting (a bulk job): one press decides them all (2026-11-12). */}
+          {waitingCount > 1 && !busy && (
+            <div className="border-t px-3 py-2 flex items-center gap-2 shrink-0 accent-soft">
+              <span className="text-[12.5px] flex-1">{waitingCount} changes waiting</span>
+              <button
+                type="button"
+                disabled={bulk}
+                onClick={() => void decideAll(false)}
+                className="text-[12.5px] rounded-md surface-2 border px-2.5 min-h-8"
+              >
+                Cancel all
+              </button>
+              <button
+                type="button"
+                disabled={bulk}
+                onClick={() => void decideAll(true)}
+                className="inline-flex items-center gap-1 text-[12.5px] rounded-md bg-[var(--accent)] text-white font-medium px-3 min-h-8 disabled:opacity-60"
+              >
+                {bulk ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Do all {waitingCount}
+              </button>
+            </div>
+          )}
 
           {/*
             Mid-conversation, the page's own suggestions stay one tap away. They follow

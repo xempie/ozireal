@@ -30,6 +30,9 @@ export type ModelTier = "haiku" | "sonnet";
 /** Models that have refused `temperature` in this process. See `send` in callClaude. */
 const NO_TEMPERATURE = new Set<string>();
 
+/** The most output one call may ask for. Kept under the size that needs streaming. */
+const MAX_OUTPUT_CEILING = 32_000;
+
 const CACHE_WRITE_MULTIPLIER = 1.25;
 const CACHE_READ_MULTIPLIER = 0.1;
 
@@ -249,8 +252,16 @@ export async function callClaude(call: ClaudeCall): Promise<ClaudeResult> {
       succeeded: false,
       rawResponse: text.slice(0, 20_000),
     });
+    /**
+     * One automatic second attempt with far more room (2026-11-12): a long answer is
+     * not a fault, and failing the agent's request for it was. Bounded, so a runaway
+     * prompt costs at most one larger call before it fails as before.
+     */
+    const current = call.maxTokens ?? 1500;
+    const roomier = Math.min(Math.max(current * 3, 8000), MAX_OUTPUT_CEILING);
+    if (roomier > current) return callClaude({ ...call, maxTokens: roomier });
     throw new ClaudeError(
-      `${call.task}: response hit the ${call.maxTokens ?? 1500}-token ceiling and was truncated (generation ${generationId}). Raise maxTokens or shorten the input.`,
+      `${call.task}: the answer was longer than the ${current}-token limit even after a retry (generation ${generationId}). Ask for less at once, e.g. in smaller batches.`,
       undefined,
       false,
     );

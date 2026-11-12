@@ -17,7 +17,7 @@ import { isIP } from "node:net";
  */
 
 const MAX_BYTES = 2_000_000;
-const MAX_TEXT = 14_000;
+const MAX_TEXT = 45_000;
 
 function privateAddress(ip: string): boolean {
   if (isIP(ip) === 6) {
