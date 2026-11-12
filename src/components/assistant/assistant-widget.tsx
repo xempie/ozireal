@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { suggestionsFor, recordFromPath, type Suggestion } from "./page-suggestions";
 import { ASK_EVENT, type AskDetail } from "./ask-button";
-import { Sparkles, X, Send, RotateCcw, Check, Ban, Loader2, ArrowUpRight } from "lucide-react";
+import { Sparkles, X, Send, RotateCcw, Check, Ban, Loader2, ArrowUpRight, ImagePlus, ImageIcon } from "lucide-react";
+import { attachmentsFrom, MAX_ATTACHMENTS, type Attachment } from "./attachments";
 import { cn } from "@/lib/utils";
 import {
   assistantTurn,
@@ -49,9 +50,23 @@ function load(): Stored {
   return { messages: [], cards: {} };
 }
 
+/**
+ * Images are sent once: the model reads them in the turn they arrive and acts on them.
+ * Afterwards each is replaced by a short marker, so the history stays small enough to
+ * resend every turn and to keep in sessionStorage.
+ */
+const IMAGE_MARKER = "[An image the agent shared earlier; already read]";
+function withoutImages(ms: ChatMessage[]): ChatMessage[] {
+  return ms.map((m) =>
+    Array.isArray(m.content) && m.content.some((b) => b.type === "image")
+      ? { ...m, content: m.content.map((b) => (b.type === "image" ? { type: "text" as const, text: IMAGE_MARKER } : b)) }
+      : m,
+  );
+}
+
 function save(s: Stored) {
   try {
-    window.sessionStorage.setItem(STORE_KEY, JSON.stringify(s));
+    window.sessionStorage.setItem(STORE_KEY, JSON.stringify({ ...s, messages: withoutImages(s.messages) }));
   } catch {
     /* storage full or blocked: the chat still works for this page */
   }
@@ -188,6 +203,9 @@ export function AssistantWidget() {
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [draft, setDraft] = React.useState("");
+  const [images, setImages] = React.useState<Attachment[]>([]);
+  const [dragging, setDragging] = React.useState(false);
+  const fileRef = React.useRef<HTMLInputElement>(null);
   /** Fixed next steps from the changes just confirmed (see nextSteps on the server). */
   const [actionNext, setActionNext] = React.useState<string[]>([]);
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -250,7 +268,7 @@ export function AssistantWidget() {
         setError(r.error);
         return;
       }
-      setMessages(r.data.messages);
+      setMessages(withoutImages(r.data.messages));
       setPending(r.data.pending);
       setPendingResults(r.data.pendingResults);
       if (r.data.pending.length) {
@@ -276,12 +294,25 @@ export function AssistantWidget() {
     }
   }
 
-  function send(text: string) {
+  function send(text: string, imgs: Attachment[] = images) {
     const t = text.trim();
-    if (!t || busy || pending.length) return;
+    if ((!t && imgs.length === 0) || busy || pending.length) return;
     setDraft("");
+    setImages([]);
     setActionNext([]);
-    void runTurn([...messages, { role: "user", content: t }]);
+    const content: ChatMessage["content"] = imgs.length
+      ? [
+          ...imgs.map((a) => ({ type: "image" as const, source: { type: "base64" as const, media_type: a.media_type, data: a.data } })),
+          { type: "text" as const, text: t || "Here is what I have. Do what is needed." },
+        ]
+      : t;
+    void runTurn([...withoutImages(messages), { role: "user", content }]);
+  }
+
+  async function addImages(list: DataTransferItemList | FileList | null) {
+    const got = await attachmentsFrom(list);
+    if (got.length) setImages((prev) => [...prev, ...got].slice(0, MAX_ATTACHMENTS));
+    return got.length;
   }
 
   /** Once every card in the batch is decided, the outcomes go back to the model. */
@@ -353,10 +384,16 @@ export function AssistantWidget() {
   /** Other parts of the page (the dashboard's quick actions) open the chat by event. */
   const pickRef = React.useRef(pickSuggestion);
   pickRef.current = pickSuggestion;
+  const sendRef = React.useRef(send);
+  sendRef.current = send;
   React.useEffect(() => {
     const onAsk = (e: Event) => {
       const d = (e as CustomEvent<AskDetail>).detail ?? {};
       setOpen(true);
+      if (d.images?.length) {
+        sendRef.current(d.send ?? d.prefill ?? "", d.images);
+        return;
+      }
       if (d.send || d.prefill) {
         pickRef.current({ label: d.send ?? d.prefill ?? "", send: d.send, prefill: d.prefill });
       }
@@ -375,6 +412,7 @@ export function AssistantWidget() {
     setPendingResults([]);
     setError(null);
     setActionNext([]);
+    setImages([]);
     decisions.current = {};
   }
 
@@ -456,11 +494,18 @@ export function AssistantWidget() {
 
             {messages.map((m, i) => {
               if (m.role === "user") {
-                if (typeof m.content !== "string") return null; // tool results: not for display
+                const parts = typeof m.content === "string" ? [{ type: "text" as const, text: m.content }] : m.content;
+                if (parts.some((b) => b.type === "tool_result")) return null; // tool results: not for display
+                const pics = parts.filter((b) => b.type === "image" || (b.type === "text" && b.text === IMAGE_MARKER)).length;
                 return (
                   <div key={i} className="flex justify-end">
                     <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-[var(--accent)] text-white px-3.5 py-2 text-[13.5px] whitespace-pre-wrap">
-                      {m.content}
+                      {pics > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[12px] opacity-90 mb-0.5">
+                          <ImageIcon size={13} /> {pics === 1 ? "1 image" : `${pics} images`}
+                        </span>
+                      )}
+                      {parts.map((b, j) => (b.type === "text" && b.text !== IMAGE_MARKER ? <div key={j}>{b.text}</div> : null))}
                     </div>
                   </div>
                 );
@@ -547,17 +592,72 @@ export function AssistantWidget() {
             </div>
           )}
 
+          {images.length > 0 && (
+            <div className="border-t px-3 pt-2 flex gap-2 shrink-0 overflow-x-auto">
+              {images.map((a, k) => (
+                <div key={k} className="relative shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- local data URL preview */}
+                  <img src={a.preview} alt={a.name} className="h-16 w-16 object-cover rounded-md border" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, x) => x !== k))}
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-[#13254A] text-white grid place-items-center"
+                    aria-label="Remove image"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <form
-            className="border-t p-3 flex items-end gap-2 shrink-0"
+            className={cn("border-t p-3 flex items-end gap-2 shrink-0", dragging && "accent-soft")}
             onSubmit={(e) => {
               e.preventDefault();
               send(draft);
             }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              void addImages(e.dataTransfer.files);
+            }}
           >
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                void addImages(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={busy || pending.length > 0 || images.length >= MAX_ATTACHMENTS}
+              className="h-10 w-10 rounded-lg border surface-3 grid place-items-center text-2 hover:text-[var(--text)] disabled:opacity-40 shrink-0"
+              aria-label="Add a screenshot or photo"
+              title="Add a screenshot or photo (or paste one)"
+            >
+              <ImagePlus size={17} />
+            </button>
             <textarea
               ref={inputRef}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
+              onPaste={(e) => {
+                if (Array.from(e.clipboardData.items).some((it) => it.type.startsWith("image/"))) {
+                  e.preventDefault();
+                  void addImages(e.clipboardData.items);
+                }
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -566,13 +666,13 @@ export function AssistantWidget() {
               }}
               rows={1}
               maxLength={4000}
-              placeholder={pending.length ? "Choose Do it or Cancel above first" : "Ask or tell me what to do…"}
+              placeholder={pending.length ? "Choose Do it or Cancel above first" : images.length ? "Add a note, or just send" : "Ask, or paste a screenshot or message…"}
               disabled={busy || pending.length > 0}
               className="flex-1 resize-none max-h-32 rounded-lg border surface-3 px-3 py-2 text-[16px] sm:text-[13.5px] outline-none focus:border-[var(--accent)] disabled:opacity-60"
             />
             <button
               type="submit"
-              disabled={busy || !draft.trim() || pending.length > 0}
+              disabled={busy || (!draft.trim() && images.length === 0) || pending.length > 0}
               className="h-10 w-10 rounded-lg bg-[var(--accent)] text-white grid place-items-center hover:opacity-90 disabled:opacity-40 shrink-0"
               aria-label="Send"
             >

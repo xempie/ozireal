@@ -1,5 +1,6 @@
 "use client";
 
+import { FeatureAssist } from "@/components/assistant/feature-assist";
 import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -581,7 +582,8 @@ export function ConsoleShell({
       <div className="flex-1 min-w-0 flex flex-col">
         <TopBar onOpenMenu={() => setMenuOpen(true)} data={data} signOut={signOut} />
         <main className="flex-1 px-4 py-4 sm:px-6 sm:py-6 w-full max-w-[1500px] min-w-0">
-          {children}
+          <FeatureAssist />
+
         </main>
       </div>
       <AssistantWidget />

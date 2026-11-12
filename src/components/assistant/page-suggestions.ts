@@ -137,6 +137,34 @@ export function suggestionsFor(pathname: string): { area: string; items: Suggest
     };
   }
 
+  if (pathname.startsWith("/building-checks")) {
+    return {
+      area: "building checks",
+      items: [
+        p("Add a task to book a building inspection for…", "Add a task to book a building and pest inspection for "),
+        s("Which properties are being worked right now?"),
+        p("Log a call with the vendor about the check…", "Log a call with "),
+      ],
+    };
+  }
+  if (pathname.startsWith("/insights") || pathname.startsWith("/reports") || pathname.startsWith("/seo")) {
+    return {
+      area: "insights",
+      items: [
+        s("How is the business doing this month?"),
+        s("Which contacts came in this week, and from where?"),
+        s("Which properties have the most matched buyers?"),
+        s("What follow-ups are overdue?"),
+      ],
+    };
+  }
+  if (pathname.startsWith("/calendar")) {
+    return {
+      area: "the calendar",
+      items: [s("What is on today and tomorrow?"), p("Add a task for…", "Add a task: "), s("What tasks are overdue?")],
+    };
+  }
+
   // The dashboard, and any page without its own set: one from each of the four areas.
   return {
     area: "everything",

@@ -8,7 +8,7 @@ import * as React from "react";
  * page never needs a reference to it.
  */
 export const ASK_EVENT = "ozi:ask";
-export type AskDetail = { prefill?: string; send?: string };
+export type AskDetail = { prefill?: string; send?: string; images?: import("./attachments").Attachment[] };
 
 export function openAssistant(detail: AskDetail = {}) {
   window.dispatchEvent(new CustomEvent<AskDetail>(ASK_EVENT, { detail }));

@@ -7,6 +7,7 @@ import type { ActionResult } from "@/server/actions/action";
 import { createContact, updateContact, logInteraction, recordFollowupOutcome } from "@/server/actions/contacts";
 import { createTask, completeTask } from "@/server/actions/ops";
 import { createProperty, updateProperty, createListing, updateListing } from "@/server/actions/stock";
+import { createFullListing } from "@/server/actions/listing-new";
 import { createMessageDraft } from "@/server/actions/drafts";
 import { recordConsent } from "@/server/actions/consent";
 import { setContactPreferences } from "@/server/actions/preferences";
@@ -116,6 +117,36 @@ export async function describeWrite(name: ToolName, input: Record<string, unknow
     case "complete_task": {
       const t = (await getTasks()).find((x) => x.id === input.taskId);
       return { title: `Mark done: ${t?.title ?? "unknown task"}`, lines: [] };
+    }
+    case "add_property_with_listing": {
+      const addr =
+        input.section === "new_homes"
+          ? String(input.projectName ?? "New Homes project")
+          : [input.unit ? `${input.unit}/` : "", input.streetNumber, input.street].filter(Boolean).join(" ").replace("/ ", "/");
+      const specs = [
+        input.beds != null && `${input.beds} bed`,
+        input.baths != null && `${input.baths} bath`,
+        input.parking != null && `${input.parking} car`,
+        input.landAreaSqm && `${input.landAreaSqm} m² land`,
+        input.floorAreaSqm && `${input.floorAreaSqm} m² floor`,
+      ].filter(Boolean).join(" · ");
+      const lines = [
+        `${input.propertyType}${specs ? ` · ${specs}` : ""}`,
+        input.priceDisplay ? `Price shown: ${input.priceDisplay}` : "Price shown: not set (you write it)",
+        ...(input.rentPw ? [`Rent: ${input.rentPw} pw`] : []),
+        ...(input.publicHeadline ? [`Headline: ${input.publicHeadline}`] : []),
+        ...(Array.isArray(input.highlights) && input.highlights.length ? [`Highlights: ${input.highlights.join(", ")}`] : []),
+        ...(input.publicCopy ? [`Copy: ${String(input.publicCopy).slice(0, 160)}${String(input.publicCopy).length > 160 ? "…" : ""}`] : []),
+      ];
+      for (const pp of (input.people ?? []) as { role: string; contactId?: string; firstName?: string; lastName?: string; phone?: string; email?: string }[]) {
+        const who = pp.contactId ? await contactName(pp.contactId) : [pp.firstName, pp.lastName].filter(Boolean).join(" ");
+        lines.push(`${label(pp.role)}: ${who}${pp.phone ? ` · ${pp.phone}` : ""}${pp.email ? ` · ${pp.email}` : ""}`);
+      }
+      lines.push("Saved as a DRAFT listing. Nothing goes on the website until you publish it.");
+      return {
+        title: `Add ${addr}, ${input.suburb} with a draft ${input.listingType === "rent" ? "rental" : "sale"} listing`,
+        lines,
+      };
     }
     case "create_property": {
       const addr = [input.unit ? `${input.unit}/` : "", input.streetNumber, input.street].filter(Boolean).join(" ").replace("/ ", "/");
@@ -283,6 +314,12 @@ async function nextSteps(name: ToolName, input: Record<string, unknown>): Promis
     case "create_task":
     case "complete_task":
       return ["Show my open tasks", "What is overdue?"];
+    case "add_property_with_listing":
+      return [
+        `Find matching contacts for ${input.section === "new_homes" ? input.projectName : [input.streetNumber, input.street].filter(Boolean).join(" ")}`,
+        "Write the listing headline and copy",
+        "Add a task to book the photographer",
+      ];
     case "create_property":
     case "update_property": {
       const addr =
@@ -399,6 +436,44 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     case "complete_task": {
       const r = await completeTask({ id: input.taskId });
       return outcome(r, "Task done.", "/tasks");
+    }
+
+    case "add_property_with_listing": {
+      const sub = await resolveSuburb(String(input.suburb), input.postcode);
+      if (!sub.ok) return sub;
+      if (input.section !== "new_homes" && !input.street) return { ok: false, message: "I need the street name to add this property." };
+      if (input.section === "new_homes" && !input.projectName) return { ok: false, message: "I need the project name for a New Homes card." };
+      const r = await createFullListing({
+        listingType: input.listingType,
+        section: input.section,
+        goLive: false,
+        streetNumber: input.streetNumber,
+        street: input.street,
+        unit: input.unit,
+        suburbId: sub.id,
+        propertyType: input.propertyType,
+        beds: input.beds,
+        baths: input.baths,
+        parking: input.parking,
+        landAreaSqm: input.landAreaSqm,
+        floorAreaSqm: input.floorAreaSqm,
+        projectName: input.projectName,
+        highlights: input.highlights ?? [],
+        priceDisplay: input.priceDisplay,
+        searchPriceMin: input.searchPriceMin,
+        searchPriceMax: input.searchPriceMax,
+        rentPw: input.rentPw,
+        publicHeadline: input.publicHeadline,
+        publicCopy: input.publicCopy,
+        contacts: ((input.people ?? []) as { role: string; contactId?: string; firstName?: string; lastName?: string; phone?: string; email?: string }[])
+          .filter((pp) => pp.contactId || pp.firstName)
+          .map((pp) =>
+            pp.contactId
+              ? { role: pp.role, contactId: pp.contactId }
+              : { role: pp.role, newContact: { firstName: pp.firstName!, lastName: pp.lastName ?? "", phone: pp.phone ?? "", email: pp.email ?? "" } },
+          ),
+      });
+      return outcome(r, "Added the property with a draft listing. Check it, then publish from the property page.", r.ok ? `/listings/${r.data.id}` : undefined);
     }
 
     case "create_property": {
@@ -600,4 +675,23 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     default:
       return { ok: false, message: `${name} is not something the assistant can change.` };
   }
+}
+
+/** A suburb name (and optional postcode) to its id, or a plain reason why not. */
+async function resolveSuburb(name: string, postcode?: string): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+  const found = await query((tx) =>
+    tx
+      .select({ id: suburbs.id, postcode: suburbs.postcode })
+      .from(suburbs)
+      .where(sql`lower(${suburbs.name}) = lower(${name.trim()})`),
+  );
+  const narrowed = postcode && found.some((s) => s.postcode === postcode) ? found.filter((s) => s.postcode === postcode) : found;
+  if (narrowed.length === 0) {
+    const hint = await query((tx) => didYouMean(tx, name));
+    return { ok: false, message: `"${name}" is not a suburb I recognise${hint || ""}. Check the spelling.` };
+  }
+  if (narrowed.length > 1) {
+    return { ok: false, message: `"${name}" exists with several postcodes (${narrowed.map((s) => s.postcode).join(", ")}). Say which.` };
+  }
+  return { ok: true, id: narrowed[0].id };
 }

@@ -217,6 +217,47 @@ export const TOOLS = {
       internalNotes: z.string().max(2000).optional(),
     }),
   },
+  add_property_with_listing: {
+    kind: "write",
+    description:
+      "ONE card that adds a new property AND its DRAFT listing together, plus any people on it (owner, landlord, builder…). Use this whenever the agent shares a listing, a screenshot, a brochure or a pasted message describing a property for sale or rent: fill every field you can read, in a single call. Never published here. priceDisplay only when the wording is in the source verbatim. For a new-homes project use section new_homes with projectName.",
+    schema: z.object({
+      listingType: z.enum(["sale", "rent"]),
+      section: z.enum(["advertised", "new_homes"]).default("advertised"),
+      unit: z.string().max(20).optional(),
+      streetNumber: z.string().max(20).optional(),
+      street: z.string().max(120).optional(),
+      suburb: z.string().min(1).max(80),
+      postcode: z.string().max(10).optional(),
+      propertyType: z.enum(PROPERTY_TYPES),
+      beds: z.number().int().min(0).max(30).optional(),
+      baths: z.number().int().min(0).max(30).optional(),
+      parking: z.number().int().min(0).max(30).optional(),
+      landAreaSqm: z.number().int().min(0).max(10_000_000).optional(),
+      floorAreaSqm: z.number().int().min(0).max(100_000).optional(),
+      projectName: z.string().max(120).optional(),
+      highlights: z.array(z.string().min(1).max(60)).max(4).optional(),
+      priceDisplay: z.string().max(200).optional(),
+      searchPriceMin: z.number().int().min(0).max(50_000_000).optional(),
+      searchPriceMax: z.number().int().min(0).max(50_000_000).optional(),
+      rentPw: z.number().int().min(0).max(100_000).optional(),
+      publicHeadline: z.string().max(200).optional(),
+      publicCopy: z.string().max(6000).optional(),
+      people: z
+        .array(
+          z.object({
+            role: z.enum(["owner", "landlord", "tenant", "interested_buyer", "builder_developer", "estate_agent", "other"]),
+            contactId: uuid().optional(),
+            firstName: z.string().max(100).optional(),
+            lastName: z.string().max(100).optional(),
+            phone: z.string().max(40).optional(),
+            email: z.string().max(320).optional(),
+          }),
+        )
+        .max(10)
+        .optional(),
+    }),
+  },
   update_property: {
     kind: "write",
     description: "Change a property's details, owner or status. Only the fields given change.",

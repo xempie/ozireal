@@ -31,11 +31,20 @@ import type { ActionResult } from "./action";
  * could have done themselves.
  */
 
-const PROMPT = "assistant.v5";
+const PROMPT = "assistant.v6";
 const MAX_ROUNDS = 6;
 
 const block = z.union([
   z.object({ type: z.literal("text"), text: z.string().max(20_000) }),
+  /** A screenshot or photo the agent pasted (resized in the browser to about 1.5k px). */
+  z.object({
+    type: z.literal("image"),
+    source: z.object({
+      type: z.literal("base64"),
+      media_type: z.enum(["image/jpeg", "image/png", "image/webp"]),
+      data: z.string().max(1_600_000).regex(/^[A-Za-z0-9+/=]+$/),
+    }),
+  }),
   z.object({ type: z.literal("tool_use"), id: z.string().max(100), name: z.string().max(64), input: z.unknown() }),
   z.object({
     type: z.literal("tool_result"),
@@ -46,7 +55,7 @@ const block = z.union([
 ]);
 const message = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.union([z.string().min(1).max(8_000), z.array(block).min(1).max(40)]),
+  content: z.union([z.string().min(1).max(20_000), z.array(block).min(1).max(40)]),
 });
 export type ChatMessage = z.infer<typeof message>;
 
@@ -84,7 +93,14 @@ export async function assistantTurn(raw: unknown): Promise<ActionResult<TurnResu
 
   const parsed = z
     .object({
-      messages: z.array(message).min(1).max(120),
+      messages: z
+        .array(message)
+        .min(1)
+        .max(120)
+        .refine(
+          (ms) => ms.flatMap((m) => (Array.isArray(m.content) ? m.content : [])).filter((b) => b.type === "image").length <= 6,
+          "Too many images",
+        ),
       /** Where the agent is. Strictly shaped, so a URL cannot carry text into the prompt. */
       page: z
         .object({
