@@ -31,7 +31,7 @@ import type { ActionResult } from "./action";
  * could have done themselves.
  */
 
-const PROMPT = "assistant.v8";
+const PROMPT = "assistant.v9";
 const MAX_ROUNDS = 6;
 
 const block = z.union([

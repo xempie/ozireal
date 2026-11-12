@@ -439,7 +439,7 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     }
 
     case "add_property_with_listing": {
-      const sub = await resolveSuburb(String(input.suburb), input.postcode);
+      const sub = await resolveSuburb(String(input.suburb), input.postcode, input.state);
       if (!sub.ok) return sub;
       if (input.section !== "new_homes" && !input.street) return { ok: false, message: "I need the street name to add this property." };
       if (input.section === "new_homes" && !input.projectName) return { ok: false, message: "I need the project name for a New Homes card." };
@@ -477,26 +477,11 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
     }
 
     case "create_property": {
-      const matchesFound = await query((tx) =>
-        tx
-          .select({ id: suburbs.id, postcode: suburbs.postcode })
-          .from(suburbs)
-          .where(sql`lower(${suburbs.name}) = lower(${String(input.suburb).trim()})`),
-      );
-      const narrowed = input.postcode
-        ? matchesFound.filter((s) => s.postcode === input.postcode)
-        : matchesFound;
-      if (narrowed.length === 0) {
-        const hint = await query((tx) => didYouMean(tx, String(input.suburb)));
-        return {
-          ok: false,
-          message: `"${input.suburb}" is not a suburb I recognise${hint || ""}. Check the spelling${input.postcode ? " and postcode" : ""}.`,
-        };
-      }
-      if (narrowed.length > 1) {
-        return { ok: false, message: `"${input.suburb}" exists with several postcodes (${narrowed.map((s) => s.postcode).join(", ")}). Say which.` };
-      }
-      const { suburb: _s, ...rest } = input;
+      const sub = await resolveSuburb(String(input.suburb), input.postcode, input.state);
+      if (!sub.ok) return sub;
+      const narrowed = [{ id: sub.id }];
+      const { suburb: _s, state: _st, ...rest } = input;
+      void _st;
       void _s;
       const r = await createProperty({ ...rest, suburbId: narrowed[0].id });
       return outcome(r, r.ok ? `Added ${r.data.address}.` : "", r.ok ? `/properties/${r.data.id}` : undefined);
@@ -678,20 +663,52 @@ async function applyWriteInner(name: ToolName, rawInput: unknown): Promise<Write
 }
 
 /** A suburb name (and optional postcode) to its id, or a plain reason why not. */
-async function resolveSuburb(name: string, postcode?: string): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+/**
+ * A suburb name (and postcode) to its id. A suburb not yet on the list is ADDED when the
+ * postcode is known, anywhere in Australia, with the state worked out from the postcode
+ * (owner's request, 2026-11-12: interstate stock is stock too).
+ */
+async function resolveSuburb(name: string, postcode?: string, stateHint?: string): Promise<{ ok: true; id: string } | { ok: false; message: string }> {
+  const clean = name.trim().replace(/\s+/g, " ").replace(/,?\s*(SA|NSW|VIC|QLD|WA|TAS|NT|ACT)$/i, "").replace(/\s*\((SA|NSW|VIC|QLD|WA|TAS|NT|ACT)\)$/i, "");
+  const pc = postcode?.trim();
   const found = await query((tx) =>
     tx
       .select({ id: suburbs.id, postcode: suburbs.postcode })
       .from(suburbs)
-      .where(sql`lower(${suburbs.name}) = lower(${name.trim()})`),
+      .where(sql`lower(${suburbs.name}) = lower(${clean})`),
   );
-  const narrowed = postcode && found.some((s) => s.postcode === postcode) ? found.filter((s) => s.postcode === postcode) : found;
-  if (narrowed.length === 0) {
-    const hint = await query((tx) => didYouMean(tx, name));
-    return { ok: false, message: `"${name}" is not a suburb I recognise${hint || ""}. Check the spelling.` };
-  }
+  const narrowed = pc && found.some((x) => x.postcode === pc) ? found.filter((x) => x.postcode === pc) : pc ? [] : found;
+  if (narrowed.length === 1) return { ok: true, id: narrowed[0].id };
   if (narrowed.length > 1) {
-    return { ok: false, message: `"${name}" exists with several postcodes (${narrowed.map((s) => s.postcode).join(", ")}). Say which.` };
+    return { ok: false, message: `"${clean}" exists with several postcodes (${narrowed.map((x) => x.postcode).join(", ")}). Say which.` };
   }
-  return { ok: true, id: narrowed[0].id };
+  if (pc && /^\d{4}$/.test(pc)) {
+    const state = (stateHint && /^(SA|NSW|VIC|QLD|WA|TAS|NT|ACT)$/i.test(stateHint) ? stateHint.toUpperCase() : stateFromPostcode(pc));
+    const title = clean.replace(/\b\w/g, (c) => c.toUpperCase());
+    const [row] = await query((tx) =>
+      tx
+        .insert(suburbs)
+        .values({ name: title, state, postcode: pc })
+        .onConflictDoUpdate({ target: [suburbs.name, suburbs.state, suburbs.postcode], set: { name: title } })
+        .returning({ id: suburbs.id }),
+    );
+    return { ok: true, id: row.id };
+  }
+  if (found.length === 1) return { ok: true, id: found[0].id };
+  const hint = await query((tx) => didYouMean(tx, clean));
+  return { ok: false, message: `"${clean}" is not on the suburb list yet${hint || ""}. Give its postcode and it will be added.` };
+}
+
+/** Australian postcode ranges to state (Australia Post). */
+function stateFromPostcode(pc: string): string {
+  const n = Number(pc);
+  if ((n >= 200 && n <= 299) || (n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920)) return "ACT";
+  if (n >= 800 && n <= 999) return "NT";
+  if (n >= 1000 && n <= 2999) return "NSW";
+  if (n >= 3000 && n <= 3999) return "VIC";
+  if (n >= 4000 && n <= 4999) return "QLD";
+  if (n >= 5000 && n <= 5999) return "SA";
+  if (n >= 6000 && n <= 6999) return "WA";
+  if (n >= 7000 && n <= 7999) return "TAS";
+  return "SA";
 }

@@ -206,13 +206,15 @@ export const TOOLS = {
   create_property: {
     kind: "write",
     description:
-      "Add a property to stock. `suburb` is a suburb name; it must already be in the suburb list. Status is prospect, appraised or off_market.",
+      "Add a property to stock. `suburb` is a suburb name, anywhere in Australia; always give its postcode, and a suburb not yet on the list is added. Status is prospect, appraised or off_market.",
     schema: z.object({
       unit: z.string().max(20).optional(),
       streetNumber: z.string().max(20).optional(),
       street: z.string().min(1).max(120),
       suburb: z.string().min(1).max(80),
       postcode: z.string().max(10).optional(),
+      /** SA, NSW, VIC, QLD, WA, TAS, NT or ACT. Worked out from the postcode when left out. */
+      state: z.string().max(3).optional(),
       propertyType: z.enum(PROPERTY_TYPES),
       status: z.enum(["prospect", "appraised", "off_market"]).optional(),
       beds: z.number().int().min(0).max(30).optional(),
@@ -235,6 +237,8 @@ export const TOOLS = {
       street: z.string().max(120).optional(),
       suburb: z.string().min(1).max(80),
       postcode: z.string().max(10).optional(),
+      /** SA, NSW, VIC, QLD, WA, TAS, NT or ACT. Worked out from the postcode when left out. */
+      state: z.string().max(3).optional(),
       propertyType: z.enum(PROPERTY_TYPES),
       beds: z.number().int().min(0).max(30).optional(),
       baths: z.number().int().min(0).max(30).optional(),
