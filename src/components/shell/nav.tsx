@@ -545,8 +545,16 @@ function TopBar({
           </span>
           <ThemeToggle />
           {signOut}
-          <span className="h-8 w-8 rounded-full surface-3 border grid place-items-center text-[11px] font-semibold ml-0.5 shrink-0">
-            SW
+          <span
+            title={data.userName}
+            className="h-8 w-8 rounded-full surface-3 border grid place-items-center text-[11px] font-semibold ml-0.5 shrink-0"
+          >
+            {data.userName
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((w) => w[0]!.toUpperCase())
+              .join("") || "?"}
           </span>
         </div>
       </header>
