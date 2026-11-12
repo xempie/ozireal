@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PropertyBulk, PropertySelectAll, PropertyRowBox } from "@/components/stock/property-bulk";
 import { PageHeader, Badge, Table, THead, TH, TD, TR } from "@/components/ui";
 import { getProperties } from "@/server/queries";
 import { propertyTypeLabel } from "@/lib/labels";
@@ -228,9 +229,16 @@ export default async function PropertiesPage({
           })}
         </div>
       ) : (
-        <Table minWidth={980}>
+        <PropertyBulk
+          allIds={shown.map(({ p }) => p.id)}
+          names={Object.fromEntries(shown.map(({ p }) => [p.id, titleOf(p)]))}
+        >
+        <Table minWidth={1010}>
           <THead>
             <TR>
+              <TH className="w-10">
+                <PropertySelectAll />
+              </TH>
               <TH>Property</TH>
               <TH>Specs</TH>
               <TH>Website</TH>
@@ -243,6 +251,9 @@ export default async function PropertiesPage({
           <tbody>
             {shown.map(({ p, stage }) => (
               <TR key={p.id}>
+                <TD>
+                  <PropertyRowBox id={p.id} name={titleOf(p)} />
+                </TD>
                 <TD nowrap>
                   <Link href={`/properties/${p.id}`} className="font-medium hover:underline underline-offset-2">
                     {titleOf(p)}
@@ -312,6 +323,7 @@ export default async function PropertiesPage({
             ))}
           </tbody>
         </Table>
+        </PropertyBulk>
       )}
 
       {shown.length === 0 && (
