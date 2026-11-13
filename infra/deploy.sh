@@ -18,7 +18,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 IP="${DEPLOY_IP:-$(cat "$HERE/.public-ip")}"
 KEY="${DEPLOY_KEY:-$HERE/ozirealty.pem}"
 APP_DIR=/srv/ozirealty
-SSH="ssh -i $KEY -o StrictHostKeyChecking=no ubuntu@$IP"
+SSH="ssh -i $KEY -o StrictHostKeyChecking=no -o ServerAliveInterval=15 -o ServerAliveCountMax=8 -o TCPKeepAlive=yes ubuntu@$IP"
 
 log() { printf '\n\033[1m== %s\033[0m\n' "$1"; }
 
