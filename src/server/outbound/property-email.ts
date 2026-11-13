@@ -25,6 +25,8 @@ export type EmailProperty = {
   headline: string | null;
   url: string | null;
   photoUrl: string | null;
+  /** Always set: the listing page when live, else the most relevant page of the site. */
+  link: { url: string; label: string };
 };
 
 /** The listing's public facts for the email card, or null if it has none to show. */
@@ -35,6 +37,7 @@ export async function emailPropertyFor(tenantId: string, listingId: string): Pro
         slug: listings.slug,
         status: listings.status,
         section: listings.websiteSection,
+        type: listings.listingType,
         priceDisplay: listings.priceDisplay,
         headline: listings.publicHeadline,
         street: sql<string>`trim(coalesce(${properties.unit} || '/', '') || coalesce(${properties.streetNumber} || ' ', '') || coalesce(${properties.street}, ''))`,
@@ -53,7 +56,16 @@ export async function emailPropertyFor(tenantId: string, listingId: string): Pro
   );
   if (!l) return null;
   const onSite = l.section === "advertised" && ["live", "under_offer"].includes(l.status);
+  const url = onSite ? `${SITE}/property/${l.slug}` : null;
+  const link = url
+    ? { url, label: "View the property" }
+    : l.section === "new_homes"
+      ? { url: `${SITE}/new-homes-adelaide`, label: "See our new homes and projects" }
+      : l.type === "rent"
+        ? { url: `${SITE}/rent-property-house-adelaide`, label: "See our rentals" }
+        : { url: `${SITE}/buyer-agent-adelaide`, label: "How we help buyers" };
   return {
+    link,
     address: l.street,
     suburb: l.suburb,
     priceDisplay: l.priceDisplay,
@@ -66,7 +78,7 @@ export async function emailPropertyFor(tenantId: string, listingId: string): Pro
       .filter(Boolean)
       .join(" · "),
     headline: l.headline,
-    url: onSite ? `${SITE}/property/${l.slug}` : null,
+    url,
     photoUrl: l.photo && onSite ? `${SITE}/media/${l.photo}` : null,
   };
 }
@@ -84,16 +96,16 @@ export function propertyEmailHtml(o: {
     .join("");
   const p = o.property;
   const card = !p
-    ? ""
+    ? `<p style="margin:8px 0 20px"><a href="${SITE}" style="display:inline-block;background:#D84315;color:#ffffff;text-decoration:none;font-weight:bold;padding:11px 20px;border-radius:8px;font-size:15px">Visit ozirealty.com.au</a></p>`
     : `
 <table cellpadding="0" cellspacing="0" width="100%" style="margin:8px 0 20px;border:1px solid #E3E7EF;border-radius:12px;overflow:hidden">
-  ${p.photoUrl ? `<tr><td><a href="${esc(p.url ?? SITE)}"><img src="${esc(p.photoUrl)}" alt="${esc(p.address)}" width="560" style="display:block;width:100%;max-width:560px;height:auto;border:0"></a></td></tr>` : ""}
+  ${p.photoUrl ? `<tr><td><a href="${esc(p.link.url)}"><img src="${esc(p.photoUrl)}" alt="${esc(p.address)}" width="560" style="display:block;width:100%;max-width:560px;height:auto;border:0"></a></td></tr>` : ""}
   <tr><td style="padding:16px 18px;font-family:Arial,sans-serif;color:#13254A">
     ${p.priceDisplay ? `<div style="font-size:18px;font-weight:bold;margin-bottom:4px">${esc(p.priceDisplay)}</div>` : ""}
     <div style="font-size:16px;font-weight:bold">${esc(p.address)}${p.suburb ? `, ${esc(p.suburb)}` : ""}</div>
     ${p.specs ? `<div style="font-size:14px;color:#4B5563;margin-top:4px">${esc(p.specs)}</div>` : ""}
     ${p.headline ? `<div style="font-size:14px;margin-top:8px">${esc(p.headline)}</div>` : ""}
-    ${p.url ? `<a href="${esc(p.url)}" style="display:inline-block;margin-top:14px;background:#D84315;color:#ffffff;text-decoration:none;font-weight:bold;padding:11px 20px;border-radius:8px;font-size:15px">View the property</a>` : ""}
+    <a href="${esc(p.link.url)}" style="display:inline-block;margin-top:14px;background:#D84315;color:#ffffff;text-decoration:none;font-weight:bold;padding:11px 20px;border-radius:8px;font-size:15px">${esc(p.link.label)}</a>
   </td></tr>
 </table>`;
 
@@ -122,10 +134,10 @@ export function propertyEmailText(o: { body: string; property: EmailProperty | n
           `${p.address}${p.suburb ? `, ${p.suburb}` : ""}`,
           ...(p.priceDisplay ? [p.priceDisplay] : []),
           ...(p.specs ? [p.specs] : []),
-          ...(p.url ? [`View the property: ${p.url}`] : []),
+          `${p.link.label}: ${p.link.url}`,
           "",
         ]
-      : []),
+      : [`www.ozirealty.com.au`, ""]),
     "Esi Dor | Ozi Realty · 1800 400 333 · www.ozirealty.com.au",
     "—",
     o.agencyLine,

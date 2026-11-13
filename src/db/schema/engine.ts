@@ -339,3 +339,21 @@ export const buildingChecks = pgTable(
     index("building_checks_tenant_created_idx").on(t.tenantId, t.createdAt),
   ],
 );
+
+/** One AI audience search for a property (0025). The picks themselves go into `matches`. */
+export const audienceRuns = pgTable("audience_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .references(() => tenants.id, { onDelete: "restrict" }),
+  propertyId: uuid("property_id")
+    .notNull()
+    .references(() => properties.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["queued", "running", "done", "failed"] }).notNull().default("queued"),
+  considered: integer("considered").notNull().default(0),
+  picked: integer("picked").notNull().default(0),
+  error: text("error"),
+  aiGenerationId: uuid("ai_generation_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});

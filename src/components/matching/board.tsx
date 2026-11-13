@@ -18,9 +18,11 @@ import {
   Trash2,
   RotateCcw,
   Home,
+  Sparkles,
+  Wand2,
 } from "lucide-react";
 import type { BoardProperty, BoardPerson, BoardDraft } from "@/server/queries/match-board";
-import { startMatchEmails, redraftMatchEmails } from "@/server/actions/match-emails";
+import { startMatchEmails, redraftMatchEmails, findAudienceFor, aiRewriteDraft } from "@/server/actions/match-emails";
 import { approveAndSend, editDraft, rejectDraft } from "@/server/actions/approvals";
 import { createTask } from "@/server/actions/ops";
 import { RunMatchingButton } from "@/components/forms/run-matching";
@@ -171,7 +173,7 @@ export function MatchBoard({
                       p.counts.ready > 0 || pending > 0 ? "bg-[var(--accent)] text-white" : "surface-3 border"
                     }`}
                   >
-                    {pending > 0 ? "Review drafts" : p.counts.ready > 0 ? `Email ${p.counts.ready} matched` : "Open"}
+                    {pending > 0 ? "Review drafts" : p.counts.ready > 0 ? `Email ${p.counts.ready} matched` : "Find people with AI"}
                   </Link>
                 </div>
               </article>
@@ -228,11 +230,27 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
 
   // While drafts are being written, refresh until they land.
   const drafting = batch?.drafts.some((d) => d.status === "drafting");
+  const searching = p.audience?.status === "queued" || p.audience?.status === "running";
   React.useEffect(() => {
-    if (!drafting) return;
+    if (!drafting && !searching) return;
     const t = setInterval(() => router.refresh(), 3000);
     return () => clearInterval(t);
-  }, [drafting, router]);
+  }, [drafting, searching, router]);
+
+  const [finding, setFinding] = React.useState(false);
+  async function find() {
+    setFinding(true);
+    setError(null);
+    try {
+      const r = await findAudienceFor({ propertyId: p.id });
+      if (!r.ok) setError(r.error);
+      router.refresh();
+    } catch {
+      setError("Could not reach the server. Reload the page and try again.");
+    } finally {
+      setFinding(false);
+    }
+  }
 
   async function start() {
     setError(null);
@@ -250,6 +268,7 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
 
   const groups: { key: BoardPerson["group"]; title: string; note: string }[] = [
     { key: "ready", title: "Ready to email", note: "Good match, email consent given, not yet emailed about this property." },
+    { key: "recent", title: "Emailed this week", note: "Good fit, but they had an email from you in the last 7 days (or one is waiting). Held back so you never over-send." },
     { key: "call", title: "Worth a call", note: "Good match but no email consent (or no email). A call or a task instead." },
     { key: "contacted", title: "Already contacted", note: "Emailed about this property before." },
   ];
@@ -267,7 +286,7 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
           Open the property
         </Link>
         <span className="ml-auto">
-          <RunMatchingButton propertyId={p.id} label="Match again" />
+          <RunMatchingButton propertyId={p.id} label="Preference match" />
         </span>
       </div>
 
@@ -281,7 +300,7 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
           )}
           {p.listing && p.listing.status !== "live" && p.listing.status !== "under_offer" && (
             <p className="text-[12.5px] text-[#8A4B00] mt-1">
-              Not on the website yet, so the emails will have no &ldquo;View the property&rdquo; button or photo.
+              Not on the website yet, so the emails show no photo and link to {p.section === "new_homes" ? "your New Homes page" : p.listing?.type === "rent" ? "your rentals page" : "your buyer\u2019s agent page"} instead.
             </p>
           )}
           <div className="flex gap-4 mt-2 text-[13px]">
@@ -292,6 +311,42 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
           </div>
         </div>
       </div>
+
+      <section className="rounded-xl border border-[var(--accent)]/35 bg-[var(--accent)]/[0.04] p-4 flex flex-wrap items-center gap-3">
+        <span className="h-9 w-9 rounded-full bg-[var(--accent)] text-white grid place-items-center shrink-0">
+          <Sparkles size={17} />
+        </span>
+        <div className="flex-1 min-w-[220px]">
+          <h3 className="text-[14.5px] font-semibold">Find the right people with AI</h3>
+          <p className="text-[12.5px] text-2">
+            {searching ? (
+              <span className="inline-flex items-center gap-1">
+                <Loader2 size={13} className="animate-spin" /> Reading every client&rsquo;s enquiries, tags and history… about a minute.
+              </span>
+            ) : p.audience?.status === "done" ? (
+              <>
+                Read {p.audience.considered} clients and picked {p.audience.picked}, each with a specific reason. Run again any time.
+              </>
+            ) : p.audience?.status === "failed" ? (
+              <span className="text-[#b02f2f]">The last search failed: {p.audience.error}</span>
+            ) : (
+              <>
+                Reads every client you can email (their enquiries in their own words, roles, tags, where they live) and picks who this
+                property genuinely suits. Estate agents and developers are left out.
+              </>
+            )}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={find}
+          disabled={finding || searching}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] text-white text-[13.5px] font-semibold px-4 min-h-10 disabled:opacity-50"
+        >
+          {finding || searching ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+          {p.audience?.status === "done" ? "Find again" : "Find people"}
+        </button>
+      </section>
 
       {batch && active ? (
         <Review p={p} batch={batch} />
@@ -369,7 +424,7 @@ function Focus({ p, pinned, onPin }: { p: BoardProperty; pinned: boolean; onPin:
 
           {p.people.length === 0 && (
             <div className="surface-2 border rounded-xl p-6 text-center text-2 text-[13.5px]">
-              Nobody is matched with this property yet. Run matching above, or add buyers with preferences.
+              Nobody picked for this property yet. Press <strong>Find people</strong> above.
             </div>
           )}
 
@@ -449,6 +504,14 @@ function PersonRow({
           {x.contactedAt && <span className="text-[11.5px] text-2">emailed {dayFmt.format(x.contactedAt)}</span>}
         </div>
         <p className="text-2 text-[12.5px] leading-snug">{x.reason}</p>
+        <p className="text-3 text-[11.5px] mt-0.5 flex flex-wrap gap-x-2.5">
+          {x.email && <span>{x.email}</span>}
+          {x.phone && <span>{x.phone}</span>}
+          {[...x.roles, ...x.tags].slice(0, 5).map((t) => (
+            <span key={t} className="rounded surface-3 px-1">{t}</span>
+          ))}
+          {x.recentAt && <span className="text-[#8A4B00]">emailed {dayFmt.format(x.recentAt)}</span>}
+        </p>
       </div>
       {x.group === "call" && (
         <div className="flex gap-1 shrink-0">
@@ -486,6 +549,22 @@ function Review({ p, batch }: { p: BoardProperty; batch: NonNullable<BoardProper
   const drafting = drafts.filter((d) => d.status === "drafting").length;
   const flagged = pending.filter((d) => d.reviewNote).length;
   const failed = drafts.filter((d) => d.status === "failed").length;
+
+  const [allInstr, setAllInstr] = React.useState("");
+  const [rewriting, setRewriting] = React.useState<{ done: number; total: number } | null>(null);
+  async function rewriteAll() {
+    const t = allInstr.trim();
+    if (!t) return;
+    const list = pending.filter((d) => !results[d.itemId!]);
+    setRewriting({ done: 0, total: list.length });
+    for (const [i, d] of list.entries()) {
+      await aiRewriteDraft({ id: d.itemId!, instruction: t }).catch(() => null);
+      setRewriting({ done: i + 1, total: list.length });
+    }
+    setRewriting(null);
+    setAllInstr("");
+    router.refresh();
+  }
 
   async function approveAll() {
     const list = pending.filter((d) => !results[d.itemId!]);
@@ -538,6 +617,33 @@ function Review({ p, batch }: { p: BoardProperty; batch: NonNullable<BoardProper
           {sending ? `Sending ${sending.done}/${sending.total}…` : `Approve & send ${pending.length}`}
         </button>
       </div>
+
+      {pending.length > 1 && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void rewriteAll();
+          }}
+          className="surface-2 border rounded-xl p-3 flex flex-wrap items-center gap-2"
+        >
+          <Wand2 size={16} className="text-[var(--accent)]" />
+          <input
+            value={allInstr}
+            onChange={(e) => setAllInstr(e.target.value)}
+            placeholder="Change all emails with AI, e.g. shorter, more casual, mention the stamp duty waiver…"
+            aria-label="Change all emails with AI"
+            className="flex-1 min-w-[220px] surface-3 border rounded-md px-2.5 py-1.5 text-[16px] sm:text-[13px]"
+          />
+          <button
+            type="submit"
+            disabled={!allInstr.trim() || !!rewriting || !!sending}
+            className="rounded-md bg-[#13254A] text-white text-[13px] px-3 min-h-9 disabled:opacity-50 inline-flex items-center gap-1"
+          >
+            {rewriting ? <Loader2 size={13} className="animate-spin" /> : <Wand2 size={13} />}
+            {rewriting ? `Rewriting ${rewriting.done}/${rewriting.total}…` : `Apply to all ${pending.length}`}
+          </button>
+        </form>
+      )}
 
       <ul className="space-y-2">
         {drafts.map((d) => (
@@ -652,6 +758,10 @@ function DraftCard({
               </span>
             )}
           </div>
+          <div className="text-3 text-[11.5px] flex flex-wrap gap-x-2.5">
+            {d.email && <span>{d.email}</span>}
+            {d.phone && <span>{d.phone}</span>}
+          </div>
           {d.subject && <div className="text-2 text-[12.5px] truncate">{d.subject}</div>}
         </div>
         {d.status !== "drafting" && <ChevronDown size={16} className={open ? "rotate-180 transition" : "transition"} />}
@@ -685,15 +795,21 @@ function DraftCard({
             </>
           ) : (
             <>
+              {d.why && (
+                <p className="text-[12px] rounded-md surface-3 px-2.5 py-1.5">
+                  <strong>Why them:</strong> {d.why.replace(/\s*\[Opening:.*\]$/, "")}
+                </p>
+              )}
               <div className="text-[13.5px] leading-relaxed whitespace-pre-wrap">{d.body}</div>
               <p className="text-3 text-[11.5px]">
                 Then: the property photo, price and a &ldquo;View the property&rdquo; button, your signature, and the
                 unsubscribe link.
               </p>
               {d.status === "pending" && !result && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  <AiEdit itemId={d.itemId!} />
                   <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 rounded-md surface-3 border text-[12.5px] px-2.5 min-h-8">
-                    <Pencil size={12} /> Edit
+                    <Pencil size={12} /> Edit by hand
                   </button>
                   <button type="button" onClick={remove} disabled={busy} className="inline-flex items-center gap-1 rounded-md surface-3 border text-[12.5px] px-2.5 min-h-8 text-[#A12A12]">
                     <Trash2 size={12} /> Don&rsquo;t send this one
@@ -705,5 +821,58 @@ function DraftCard({
         </div>
       )}
     </li>
+  );
+}
+
+/** Change one email with AI: type how, it rewrites with the same facts and rules. */
+function AiEdit({ itemId }: { itemId: string }) {
+  const router = useRouter();
+  const [open, setOpen] = React.useState(false);
+  const [text, setText] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
+  if (!open)
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 rounded-md bg-[#13254A] text-white text-[12.5px] px-2.5 min-h-8"
+      >
+        <Wand2 size={12} /> Edit with AI
+      </button>
+    );
+  return (
+    <form
+      className="basis-full flex flex-wrap gap-2"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        setBusy(true);
+        setErr(null);
+        const r = await aiRewriteDraft({ id: itemId, instruction: text.trim() }).catch(() => null);
+        setBusy(false);
+        if (r && r.ok) {
+          setOpen(false);
+          setText("");
+          router.refresh();
+        } else setErr(r && !r.ok ? r.error : "Could not reach the server.");
+      }}
+    >
+      <input
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="e.g. shorter, warmer, mention the $15K grant, ask about an inspection Saturday"
+        aria-label="How should the AI change this email?"
+        className="flex-1 min-w-[200px] surface-3 border rounded-md px-2.5 py-1.5 text-[16px] sm:text-[13px]"
+      />
+      <button type="submit" disabled={busy || !text.trim()} className="rounded-md bg-[#13254A] text-white text-[12.5px] px-3 min-h-8 disabled:opacity-50 inline-flex items-center gap-1">
+        {busy ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />} {busy ? "Rewriting…" : "Rewrite"}
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="rounded-md surface-3 border text-[12.5px] px-2.5 min-h-8">
+        Cancel
+      </button>
+      {err && <p className="basis-full text-[12px] text-[#b02f2f]">{err}</p>}
+    </form>
   );
 }

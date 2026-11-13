@@ -30,7 +30,9 @@ export type JobName =
   /** entityId = a building check id: read its photos and write the report. */
   | "RunBuildingCheck"
   /** entityId = a campaign_recipients id: draft that person's matched-property email. */
-  | "DraftMatchEmail";
+  | "DraftMatchEmail"
+  /** entityId = an audience_runs id: read every client and pick who suits the property. */
+  | "FindAudience";
 
 export type JobPayload = {
   tenantId: string;

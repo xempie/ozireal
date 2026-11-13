@@ -71,6 +71,11 @@ const handlers: Record<JobName, Handler> = {
     return { queued };
   },
   /** Photos to a Red / Amber / Green condition read (2026-11-11). */
+  async FindAudience(job) {
+    // Read every client and pick who suits the property (2026-11-13).
+    const { findAudience } = await import("@/server/audience/find");
+    return findAudience(job.data.tenantId, job.data.entityId);
+  },
   async DraftMatchEmail(job) {
     // One personal matched-property email into the approval queue (2026-11-12).
     const { draftMatchEmail } = await import("@/server/match-email/draft");

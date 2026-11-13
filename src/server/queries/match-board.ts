@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { query } from "@/db";
 import {
   approvalItems,
+  audienceRuns,
   campaignRecipients,
   campaigns,
   contacts,
@@ -29,7 +30,12 @@ export type BoardPerson = {
   score: number;
   reason: string;
   hasEmail: boolean;
+  email: string | null;
   phone: string | null;
+  roles: string[];
+  tags: string[];
+  /** Last marketing email to them about anything, if within 7 days (or one waiting). */
+  recentAt: Date | null;
   /** Email consent as the latest consent row has it. */
   consent: "granted" | "revoked" | "never_given" | null;
   doNotContact: boolean;
@@ -37,7 +43,7 @@ export type BoardPerson = {
   contactedAt: Date | null;
   /** Their last interaction of any kind. */
   lastTouch: Date | null;
-  group: "ready" | "call" | "contacted" | "weak";
+  group: "ready" | "recent" | "call" | "contacted" | "weak";
 };
 
 export type BoardDraft = {
@@ -45,6 +51,9 @@ export type BoardDraft = {
   recipientId: string;
   contactId: string;
   name: string;
+  email: string | null;
+  phone: string | null;
+  why: string | null;
   status: "drafting" | "pending" | "sent" | "blocked" | "rejected" | "failed";
   subject: string | null;
   body: string | null;
@@ -68,8 +77,10 @@ export type BoardProperty = {
   parking: number | null;
   listing: { id: string; status: string; type: "sale" | "rent"; priceDisplay: string | null; photo: string | null } | null;
   people: BoardPerson[];
-  counts: { strong: number; good: number; ready: number; call: number; contacted: number; weak: number };
+  counts: { strong: number; good: number; ready: number; call: number; contacted: number; weak: number; recent: number };
   batch: BoardBatch | null;
+  section: string | null;
+  audience: { status: "queued" | "running" | "done" | "failed"; considered: number; picked: number; error: string | null; at: Date } | null;
 };
 
 export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; cold: { contactId: string; name: string; best: string; days: number | null }[] }> {
@@ -97,6 +108,8 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
         status: listings.status,
         type: listings.listingType,
         priceDisplay: listings.priceDisplay,
+        section: listings.websiteSection,
+        projectName: listings.projectName,
         createdAt: listings.createdAt,
         photo: sql<string | null>`(select m.s3_key from listing_media m where m.listing_id = ${listings.id} and m.kind = 'photo' order by m.sort_order, m.created_at limit 1)`,
       })
@@ -120,6 +133,11 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
         lastName: contacts.lastName,
         email: contacts.emailRaw,
         phone: contacts.phoneRaw,
+        tags: contacts.tags,
+        roles: sql<string[]>`coalesce((select array_agg(r.role::text) from contact_roles r where r.contact_id = ${contacts.id}), '{}')`,
+        recentAt: sql<Date | null>`(select max(coalesce(a.sent_at, a.created_at)) from approval_items a
+          where a.contact_id = ${contacts.id} and a.kind = 'email'
+            and ((a.status = 'sent' and a.sent_at > now() - interval '7 days') or a.status = 'pending'))`,
         doNotContact: contacts.doNotContact,
         consent: sql<"granted" | "revoked" | "never_given" | null>`(
           select c.status from consents c
@@ -165,6 +183,9 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
         contactId: campaignRecipients.contactId,
         firstName: contacts.firstName,
         lastName: contacts.lastName,
+        email: contacts.emailRaw,
+        phone: contacts.phoneRaw,
+        why: sql<string | null>`(select m.reason from matches m where m.property_id = ${campaigns.propertyId} and m.contact_id = ${contacts.id})`,
         blocked: campaignRecipients.blockedReason,
         itemId: approvalItems.id,
         itemStatus: approvalItems.status,
@@ -182,6 +203,16 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
     const newest = new Map<string, string>();
     for (const b of batchRows) if (b.propertyId && !newest.has(b.propertyId)) newest.set(b.propertyId, b.campaignId);
 
+    const runs = await tx
+      .select()
+      .from(audienceRuns)
+      .where(inArray(audienceRuns.propertyId, propIds))
+      .orderBy(desc(audienceRuns.createdAt));
+    const audienceFor = new Map<string, NonNullable<BoardProperty["audience"]>>();
+    for (const r of runs)
+      if (!audienceFor.has(r.propertyId))
+        audienceFor.set(r.propertyId, { status: r.status, considered: r.considered, picked: r.picked, error: r.error, at: r.createdAt });
+
     const out: BoardProperty[] = props.map((p) => {
       const l = listingFor.get(p.id) ?? null;
       const people: BoardPerson[] = ms
@@ -189,20 +220,27 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
         .map((m) => {
           const contactedAt = sentKey.get(`${p.id}:${m.contactId}`) ?? null;
           const emailable = !!m.email && m.consent === "granted" && !m.doNotContact;
+          const recentAt = m.recentAt ? new Date(m.recentAt) : null;
           const group: BoardPerson["group"] = contactedAt
             ? "contacted"
-            : m.score < GOOD
+            : m.score < 0.4
               ? "weak"
-              : emailable
-                ? "ready"
-                : "call";
+              : !emailable
+                ? "call"
+                : recentAt
+                  ? "recent"
+                  : "ready";
           return {
             contactId: m.contactId,
             name: `${m.firstName} ${m.lastName}`.trim(),
             score: m.score,
             reason: m.reason,
             hasEmail: !!m.email,
+            email: m.email,
             phone: m.phone,
+            roles: m.roles ?? [],
+            tags: (m.tags ?? []).filter((t) => !/\.(csv|xlsx|vcf)$|^export_/i.test(t)),
+            recentAt,
             consent: m.consent,
             doNotContact: m.doNotContact,
             contactedAt,
@@ -223,6 +261,9 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
                 recipientId: r.recipientId,
                 contactId: r.contactId,
                 name: `${r.firstName} ${r.lastName}`.trim(),
+                email: r.email,
+                phone: r.phone,
+                why: r.why,
                 status: r.itemId
                   ? ((r.itemStatus === "approved" ? "pending" : r.itemStatus) as BoardDraft["status"])
                   : r.blocked
@@ -238,6 +279,7 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
 
       return {
         ...p,
+        label: l?.section === "new_homes" && l.projectName ? l.projectName : p.label,
         listing: l ? { id: l.id, status: l.status, type: l.type, priceDisplay: l.priceDisplay, photo: l.photo } : null,
         people,
         counts: {
@@ -247,7 +289,10 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
           call: people.filter((x) => x.group === "call").length,
           contacted: people.filter((x) => x.group === "contacted").length,
           weak: people.filter((x) => x.group === "weak").length,
+          recent: people.filter((x) => x.group === "recent").length,
         },
+        section: l?.section ?? null,
+        audience: audienceFor.get(p.id) ?? null,
         // A batch that is fully settled stays visible as history, not as work.
         batch,
       };

@@ -1,23 +1,18 @@
 import { z } from "zod";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { withTenant } from "@/db";
 import {
   approvalItems,
   campaignRecipients,
   campaigns,
-  contactIntent,
-  contactPreferenceSuburbs,
-  contactPreferences,
   contacts,
-  listings,
   matches,
-  properties,
-  suburbs,
 } from "@/db/schema";
 import { checkConsent } from "@/server/outbound/gate";
 import { runTask, TaskOutputError } from "@/server/ai/run-task";
 import { ClaudeError } from "@/server/ai/claude";
 import { loadPrompt } from "@/server/ai/prompts";
+import { clientProfiles, propertyProfile } from "@/server/audience/profile";
 
 /**
  * Draft one matched-buyer email (2026-11-12): the job DraftMatchEmail, one per
@@ -36,9 +31,6 @@ const draftSchema = z.object({
   body: z.preprocess((v) => String(v ?? "").slice(0, 3000), z.string().min(20)),
   reviewNote: z.preprocess((v) => (v == null || v === "" ? null : String(v).slice(0, 200)), z.string().nullable()),
 });
-
-const money = (n: number | null | undefined) =>
-  n == null ? null : n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2).replace(/\.?0+$/, "")}m` : `$${Math.round(n / 1000)}k`;
 
 export async function draftMatchEmail(tenantId: string, recipientId: string) {
   const ctx = await withTenant(tenantId, async (tx) => {
@@ -74,93 +66,31 @@ export async function draftMatchEmail(tenantId: string, recipientId: string) {
       return null;
     }
 
-    const [pref] = await tx.select().from(contactPreferences).where(eq(contactPreferences.contactId, r.contactId)).limit(1);
-    const prefSuburbs = pref
-      ? await tx
-          .select({ name: suburbs.name })
-          .from(contactPreferenceSuburbs)
-          .innerJoin(suburbs, eq(suburbs.id, contactPreferenceSuburbs.suburbId))
-          .where(eq(contactPreferenceSuburbs.preferenceId, pref.id))
-      : [];
-    const [intent] = await tx.select().from(contactIntent).where(eq(contactIntent.contactId, r.contactId)).limit(1);
     const [match] = await tx
       .select({ score: matches.score, reason: matches.reason })
       .from(matches)
       .where(and(eq(matches.propertyId, r.propertyId), eq(matches.contactId, r.contactId)))
       .limit(1);
-
-    const [prop] = await tx
-      .select({
-        street: sql<string>`trim(coalesce(${properties.unit} || '/', '') || coalesce(${properties.streetNumber} || ' ', '') || coalesce(${properties.street}, ''))`,
-        suburb: suburbs.name,
-        type: properties.propertyType,
-        beds: properties.beds,
-        baths: properties.baths,
-        parking: properties.parking,
-        land: properties.landAreaSqm,
-      })
-      .from(properties)
-      .leftJoin(suburbs, eq(suburbs.id, properties.suburbId))
-      .where(eq(properties.id, r.propertyId))
-      .limit(1);
-
-    const [listing] = r.listingId
-      ? await tx
-          .select({
-            type: listings.listingType,
-            price: listings.priceDisplay,
-            rentPw: listings.rentPw,
-            headline: listings.publicHeadline,
-            copy: listings.publicCopy,
-            projectName: listings.projectName,
-          })
-          .from(listings)
-          .where(eq(listings.id, r.listingId))
-          .limit(1)
-      : [];
-
-    return { r, gate, person, pref, prefSuburbs, intent, match, prop, listing };
+    const [profile] = await clientProfiles(tx, [r.contactId], { enquiries: 6, enquiryChars: 700 });
+    const property = await propertyProfile(tx, r.propertyId);
+    return { r, gate, person, match, profile, property };
   });
-  if (!ctx || !ctx.prop) return { skipped: true };
-  const { r, gate, person, pref, prefSuburbs, intent, match, prop, listing } = ctx;
-
-  const wants = [
-    prefSuburbs.length ? `Suburbs: ${prefSuburbs.map((s) => s.name).join(", ")}` : null,
-    pref?.postcodes?.length ? `Postcodes: ${pref.postcodes.join(", ")}` : null,
-    pref?.priceMin || pref?.priceMax ? `Budget: ${money(pref?.priceMin) ?? "?"} to ${money(pref?.priceMax) ?? "?"}` : null,
-    pref?.rentPwMin || pref?.rentPwMax ? `Rent: $${pref?.rentPwMin ?? "?"} to $${pref?.rentPwMax ?? "?"} per week` : null,
-    pref?.bedsMin ? `At least ${pref.bedsMin} bedrooms` : null,
-    pref?.bathsMin ? `At least ${pref.bathsMin} bathrooms` : null,
-    pref?.parkingMin ? `At least ${pref.parkingMin} car spaces` : null,
-    pref?.landSizeMin ? `Land at least ${pref.landSizeMin} m²` : null,
-    pref?.propertyTypes?.length ? `Types: ${pref.propertyTypes.join(", ")}` : null,
-    pref?.timeline ? `Timeline: ${pref.timeline}` : null,
-    pref?.financeStatus ? `Finance: ${pref.financeStatus}` : null,
-    pref?.softRequirements ? `In their words: ${pref.softRequirements}` : null,
-  ].filter(Boolean);
+  if (!ctx || !ctx.property || !ctx.profile) return { skipped: true };
+  const { r, gate, person, match, profile, property } = ctx;
 
   const request = [
-    "THE PERSON",
+    "THE CLIENT",
     `First name: ${person.firstName || "there"}`,
-    wants.length ? `What they want:\n- ${wants.join("\n- ")}` : "What they want: not recorded",
-    intent?.rollingBrief ? `Brief: ${intent.rollingBrief}` : null,
-    match ? `Why the engine matched them (score ${match.score.toFixed(2)}): ${match.reason}` : null,
+    profile.text,
+    match ? `\nWhy they were picked (fit ${match.score.toFixed(2)}): ${match.reason}` : null,
     "",
     "THE PROPERTY",
-    `Address: ${listing?.projectName ?? prop.street}, ${prop.suburb ?? ""}`,
-    `Type: ${prop.type}`,
-    [prop.beds != null && `${prop.beds} bed`, prop.baths != null && `${prop.baths} bath`, prop.parking != null && `${prop.parking} car`, prop.land && `${prop.land} m² land`]
-      .filter(Boolean)
-      .join(", "),
-    listing ? `For ${listing.type === "rent" ? "lease" : "sale"}` : "Not advertised (an off-market opportunity)",
-    listing?.price ? `Price wording (verbatim, the only price you may mention): ${listing.price}` : "Price wording: none",
-    listing?.headline ? `Headline: ${listing.headline}` : null,
-    listing?.copy ? `Description: ${listing.copy.slice(0, 1500)}` : null,
+    property.text,
   ]
     .filter((x) => x !== null)
     .join("\n");
 
-  const prompt = loadPrompt("match-email.v1");
+  const prompt = loadPrompt("match-email.v2");
   try {
     const { data, generationId } = await runTask(draftSchema, {
       task: "match-email",
