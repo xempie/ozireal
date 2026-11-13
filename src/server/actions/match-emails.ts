@@ -140,7 +140,12 @@ export const findAudienceFor = defineAction({
       .from(audienceRuns)
       .where(and(eq(audienceRuns.propertyId, input.propertyId), inArray(audienceRuns.status, ["queued", "running"])))
       .limit(1);
-    if (busy) return { runId: busy.id };
+    if (busy) {
+      // A run older than 5 minutes is dead: retire it and start fresh.
+      await ctx.tx.update(audienceRuns).set({ status: "failed", error: "Timed out" }).where(and(eq(audienceRuns.id, busy.id), sql`${audienceRuns.createdAt} < now() - interval '5 minutes'`));
+      const [still] = await ctx.tx.select({ s: audienceRuns.status }).from(audienceRuns).where(eq(audienceRuns.id, busy.id));
+      if (still?.s !== "failed") return { runId: busy.id };
+    }
     const [run] = await ctx.tx
       .insert(audienceRuns)
       .values({ tenantId: ctx.tenantId, propertyId: input.propertyId })

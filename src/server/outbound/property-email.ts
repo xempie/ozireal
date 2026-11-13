@@ -1,4 +1,3 @@
-import "server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { withTenant } from "@/db";
 import { listings, properties, suburbs } from "@/db/schema";

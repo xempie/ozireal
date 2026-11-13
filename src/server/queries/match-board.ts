@@ -211,7 +211,15 @@ export async function getMatchBoard(): Promise<{ properties: BoardProperty[]; co
     const audienceFor = new Map<string, NonNullable<BoardProperty["audience"]>>();
     for (const r of runs)
       if (!audienceFor.has(r.propertyId))
-        audienceFor.set(r.propertyId, { status: r.status, considered: r.considered, picked: r.picked, error: r.error, at: r.createdAt });
+        audienceFor.set(r.propertyId, {
+          // A search stuck for 5 minutes has died in the worker: say so instead of spinning.
+          ...((r.status === "queued" || r.status === "running") && Date.now() - r.createdAt.getTime() > 5 * 60_000
+            ? { status: "failed" as const, error: "It did not finish. Press Find again." }
+            : { status: r.status, error: r.error }),
+          considered: r.considered,
+          picked: r.picked,
+          at: r.createdAt,
+        });
 
     const out: BoardProperty[] = props.map((p) => {
       const l = listingFor.get(p.id) ?? null;
