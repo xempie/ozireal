@@ -1,5 +1,6 @@
 "use client";
 
+import { SuburbSearch } from "./suburb-search";
 import * as React from "react";
 import { Plus, Pencil, Trash2, Globe, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -76,18 +77,7 @@ export function NewPropertyButton({
             <Input label="Street" name="street" required errors={a.fieldErrors.street} />
           </div>
 
-          <Select
-            label="Suburb"
-            name="suburbId"
-            required
-            options={[{ value: "", label: "Choose a suburb…" }, ...suburbs]}
-            errors={a.fieldErrors.suburbId}
-          />
-          <p className="text-3 text-[11px] -mt-2">
-            Picked from the list, not typed — matching compares suburbs by record, so a
-            hand-typed one would quietly never match anybody. State and postcode come
-            from the suburb.
-          </p>
+          <SuburbSearch suburbs={suburbs} errors={a.fieldErrors.suburbId} className="" />
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Select
@@ -406,14 +396,7 @@ export function EditPropertyButton({
             />
           </div>
 
-          <Select
-            label="Suburb"
-            name="suburbId"
-            required
-            defaultValue={property.suburbId ?? ""}
-            options={[{ value: "", label: "Choose a suburb…" }, ...suburbs]}
-            errors={a.fieldErrors.suburbId}
-          />
+          <SuburbSearch suburbs={suburbs} defaultValue={property.suburbId} errors={a.fieldErrors.suburbId} className="" />
 
           <div className="grid sm:grid-cols-2 gap-3">
             <Select

@@ -1,5 +1,6 @@
 "use client";
 
+import { SuburbSearch } from "./suburb-search";
 import * as React from "react";
 import { Plus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -441,96 +442,3 @@ function ContactLinks({ linked, setLinked }: { linked: Linked[]; setLinked: (l: 
  * scroll. Matches the name or postcode, names starting with the text first. Still writes
  * a real suburb id, because matching compares suburbs by record, never by typed text.
  */
-function SuburbSearch({ suburbs, errors }: { suburbs: Option[]; errors?: string[] }) {
-  const [text, setText] = React.useState("");
-  const [picked, setPicked] = React.useState<Option | null>(null);
-  const [open, setOpen] = React.useState(false);
-  const [active, setActive] = React.useState(0);
-  const q = text.trim().toLowerCase();
-  const results = React.useMemo(() => {
-    if (q.length < 2) return [];
-    const starts = suburbs.filter((o) => o.label.toLowerCase().startsWith(q));
-    const contains = suburbs.filter((o) => !o.label.toLowerCase().startsWith(q) && o.label.toLowerCase().includes(q));
-    return [...starts, ...contains].slice(0, 10);
-  }, [q, suburbs]);
-
-  const choose = (o: Option) => {
-    setPicked(o);
-    setText(o.label);
-    setOpen(false);
-  };
-
-  return (
-    <div className="col-span-2 relative">
-      <label htmlFor="suburb-search" className="block text-[12px] font-medium text-2 mb-1.5">
-        Suburb
-      </label>
-      <input type="hidden" name="suburbId" value={picked?.value ?? ""} />
-      <input
-        id="suburb-search"
-        role="combobox"
-        aria-expanded={open && results.length > 0}
-        aria-controls="suburb-results"
-        aria-autocomplete="list"
-        autoComplete="off"
-        placeholder="Type a suburb or postcode…"
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-          setPicked(null);
-          setOpen(true);
-          setActive(0);
-        }}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onKeyDown={(e) => {
-          if (!results.length) return;
-          if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setActive((i) => Math.min(i + 1, results.length - 1));
-          } else if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setActive((i) => Math.max(i - 1, 0));
-          } else if (e.key === "Enter" && open) {
-            e.preventDefault();
-            choose(results[active]);
-          }
-        }}
-        className={`w-full surface-2 border rounded-md px-2.5 py-2 text-[16px] sm:text-[13.5px] outline-none focus:ring-2 focus:ring-[var(--accent)]/30 ${errors?.length ? "border-[#d03b3b]/60" : ""}`}
-      />
-      {open && q.length >= 2 && (
-        <ul
-          id="suburb-results"
-          role="listbox"
-          className="absolute z-20 mt-1 w-full max-h-64 overflow-auto surface-2 border rounded-md shadow-lg text-[13.5px]"
-        >
-          {results.length === 0 ? (
-            <li className="px-3 py-2 text-3">No suburb matches “{text.trim()}”.</li>
-          ) : (
-            results.map((o, i) => (
-              <li
-                key={o.value}
-                role="option"
-                aria-selected={i === active}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  choose(o);
-                }}
-                onMouseEnter={() => setActive(i)}
-                className={`px-3 py-2 cursor-pointer ${i === active ? "bg-[var(--accent)] text-white" : "hover:surface-3"}`}
-              >
-                {o.label}
-              </li>
-            ))
-          )}
-        </ul>
-      )}
-      {text && !picked && !open && (
-        <p className="text-[11.5px] text-[#b02f2f] mt-1">Pick a suburb from the list.</p>
-      )}
-      {errors?.map((m) => (
-        <p key={m} className="text-[11.5px] text-[#b02f2f] mt-1">{m}</p>
-      ))}
-    </div>
-  );
-}

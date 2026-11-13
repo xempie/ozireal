@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { stateFromPostcode } from "@/lib/postcode";
 import type { ZodTypeAny } from "zod";
 import { auth } from "@/auth";
 import { query } from "@/db";
@@ -683,7 +684,7 @@ async function resolveSuburb(name: string, postcode?: string, stateHint?: string
     return { ok: false, message: `"${clean}" exists with several postcodes (${narrowed.map((x) => x.postcode).join(", ")}). Say which.` };
   }
   if (pc && /^\d{4}$/.test(pc)) {
-    const state = (stateHint && /^(SA|NSW|VIC|QLD|WA|TAS|NT|ACT)$/i.test(stateHint) ? stateHint.toUpperCase() : stateFromPostcode(pc));
+    const state = (stateHint && /^(SA|NSW|VIC|QLD|WA|TAS|NT|ACT)$/i.test(stateHint) ? stateHint.toUpperCase() : (stateFromPostcode(pc) ?? "SA"));
     const title = clean.replace(/\b\w/g, (c) => c.toUpperCase());
     const [row] = await query((tx) =>
       tx
@@ -699,16 +700,3 @@ async function resolveSuburb(name: string, postcode?: string, stateHint?: string
   return { ok: false, message: `"${clean}" is not on the suburb list yet${hint || ""}. Give its postcode and it will be added.` };
 }
 
-/** Australian postcode ranges to state (Australia Post). */
-function stateFromPostcode(pc: string): string {
-  const n = Number(pc);
-  if ((n >= 200 && n <= 299) || (n >= 2600 && n <= 2618) || (n >= 2900 && n <= 2920)) return "ACT";
-  if (n >= 800 && n <= 999) return "NT";
-  if (n >= 1000 && n <= 2999) return "NSW";
-  if (n >= 3000 && n <= 3999) return "VIC";
-  if (n >= 4000 && n <= 4999) return "QLD";
-  if (n >= 5000 && n <= 5999) return "SA";
-  if (n >= 6000 && n <= 6999) return "WA";
-  if (n >= 7000 && n <= 7999) return "TAS";
-  return "SA";
-}
