@@ -47,7 +47,15 @@ const SIGNATURE_HTML = `
       <a href="https://www.ozirealty.com.au" style="color:#0034C8;text-decoration:none">www.ozirealty.com.au</a><br>
       308 Prospect Rd, Prospect SA 5082 &middot; RLA 350628<br>
       ${SOCIALS.map((s) => `<a href="${s.href}" style="color:#D84315;text-decoration:none;font-weight:bold">${s.name}</a>`).join(" &middot; ")}<br>
-      <img src="https://www.ozirealty.com.au/brand/logo.png" alt="Ozi Realty" height="36" style="margin-top:8px;display:block">
+      <table cellpadding="0" cellspacing="0" style="margin-top:10px"><tr>
+        <td style="vertical-align:middle;padding-right:14px;border-right:1px solid #D7DCE5">
+          <img src="https://www.ozirealty.com.au/brand/logo.png" alt="Ozi Realty" height="36" style="display:block">
+        </td>
+        <td style="vertical-align:middle;padding-left:14px;font-size:10px;color:#6B7280;line-height:1.2">
+          <img src="https://www.ozirealty.com.au/brand/reisa-member.png" alt="REISA member" height="38" style="display:block">
+          <span style="display:block;margin-top:2px">Member</span>
+        </td>
+      </tr></table>
     </td>
   </tr>
 </table>`;
